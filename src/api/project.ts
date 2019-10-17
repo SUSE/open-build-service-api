@@ -1,8 +1,8 @@
-import { extractElementIfPresent, extractElementAsArray } from "../util";
-import { BaseRepository, BaseProject } from "./base_types";
-import { Project, User } from "../obs";
-import { Connection } from "../connection";
 import { assert } from "console";
+import { Connection } from "../connection";
+import { Project, User } from "../obs";
+import { extractElementAsArray, extractElementIfPresent } from "../util";
+import { BaseProject, BaseRepository } from "./base_types";
 
 // Representation of a FlagSwitch as extracted from OBS' API
 type FlagSwitchApiReply =
@@ -22,8 +22,8 @@ function flagSwitchFromApi(data: FlagSwitchApiReply): FlagSwitch | undefined {
   return data === ""
     ? undefined
     : {
-        repository: extractElementIfPresent<string>(data.$, "repository"),
-        arch: extractElementIfPresent<Project.Arch>(data.$, "arch")
+        arch: extractElementIfPresent<Project.Arch>(data.$, "arch"),
+        repository: extractElementIfPresent<string>(data.$, "repository")
       };
 }
 
@@ -41,13 +41,13 @@ const enum DefaultValue {
 // `disable = [FlagSwitch({"RepoA", "SomeArch"})]`.
 interface Flag {
   defaultValue: DefaultValue;
-  enable: Array<FlagSwitch>;
-  disable: Array<FlagSwitch>;
+  enable: FlagSwitch[];
+  disable: FlagSwitch[];
 }
 
 export function projectSettingFromFlag(
   repositoryName: string,
-  architectures: Array<Project.Arch>,
+  architectures: Project.Arch[],
   flag?: Flag,
   defaultSetting?: boolean
 ): Map<Project.Arch, boolean | undefined> | boolean | undefined {
@@ -78,10 +78,10 @@ export function projectSettingFromFlag(
     return globalDefault;
   }
 
-  let res = new Map();
+  const res = new Map();
 
   const matchesAndDefault: Array<{
-    match: Array<FlagSwitch>;
+    match: FlagSwitch[];
     value: boolean;
   }> = [
     { match: matchingEnable, value: true },
@@ -91,9 +91,9 @@ export function projectSettingFromFlag(
   // check each matching <enable>/<disable>:
   // no arch field? => return true/false directly
   // arch field? => put it in the Map
-  for (var { match, value } of matchesAndDefault) {
-    for (var flg of match) {
-      if (flg.repository == repositoryName) {
+  for (const { match, value } of matchesAndDefault) {
+    for (const flg of match) {
+      if (flg.repository === repositoryName) {
         if (flg.arch === undefined) {
           return value;
         } else {
@@ -115,13 +115,13 @@ export function projectSettingFromFlag(
 }
 
 function flagFromApi(data: {
-  enable?: FlagSwitchApiReply | Array<FlagSwitchApiReply>;
-  disable?: FlagSwitchApiReply | Array<FlagSwitchApiReply>;
+  enable?: FlagSwitchApiReply | FlagSwitchApiReply[];
+  disable?: FlagSwitchApiReply | FlagSwitchApiReply[];
 }): Flag {
   let defaultValue: DefaultValue = DefaultValue.Unspecified;
 
   const findGlobalSwitch = (
-    flags?: FlagSwitchApiReply | Array<FlagSwitchApiReply>
+    flags?: FlagSwitchApiReply | FlagSwitchApiReply[]
   ) => {
     if (flags === undefined) {
       return false;
@@ -146,20 +146,18 @@ function flagFromApi(data: {
     defaultValue = DefaultValue.Disable;
   }
 
-  let extractEnableDisable = function(
-    key: "enable" | "disable"
-  ): Array<FlagSwitch> {
+  const extractEnableDisable = (key: "enable" | "disable"): FlagSwitch[] => {
     return data[key] !== undefined && data[key] !== ""
       ? (extractElementAsArray<FlagSwitch | undefined>(data, key, {
           construct: flagSwitchFromApi
-        }).filter(elem => elem !== undefined) as Array<FlagSwitch>)
+        }).filter(elem => elem !== undefined) as FlagSwitch[])
       : [];
   };
 
   return {
-    defaultValue: defaultValue,
-    enable: extractEnableDisable("enable"),
-    disable: extractEnableDisable("disable")
+    defaultValue,
+    disable: extractEnableDisable("disable"),
+    enable: extractEnableDisable("enable")
   };
 }
 
@@ -180,28 +178,28 @@ function parseRepositoryFromApi(data: {
     block?: string;
     linkedbuild?: string;
   };
-  arch: Array<string>;
+  arch: string[];
   releasetarget: {
     $: { project: string; repository: string; trigger?: string };
   };
   path: { $: { repository: string; project: string } };
 }): BaseRepository {
   return {
-    name: data.$.name,
-    rebuild: extractElementIfPresent<Project.RebuildMode>(data.$, "rebuild"),
+    arch: extractElementAsArray(data, "arch", {
+      construct: (data: Project.Arch): Project.Arch => data
+    }),
     block: extractElementIfPresent<Project.BlockMode>(data.$, "block"),
     linkedbuild: extractElementIfPresent<Project.LinkedBuildMode>(
       data.$,
       "linkedbuild"
     ),
-    arch: extractElementAsArray(data, "arch", {
-      construct: (data: Project.Arch): Project.Arch => data
-    }),
-    releasetarget: extractElementAsArray(data, "releasetarget", {
-      type: Project.ReleaseTarget
-    }),
+    name: data.$.name,
     path: extractElementAsArray(data, "path", {
       type: Project.Path
+    }),
+    rebuild: extractElementIfPresent<Project.RebuildMode>(data.$, "rebuild"),
+    releasetarget: extractElementAsArray(data, "releasetarget", {
+      type: Project.ReleaseTarget
     })
   };
 }
@@ -222,7 +220,7 @@ export interface Project extends BaseProject {
   // readonly binarydownload?: Flag;
 
   // repositories for this project
-  readonly repository: Array<BaseRepository>;
+  readonly repository: BaseRepository[];
 }
 // return the route to GET or PUT the project's _meta
 function metaRoute(name: string): string {
@@ -233,13 +231,13 @@ export async function getProject(
   conn: Connection,
   projName: string
 ): Promise<Project> {
-  let res = await conn.makeApiCall(metaRoute(projName));
+  const res = await conn.makeApiCall(metaRoute(projName));
   assert(
     res.project.$.name === projName,
     "Expected the received project name and the sent project name to be equal"
   );
 
-  const lock_elem:
+  const lockElem:
     | { enable?: {}; disable?: {} }
     | undefined = extractElementIfPresent(res.project, "lock");
 
@@ -253,46 +251,42 @@ export async function getProject(
   );
 
   const proj = {
-    name: projName,
-    description: res.project.description,
-    title: res.project.title,
+    access: accessElem,
+    build: extractElementIfPresent<Flag>(res.project, "build", {
+      construct: flagFromApi
+    }),
     created: extractElementIfPresent<string>(res.project, "created"),
-    updated: extractElementIfPresent<string>(res.project, "updated"),
-    url: extractElementIfPresent<string>(res.project, "url"),
-    mountproject: extractElementIfPresent<string>(res.project, "mountproject"),
+    debuginfo: extractElementIfPresent<Flag>(res.project, "debuginfo", {
+      construct: flagFromApi
+    }),
+    description: res.project.description,
+    group: extractElementAsArray<User.Group>(res.project, "group", {
+      type: User.Group
+    }),
+
     kind: extractElementIfPresent<Project.Kind>(res.project, "kind"),
     link: extractElementAsArray<Project.Link>(res.project, "link", {
       type: Project.Link
     }),
+    lock: lockElem === undefined ? false : simpleFlagToBoolean(lockElem),
+    mountproject: extractElementIfPresent<string>(res.project, "mountproject"),
+    name: projName,
     person: extractElementAsArray<User.User>(res.project, "person", {
       type: User.User
-    }),
-    group: extractElementAsArray<User.Group>(res.project, "group", {
-      type: User.Group
-    }),
-    build: extractElementIfPresent<Flag>(res.project, "build", {
-      construct: flagFromApi
     }),
     publish: extractElementIfPresent<Flag>(res.project, "publish", {
       construct: flagFromApi
     }),
-    useforbuild: extractElementIfPresent<Flag>(res.project, "useforbuild", {
-      construct: flagFromApi
-    }),
-    debuginfo: extractElementIfPresent<Flag>(res.project, "debuginfo", {
-      construct: flagFromApi
-    }),
-    binaryDownload: extractElementIfPresent<Flag>(
-      res.project,
-      "binarydownload",
-      { construct: flagFromApi }
-    ),
     repository: extractElementAsArray(res.project, "repository", {
       construct: parseRepositoryFromApi
     }),
-    lock: lock_elem === undefined ? false : simpleFlagToBoolean(lock_elem),
-    access: accessElem,
-    sourceAccess: sourceAccessElem
+    sourceAccess: sourceAccessElem,
+    title: res.project.title,
+    updated: extractElementIfPresent<string>(res.project, "updated"),
+    url: extractElementIfPresent<string>(res.project, "url"),
+    useforbuild: extractElementIfPresent<Flag>(res.project, "useforbuild", {
+      construct: flagFromApi
+    })
   };
 
   return proj;

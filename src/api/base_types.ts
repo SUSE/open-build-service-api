@@ -10,13 +10,13 @@ export interface BaseRepository {
   linkedbuild?: Project.LinkedBuildMode;
 
   // architecture of this repository
-  arch: Array<Project.Arch>;
+  arch: Project.Arch[];
 
   // repositories that should be released
-  releasetarget: Array<Project.ReleaseTarget>;
+  releasetarget: Project.ReleaseTarget[];
 
   // Array of included repositories from other projects
-  path: Array<Project.Path>;
+  path: Project.Path[];
 
   hostsystem?: Project.HostSystem;
 }
@@ -32,11 +32,11 @@ export interface BaseProject {
   mountProject?: string;
   kind?: Project.Kind;
   // list of users and their roles belonging to this project
-  person: Array<User.User>;
+  person: User.User[];
 
-  link: Array<Project.Link>;
+  link: Project.Link[];
   // list of groups and their roles belonging to this project
-  group: Array<User.Group>;
+  group: User.Group[];
 
   // Is this project locked from rebuilding (used for maintenance project)
   lock: boolean;

@@ -1,20 +1,21 @@
 "use strict";
 
 import xml2js = require("xml2js");
-const xml_parser = new xml2js.Parser({ explicitArray: false, async: true });
+
+const xmlParser = new xml2js.Parser({ explicitArray: false, async: true });
 const ConfigIniParser = require("config-ini-parser").ConfigIniParser;
 
-import { request } from "https";
 import { readFileSync } from "fs";
+import { request } from "https";
 import { homedir } from "os";
 
 // Class for storing the credentials to connect to a Open Build Service instance.
 export class Connection {
+  // the username which will be used to connect to the API
+  public readonly username: string;
+
   // the user's password
   private readonly password: string;
-
-  // the username which will be used to connect to the API
-  readonly username: string;
 
   // HTTP simple auth header for fetch containing the necessary credentials
   private readonly headers: string;
@@ -34,9 +35,9 @@ export class Connection {
       const oscrc = homedir().concat("/.config/osc/oscrc");
 
       const parser = new ConfigIniParser();
-      const oscrc_contents = parser.parse(readFileSync(oscrc).toString());
-      this.password = oscrc_contents.get(url, "pass");
-      this.username = oscrc_contents.get(url, "user");
+      const oscrcContents = parser.parse(readFileSync(oscrc).toString());
+      this.password = oscrcContents.get(url, "pass");
+      this.username = oscrcContents.get(url, "user");
     } else {
       this.password = password!;
       this.username = username!;
@@ -50,31 +51,30 @@ export class Connection {
     // });
   }
 
-  async makeApiCall(route: string, method: string = "GET"): Promise<any> {
+  public async makeApiCall(
+    route: string,
+    method: string = "GET"
+  ): Promise<any> {
     const url = this.url.concat(route);
 
     return new Promise((resolve, reject) => {
-      const req = request(
-        url,
-        { method: method, auth: this.headers },
-        response => {
-          if (response.statusCode! < 200 || response.statusCode! > 299) {
-            reject(
-              new Error(
-                `Failed to load URL ${url}, status code: ${response.statusCode}`
-              )
-            );
-          }
-
-          const body: any[] = [];
-          response.on("data", chunk => {
-            body.push(chunk);
-          });
-          response.on("end", async () =>
-            resolve(await xml_parser.parseStringPromise(body.join("")))
+      const req = request(url, { method, auth: this.headers }, response => {
+        if (response.statusCode! < 200 || response.statusCode! > 299) {
+          reject(
+            new Error(
+              `Failed to load URL ${url}, status code: ${response.statusCode}`
+            )
           );
         }
-      );
+
+        const body: any[] = [];
+        response.on("data", chunk => {
+          body.push(chunk);
+        });
+        response.on("end", async () =>
+          resolve(await xmlParser.parseStringPromise(body.join("")))
+        );
+      });
       req.on("error", err => reject(err));
       req.end();
     });

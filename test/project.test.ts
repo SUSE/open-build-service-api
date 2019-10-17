@@ -38,21 +38,21 @@ describe("Project", () => {
 
     // users
     expect(proj.person).to.deep.include({
-      user_id: "dimstar_suse",
+      userId: "dimstar_suse",
       role: "maintainer"
     });
     expect(proj.person).to.deep.include({
-      user_id: "factory-auto",
+      userId: "factory-auto",
       role: "reviewer"
     });
 
     // groups
     expect(proj.group).to.deep.include({
-      group_id: "factory-maintainers",
+      groupId: "factory-maintainers",
       role: "maintainer"
     });
     expect(proj.group).to.deep.include({
-      group_id: "factory-staging",
+      groupId: "factory-staging",
       role: "reviewer"
     });
 
@@ -123,17 +123,17 @@ describe("Project", () => {
     // users
     ["dancermak", "robert_munteanu", "ojkastl_buildservice"].forEach(user => {
       expect(proj.person).to.deep.include({
-        user_id: user,
+        userId: user,
         role: "maintainer"
       });
       expect(proj.person).to.deep.include({
-        user_id: user,
+        userId: user,
         role: "bugowner"
       });
     });
 
     expect(proj.person).to.deep.include({
-      user_id: "dirkmueller",
+      userId: "dirkmueller",
       role: "maintainer"
     });
 

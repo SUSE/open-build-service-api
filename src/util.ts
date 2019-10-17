@@ -7,7 +7,7 @@ import { assert } from "console";
 
 function makeConstruct<T>(
   construct?: (data: any) => T,
-  type?: { new (data: any): T }
+  type?: new (data: any) => T
 ): (data: any) => T {
   if (construct === undefined && type === undefined) {
     return (data: any) => data;
@@ -24,13 +24,13 @@ function extractPropertyFromObject<T>(
   data: any,
   key: string,
   {
-    default_value,
+    defaultValue,
     construct,
     type
   }: {
-    default_value?: T;
+    defaultValue?: T;
     construct?: (data: any) => T;
-    type?: { new (data: any): T };
+    type?: new (data: any) => T;
   } = {}
 ): T | undefined {
   assert(
@@ -39,7 +39,7 @@ function extractPropertyFromObject<T>(
   );
 
   if (!(key in data)) {
-    return default_value === undefined ? undefined : default_value;
+    return defaultValue === undefined ? undefined : defaultValue;
   }
 
   return makeConstruct<T>(construct, type)(data[key]);
@@ -58,7 +58,7 @@ export function extractElementIfPresent<T>(
   key: string,
   options?: {
     construct?: (data: any) => T;
-    type?: { new (data: any): T };
+    type?: new (data: any) => T;
   }
 ): T | undefined {
   return extractPropertyFromObject(data, key, options);
@@ -69,19 +69,19 @@ export function extractElementIfPresent<T>(
 export function extractElementOrDefault<T>(
   data: any,
   key: string,
-  default_value: T,
+  defaultValue: T,
   {
     construct,
     type
   }: {
     construct?: (data: any) => T;
-    type?: { new (data: any): T };
+    type?: new (data: any) => T;
   } = {}
 ): T {
   return extractPropertyFromObject(data, key, {
-    default_value: default_value,
-    construct: construct,
-    type: type
+    construct,
+    defaultValue,
+    type
   })!;
 }
 
@@ -95,9 +95,9 @@ function extractPropertyFromObjectAsArray<T>(
   }: {
     default_value?: T;
     construct?: (data: any) => T;
-    type?: { new (data: any): T };
+    type?: new (data: any) => T;
   } = {}
-): Array<T> | undefined {
+): T[] | undefined {
   if (!(key in data)) {
     return default_value === undefined ? undefined : [default_value];
   }
@@ -108,7 +108,7 @@ function extractPropertyFromObjectAsArray<T>(
     return [constructF(data[key])];
   }
 
-  const res: Array<T> = [];
+  const res: T[] = [];
   data[key].forEach((element: any) => {
     res.push(constructF(element));
   });
@@ -123,9 +123,9 @@ export function extractElementAsArrayIfPresent<T>(
   key: string,
   options?: {
     construct?: (data: any) => T;
-    type?: { new (data: any): T };
+    type?: new (data: any) => T;
   }
-): Array<T> | undefined {
+): T[] | undefined {
   return extractPropertyFromObjectAsArray<T>(data, key, options);
 }
 
@@ -136,9 +136,9 @@ export function extractElementAsArray<T>(
   key: string,
   options?: {
     construct?: (data: any) => T;
-    type?: { new (data: any): T };
+    type?: new (data: any) => T;
   }
-): Array<T> {
+): T[] {
   const res = extractPropertyFromObjectAsArray<T>(data, key, options);
   return res === undefined ? [] : res;
 }

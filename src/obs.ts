@@ -1,10 +1,9 @@
 "use strict";
 
-import { extractElementIfPresent, extractElementOrDefault } from "./util";
-
-import { Connection } from "./connection";
-import { BaseRepository, BaseProject } from "./api/base_types";
 import * as api from "./api/project";
+import { BaseProject, BaseRepository } from "./api/base_types";
+import { Connection } from "./connection";
+import { extractElementIfPresent, extractElementOrDefault } from "./util";
 
 /*function getElementOrDefaultMarkerIfPresent<IT, MT>(
     data: any,
@@ -33,22 +32,22 @@ export namespace User {
 
   // A user belonging to a project
   export class User {
-    readonly user_id: string;
-    readonly role: LocalRole;
+    public readonly userId: string;
+    public readonly role: LocalRole;
 
     constructor(data: { $: { userid: string; role: LocalRole } }) {
-      this.user_id = data.$.userid;
+      this.userId = data.$.userid;
       this.role = data.$.role;
     }
   }
 
   // A group belonging to a project
   export class Group {
-    readonly group_id: string;
-    readonly role: LocalRole;
+    public readonly groupId: string;
+    public readonly role: LocalRole;
 
     constructor(data: { $: { groupid: string; role: LocalRole } }) {
-      this.group_id = data.$.groupid;
+      this.groupId = data.$.groupid;
       this.role = data.$.role;
     }
   }
@@ -98,9 +97,9 @@ export namespace Project {
 
 export namespace Project {
   export class ReleaseTarget {
-    readonly project: string;
-    readonly repository: string;
-    readonly trigger: Project.ReleaseTrigger;
+    public readonly project: string;
+    public readonly repository: string;
+    public readonly trigger: Project.ReleaseTrigger;
 
     constructor(data: {
       $: {
@@ -125,9 +124,9 @@ export namespace Project {
   // { project: "openSUSE:Factory", repository: "standard" }
   export class Path {
     // Name of the project, which repository we want to reference
-    readonly project: string;
+    public readonly project: string;
     // Name of the repository in the given project
-    readonly repository: string;
+    public readonly repository: string;
 
     constructor(data: { $: { repository: string; project: string } }) {
       this.repository = data.$.repository;
@@ -142,8 +141,8 @@ export namespace Project {
   }
 
   export class Link {
-    readonly vrevmode: VrevMode;
-    readonly project: string;
+    public readonly vrevmode: VrevMode;
+    public readonly project: string;
 
     constructor(data: { vrevmode?: VrevMode; project: string }) {
       let vrevmode = extractElementIfPresent<VrevMode>(data, "vrevmode");
@@ -236,11 +235,11 @@ export namespace Project {
   }
 
   export interface Project extends BaseProject {
-    readonly repositories: Array<Repository>;
+    readonly repositories: Repository[];
   }
 
   function convertFromApiProject(apiProject: api.Project): Project {
-    let {
+    const {
       build,
       publish,
       useforbuild,
@@ -249,19 +248,19 @@ export namespace Project {
       ...res
     } = apiProject;
 
-    let repos: Array<Repository> = [];
+    const repos: Repository[] = [];
     if (repository !== undefined) {
       repository.forEach(repo => {
         const arches = repo.arch;
         repos.push({
           build: api.projectSettingFromFlag(repo.name, arches, build),
+          debugInfo: api.projectSettingFromFlag(repo.name, arches, debuginfo),
           publish: api.projectSettingFromFlag(repo.name, arches, publish),
           useForBuild: api.projectSettingFromFlag(
             repo.name,
             arches,
             useforbuild
           ),
-          debugInfo: api.projectSettingFromFlag(repo.name, arches, debuginfo),
           ...repo
         });
       });
