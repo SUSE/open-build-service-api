@@ -1,0 +1,64 @@
+{
+  "name": "obs-ts",
+  "version": "0.0.0",
+  "description": "obs-ts",
+  "license": "MIT",
+  "repository": "",
+  "author": "",
+  "keywords": [
+    ""
+  ],
+  "files": [
+    "lib"
+  ],
+  "main": "lib/index",
+  "types": "lib/index",
+  "scripts": {
+    "format": "prettier --write \"{src,test}/**/*.ts\"",
+    "lint": "tslint --force --format verbose \"src/**/*.ts\"",
+    "prepublishOnly": "npm run build",
+    "build": "tsc --pretty",
+    "test": "npm run build && mocha --require ts-node/register --recursive \"test/**/*.test.ts\"",
+    "coverage": "nyc --include=\"src/**/*.ts\" --reporter=text --reporter=html --reporter=lcov mocha --compilers ts:ts-node/register --recursive \"test/**/*.test.ts\"",
+    "watch": "npm run build -- --watch",
+    "watch:test": "npm run test -- --watch"
+  },
+  "dependencies": {
+    "config-ini-parser": "^1.2.2",
+    "xml2js": "^0.4.22"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.1.6",
+    "@types/mocha": "^5.2.5",
+    "@types/node": "^10.11.4",
+    "@types/xml2js": "^0.4.4",
+    "chai": "^4.2.0",
+    "mocha": "^5.2.0",
+    "nock": "^11.3.5",
+    "nyc": "^13.0.1",
+    "prettier": "^1.14.3",
+    "ts-node": "^7.0.1",
+    "tslint": "^5.11.0",
+    "tslint-config-prettier": "^1.15.0",
+    "typescript": "^3.1.0"
+  },
+  "engines": {
+    "node": ">=10.0.0"
+  },
+  "nyc": {
+    "include": [
+      "src/**/*.ts"
+    ],
+    "exclude": [
+      "lib"
+    ],
+    "extension": [
+      ".ts"
+    ],
+    "require": [
+      "ts-node/register"
+    ],
+    "reporter": [],
+    "all": true
+  }
+}
