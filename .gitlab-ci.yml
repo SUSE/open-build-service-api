@@ -1,0 +1,17 @@
+image: node:latest
+
+stages:
+  - test
+
+cache:
+  paths:
+    - node_modules/
+
+run_tests:
+  stage: test
+  before_script:
+    - npm install yarn
+    - yarn install
+  script:
+    - npm run test
+    - npm run coverage

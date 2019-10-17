@@ -8,7 +8,7 @@ nock.back.fixtures = join(__dirname, "..", "fixtures");
 import * as OBS from "../src/obs";
 import { Connection } from "../src/connection";
 
-const conn = new Connection();
+const conn = new Connection("fakeUsername", "fakePassword");
 
 const findRepoByNameBuilder = (proj: OBS.Project.Project) => (
   repoName: string
