@@ -44,11 +44,6 @@ export class Connection {
     }
 
     this.headers = `${this.username}:${this.password}`;
-    //     new Headers({
-    // Authorization:
-    //   "Basic " +
-    //   Buffer.from(this.username + ":" + this.password).toString("base64")
-    // });
   }
 
   public async makeApiCall(
