@@ -19,7 +19,7 @@
     "prepublishOnly": "npm run build",
     "build": "tsc --pretty",
     "test": "npm run build && mocha --require ts-node/register --recursive \"test/**/*.test.ts\"",
-    "coverage": "nyc --include=\"src/**/*.ts\" --reporter=text --reporter=html --reporter=lcov mocha --compilers ts:ts-node/register --recursive \"test/**/*.test.ts\"",
+    "coverage": "nyc --include=\"src/**/*.ts\" --reporter=text --reporter=html --reporter=lcov mocha --require ts-node/register --recursive \"test/**/*.test.ts\"",
     "watch": "npm run build -- --watch",
     "watch:test": "npm run test -- --watch"
   },
@@ -30,14 +30,14 @@
   "devDependencies": {
     "@types/chai": "^4.1.6",
     "@types/mocha": "^5.2.5",
-    "@types/node": "^10.11.4",
+    "@types/node": "^12.11.1",
     "@types/xml2js": "^0.4.4",
     "chai": "^4.2.0",
-    "mocha": "^5.2.0",
+    "mocha": "^6.2.1",
     "nock": "^11.3.5",
-    "nyc": "^13.0.1",
+    "nyc": "^14.1.1",
     "prettier": "^1.14.3",
-    "ts-node": "^7.0.1",
+    "ts-node": "^8.4.1",
     "tslint": "^5.11.0",
     "tslint-config-prettier": "^1.15.0",
     "typescript": "^3.1.0"
