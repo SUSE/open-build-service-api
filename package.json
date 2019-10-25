@@ -11,11 +11,12 @@
   "files": [
     "lib"
   ],
-  "main": "lib/index",
-  "types": "lib/index",
+  "main": "lib/main.js",
+  "types": "lib/main.d.ts",
   "scripts": {
     "format": "prettier --write \"{src,test}/**/*.ts\"",
     "lint": "tslint --force --format verbose \"src/**/*.ts\"",
+    "prepare": "npm run build",
     "prepublishOnly": "npm run build",
     "build": "tsc --pretty",
     "test": "npm run build && mocha --require ts-node/register --recursive \"test/**/*.test.ts\"",
