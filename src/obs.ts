@@ -93,9 +93,7 @@ export namespace Project {
     // treat packages from project links like local packages
     All = "all"
   }
-}
 
-export namespace Project {
   export class ReleaseTarget {
     public readonly project: string;
     public readonly repository: string;
