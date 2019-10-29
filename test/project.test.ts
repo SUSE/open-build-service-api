@@ -1,35 +1,21 @@
-import { describe, it, beforeEach, afterEach } from "mocha";
 import { expect } from "chai";
-import * as nock from "nock";
-import { join } from "path";
+import { afterEach, beforeEach, describe, it } from "mocha";
 
-nock.back.fixtures = join(__dirname, "..", "fixtures");
+import { afterEachRecorded, beforeEachRecorded } from "./nock-record";
+import { getTestConnection } from "./test-con";
 
 import * as OBS from "../src/obs";
-import { Connection } from "../src/connection";
 
-const conn = new Connection("fakeUsername", "fakePassword");
+const conn = getTestConnection();
 
 const findRepoByNameBuilder = (proj: OBS.Project.Project) => (
   repoName: string
 ) => proj.repositories.find(elem => elem.name === repoName);
 
 describe("Project", () => {
-  beforeEach(async function() {
-    const json_path =
-      this.currentTest!.titlePath()
-        .map(elem => elem.replace(/\s+/g, "_"))
-        .join("_") + ".json";
+  beforeEach(beforeEachRecorded);
 
-    nock.back.setMode("record");
-    const { nockDone } = await nock.back(json_path);
-    this.nockDone = nockDone;
-  });
-
-  afterEach(function() {
-    this.nockDone();
-    nock.back.setMode("wild");
-  });
+  afterEach(afterEachRecorded);
 
   it("should correctly parse openSUSE:Factory", async function() {
     const proj = await OBS.Project.getProject(conn, "openSUSE:Factory");
