@@ -2,9 +2,8 @@
   "name": "obs-ts",
   "version": "0.0.1",
   "description": "obs-ts",
-  "repository": "",
-  "author": "",
   "license": "LGPL-3.0-only",
+  "repository": "https://gitlab.suse.de/dancermak/obs.ts",
   "author": "Dan Čermák <dcermak@suse.com>",
   "keywords": [
     ""
