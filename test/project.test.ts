@@ -84,13 +84,6 @@ describe("Project", () => {
       build: false,
       arch: ["ppc64le", "ppc64", "ppc", "armv6l", "armv7l", "aarch64"]
     });
-    expect(findRepoByName("totest")).to.deep.include({
-      name: "totest",
-      arch: defaultArch,
-      build: false,
-      publish: false,
-      debugInfo: true
-    });
     expect(findRepoByName("snapshot")).to.deep.include({
       name: "snapshot",
       arch: defaultArch,
@@ -121,7 +114,7 @@ describe("Project", () => {
     expect(proj.name).to.equal("Virtualization:vagrant");
 
     // users
-    ["dancermak", "robert_munteanu", "ojkastl_buildservice"].forEach(user => {
+    ["dancermak", "ojkastl_buildservice"].forEach(user => {
       expect(proj.person).to.deep.include({
         userId: user,
         role: "maintainer"
