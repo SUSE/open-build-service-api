@@ -1,5 +1,5 @@
-import { describe, it } from "mocha";
 import { expect } from "chai";
+import { describe, it } from "mocha";
 
 import * as api from "../../src/api/project";
 import { Project } from "../../src/obs";
@@ -7,7 +7,7 @@ import { Project } from "../../src/obs";
 const arches = [Project.Arch.Aarch64, Project.Arch.X86_64];
 
 describe("ApiProject", () => {
-  describe("projectSettingFromFlag", () => {
+  describe("#projectSettingFromFlag", () => {
     it("should return undefined when the flag is undefined", () => {
       expect(api.projectSettingFromFlag("foo", [])).to.equal(undefined);
     });
@@ -16,8 +16,8 @@ describe("ApiProject", () => {
       expect(
         api.projectSettingFromFlag("foo", arches, {
           defaultValue: 2,
-          enable: [{ repository: "foo" }, { repository: "bar" }],
-          disable: []
+          disable: [],
+          enable: [{ repository: "foo" }, { repository: "bar" }]
         })
       ).to.equal(true);
     });
@@ -26,25 +26,25 @@ describe("ApiProject", () => {
       expect(
         api.projectSettingFromFlag("foo", arches, {
           defaultValue: 2,
-          enable: [{ repository: "bar" }],
-          disable: [{ repository: "foo" }, { repository: "baz" }]
+          disable: [{ repository: "foo" }, { repository: "baz" }],
+          enable: [{ repository: "bar" }]
         })
       ).to.equal(false);
     });
 
     it("should return a Map when certain arches are enabled", () => {
-      let res = api.projectSettingFromFlag(
+      const res = api.projectSettingFromFlag(
         "foo",
         [...arches, ...[Project.Arch.I686]],
         {
           defaultValue: 2,
-          enable: [
-            { repository: "foo", arch: Project.Arch.X86_64 },
-            { repository: "foo", arch: Project.Arch.Aarch64 }
-          ],
           disable: [
             { repository: "bar" },
             { repository: "foo", arch: Project.Arch.I686 }
+          ],
+          enable: [
+            { repository: "foo", arch: Project.Arch.X86_64 },
+            { repository: "foo", arch: Project.Arch.Aarch64 }
           ]
         }
       );
@@ -62,17 +62,17 @@ describe("ApiProject", () => {
     });
 
     it("should correctly set the default", () => {
-      let res = api.projectSettingFromFlag(
+      const res = api.projectSettingFromFlag(
         "foo",
         [...arches, ...[Project.Arch.I686, Project.Arch.Ppc64]],
         {
           defaultValue: 0,
-          enable: [{ repository: "foo", arch: Project.Arch.X86_64 }],
           disable: [
             { repository: "bar" },
             { repository: "foo", arch: Project.Arch.I686 },
             { repository: "foo", arch: Project.Arch.Aarch64 }
-          ]
+          ],
+          enable: [{ repository: "foo", arch: Project.Arch.X86_64 }]
         }
       );
       expect(res).to.be.a("Map");
@@ -92,13 +92,13 @@ describe("ApiProject", () => {
     });
 
     it("should correctly set the default for simple cases", () => {
-      let res = api.projectSettingFromFlag(
+      const res = api.projectSettingFromFlag(
         "foo",
         [Project.Arch.X86_64, Project.Arch.Aarch64],
         {
           defaultValue: 0,
-          enable: [],
-          disable: []
+          disable: [],
+          enable: []
         }
       );
       expect(res)

@@ -17,19 +17,19 @@ describe("Project", () => {
 
   afterEach(afterEachRecorded);
 
-  it("should correctly parse openSUSE:Factory", async function() {
+  it("should correctly parse openSUSE:Factory", async () => {
     const proj = await OBS.Project.getProject(conn, "openSUSE:Factory");
 
     expect(proj.name).to.equal("openSUSE:Factory");
 
     // users
     expect(proj.person).to.deep.include({
-      userId: "dimstar_suse",
-      role: "maintainer"
+      role: "maintainer",
+      userId: "dimstar_suse"
     });
     expect(proj.person).to.deep.include({
-      userId: "factory-auto",
-      role: "reviewer"
+      role: "reviewer",
+      userId: "factory-auto"
     });
 
     // groups
@@ -54,35 +54,39 @@ describe("Project", () => {
 
     const findRepoByName = findRepoByNameBuilder(proj);
 
+    expect(proj.repositories)
+      .to.be.a("array")
+      .and.have.length(4);
+
     // check all repositories manually...
     expect(findRepoByName("standard")).to.deep.include({
-      name: "standard",
-      rebuild: "local",
       arch: defaultArch,
-      publish: true,
-      debugInfo: true,
-      build: undefined
-    });
-    expect(findRepoByName("ports")).to.deep.include({
-      name: "ports",
-      debugInfo: true,
-      publish: false,
-      build: false,
-      arch: ["ppc64le", "ppc64", "ppc", "armv6l", "armv7l", "aarch64"]
-    });
-    expect(findRepoByName("snapshot")).to.deep.include({
-      name: "snapshot",
-      arch: defaultArch,
-      build: false,
-      publish: false,
-      debugInfo: true
-    });
-    expect(findRepoByName("images")).to.deep.include({
-      name: "images",
-      arch: ["local", "i586", "x86_64"],
-      path: [{ project: "openSUSE:Factory", repository: "standard" }],
       build: undefined,
       debugInfo: true,
+      name: "standard",
+      publish: true,
+      rebuild: "local"
+    });
+    expect(findRepoByName("ports")).to.deep.include({
+      arch: ["ppc64le", "ppc64", "ppc", "armv6l", "armv7l", "aarch64"],
+      build: false,
+      debugInfo: true,
+      name: "ports",
+      publish: false
+    });
+    expect(findRepoByName("snapshot")).to.deep.include({
+      arch: defaultArch,
+      build: false,
+      debugInfo: true,
+      name: "snapshot",
+      publish: false
+    });
+    expect(findRepoByName("images")).to.deep.include({
+      arch: ["local", "i586", "x86_64"],
+      build: undefined,
+      debugInfo: true,
+      name: "images",
+      path: [{ project: "openSUSE:Factory", repository: "standard" }],
       publish: false,
       releasetarget: [
         {
@@ -94,7 +98,7 @@ describe("Project", () => {
     });
   });
 
-  it("should correctly parse Virtualization:vagrant", async function() {
+  it("should correctly parse Virtualization:vagrant", async () => {
     const proj = await OBS.Project.getProject(conn, "Virtualization:vagrant");
 
     expect(proj.name).to.equal("Virtualization:vagrant");
@@ -102,18 +106,18 @@ describe("Project", () => {
     // users
     ["dancermak", "ojkastl_buildservice"].forEach(user => {
       expect(proj.person).to.deep.include({
-        userId: user,
-        role: "maintainer"
+        role: "maintainer",
+        userId: user
       });
       expect(proj.person).to.deep.include({
-        userId: user,
-        role: "bugowner"
+        role: "bugowner",
+        userId: user
       });
     });
 
     expect(proj.person).to.deep.include({
-      userId: "dirkmueller",
-      role: "maintainer"
+      role: "maintainer",
+      userId: "dirkmueller"
     });
 
     // no groups defined
