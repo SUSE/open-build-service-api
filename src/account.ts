@@ -1,7 +1,8 @@
 "use strict";
 
-import { homedir } from "os";
 import { readFile, writeFile } from "fs";
+import { homedir } from "os";
+import { URL } from "url";
 import { promisify } from "util";
 
 const ConfigIniParser = require("config-ini-parser").ConfigIniParser;
@@ -9,13 +10,36 @@ const ConfigIniParser = require("config-ini-parser").ConfigIniParser;
 const readFileP = promisify(readFile);
 const writeFileP = promisify(writeFile);
 
-export interface Account {
-  aliases: string[];
-  username: string;
-  password: string | undefined;
-  apiUrl: string;
-  realname?: string;
-  email?: string;
+export class Account {
+  public aliases: string[];
+  public username: string;
+  public password: string | undefined;
+  public readonly apiUrl: string;
+  public realname?: string;
+  public email?: string;
+
+  constructor({
+    username,
+    password,
+    apiUrl,
+    realname,
+    email,
+    aliases
+  }: {
+    username: string;
+    password: string | undefined;
+    apiUrl: string;
+    realname?: string;
+    email?: string;
+    aliases?: string[];
+  }) {
+    this.username = username;
+    this.password = password;
+    this.apiUrl = new URL(apiUrl).toString();
+    this.realname = realname;
+    this.email = email;
+    aliases === undefined ? (this.aliases = []) : (this.aliases = aliases);
+  }
 }
 
 /**
@@ -65,19 +89,14 @@ export async function readAccountsFromOscrc(
         };
 
         const aliases = sectionElementGetter("aliases");
-        let password = sectionElementGetter("pass");
-        // if (password === undefined) {
-        // FIXME: we should try to get the password from the keyring via keytar
-        // here, if possible
-        // }
-        return {
+        return new Account({
           aliases: aliases === undefined ? [] : aliases.split(","),
           apiUrl: sect,
           email: sectionElementGetter("email"),
-          password,
+          password: sectionElementGetter("pass"),
           realname: sectionElementGetter("realname"),
           username: oscrcContents.get(sect, "user")
-        };
+        });
       })
   );
 }
@@ -104,9 +123,20 @@ export async function addAccountToOscrc(
   const parser = new ConfigIniParser();
   const oscrcContents = parser.parse(oscrc);
 
-  if (oscrcContents.isHaveSection(account.apiUrl)) {
-    throw new Error(`Cannot add ${account.apiUrl} to oscrc: already present`);
-  }
+  // we need to explicitly construct a URL from the section name, as the URL
+  // constructor will append a / to URL and thus a isHaveSection(account.apiUrl)
+  // doesn't work
+  // Also, we need to convert the URLs to strings, as comparing two equal URL
+  // objects with === still yields false. Because of reasons (I'm sure about
+  // that).
+  oscrcContents.sections().forEach((sect: string) => {
+    if (sect === "general") {
+      return;
+    }
+    if (new URL(sect).toString() === account.apiUrl.toString()) {
+      throw new Error(`Cannot add ${account.apiUrl} to oscrc: already present`);
+    }
+  });
 
   oscrc += `[${account.apiUrl}]
 `;

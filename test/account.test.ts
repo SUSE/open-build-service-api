@@ -1,6 +1,6 @@
 import mock = require("mock-fs");
 
-import { expect, use } from "chai";
+import { expect, use, should } from "chai";
 import * as chaiAsPromised from "chai-as-promised";
 import * as chaiThings from "chai-things";
 import { describe, it } from "mocha";
@@ -9,12 +9,17 @@ import { readFile } from "fs";
 import { homedir } from "os";
 import { promisify } from "util";
 
-import { addAccountToOscrc, readAccountsFromOscrc } from "../src/account";
+import {
+  Account,
+  addAccountToOscrc,
+  readAccountsFromOscrc
+} from "../src/account";
 
 const readFileP = promisify(readFile);
 
 use(chaiThings);
 use(chaiAsPromised);
+should();
 
 describe("Account", () => {
   beforeEach(() => {
@@ -62,7 +67,8 @@ pass = you
 
   describe("read accounts", () => {
     it("parses a valid .oscrc correctly", async () => {
-      const accounts = await readAccountsFromOscrc(".oscrc");
+      const accounts = await readAccountsFromOscrc(".oscrc").should.be
+        .fulfilled;
 
       expect(accounts)
         .to.be.a("array")
@@ -70,7 +76,7 @@ pass = you
 
       expect(accounts).to.include.something.that.deep.equals({
         aliases: ["obs"],
-        apiUrl: "https://api.opensuse.org",
+        apiUrl: "https://api.opensuse.org/",
         email: "foo@bar.com",
         password: "fakePw",
         realname: "Foo Bar",
@@ -78,7 +84,7 @@ pass = you
       });
       expect(accounts).to.include.something.that.deep.equals({
         aliases: ["api", "api_test"],
-        apiUrl: "https://api-test.opensuse.org",
+        apiUrl: "https://api-test.opensuse.org/",
         email: "foo@baz.com",
         password: "secondFakePw",
         realname: "Foo Baz",
@@ -86,7 +92,7 @@ pass = you
       });
       expect(accounts).to.include.something.that.deep.equals({
         aliases: [],
-        apiUrl: "https://api.suse.de",
+        apiUrl: "https://api.suse.de/",
         email: undefined,
         password: "guess",
         realname: undefined,
@@ -112,10 +118,13 @@ pass = you
     });
 
     it("uses $HOME/.config/osc/oscrc by default", async () => {
-      const accounts = await readAccountsFromOscrc();
-      expect(accounts).to.include.something.that.deep.equals({
+      const accounts = await readAccountsFromOscrc().should.be.fulfilled;
+      expect(accounts)
+        .to.be.a("array")
+        .and.to.have.length(1);
+      expect(accounts[0]).to.deep.equals({
         aliases: [],
-        apiUrl: "http://api.obs.fake",
+        apiUrl: "http://api.obs.fake/",
         email: undefined,
         password: "you",
         realname: undefined,
@@ -125,22 +134,22 @@ pass = you
   });
 
   describe("write accounts", () => {
-    const account = {
+    const account = new Account({
       aliases: ["api", "api_test"],
       apiUrl: "https://api-test.opensuse.org",
       email: "foo@baz.com",
       password: "secondFakePw",
       realname: "Foo Baz",
       username: "barUser"
-    };
+    });
 
     it("appends the new account to an existing oscrc", async () => {
-      const acc = {
+      const acc = new Account({
         aliases: [],
         apiUrl: "https://api-test.opensuse.org",
         password: "secondFakePw",
         username: "barUser"
-      };
+      });
       await addAccountToOscrc(acc);
 
       const newOscrc = await readFileP(`${homedir()}/.config/osc/oscrc`);
@@ -149,7 +158,7 @@ pass = you
 [http://api.obs.fake]
 user = me
 pass = you
-[https://api-test.opensuse.org]
+[https://api-test.opensuse.org/]
 user = barUser
 `);
     });
@@ -160,7 +169,7 @@ user = barUser
       const newOscrc = await readFileP(".oscrc_empty");
       expect(newOscrc.toString()).to.eql(`
 [general]
-[https://api-test.opensuse.org]
+[https://api-test.opensuse.org/]
 user = barUser
 email = foo@baz.com
 realname = Foo Baz
@@ -169,10 +178,8 @@ aliases = api,api_test
     });
 
     it("throws an exception when the account is already present", async () => {
-      expect(
-        addAccountToOscrc(account, ".oscrc")
-      ).to.eventually.be.rejectedWith(
-        "Cannot add https://api-test.opensuse.org to oscrc: already present"
+      await addAccountToOscrc(account, ".oscrc").should.be.rejectedWith(
+        "Cannot add https://api-test.opensuse.org/ to oscrc: already present"
       );
     });
   });
