@@ -1,3 +1,8 @@
 export { User, Project } from "./obs";
 export { Connection } from "./connection";
-export { Account, readAccountsFromOscrc, addAccountToOscrc } from "./account";
+export {
+  Account,
+  addAccountToOscrc,
+  normalizeUrl,
+  readAccountsFromOscrc
+} from "./account";

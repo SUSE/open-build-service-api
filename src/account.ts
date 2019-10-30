@@ -10,6 +10,17 @@ const ConfigIniParser = require("config-ini-parser").ConfigIniParser;
 const readFileP = promisify(readFile);
 const writeFileP = promisify(writeFile);
 
+/**
+ * Converts a url into a well defined format (e.g. whether `/` should be
+ * appended).
+ *
+ * @param url  The url to be normalized. An exception is thrown if this is not a
+ *     valid url.
+ */
+export function normalizeUrl(url: string): string {
+  return new URL(url).toString();
+}
+
 export class Account {
   public aliases: string[];
   public username: string;
@@ -35,7 +46,7 @@ export class Account {
   }) {
     this.username = username;
     this.password = password;
-    this.apiUrl = new URL(apiUrl).toString();
+    this.apiUrl = normalizeUrl(apiUrl);
     this.realname = realname;
     this.email = email;
     aliases === undefined ? (this.aliases = []) : (this.aliases = aliases);
@@ -133,7 +144,7 @@ export async function addAccountToOscrc(
     if (sect === "general") {
       return;
     }
-    if (new URL(sect).toString() === account.apiUrl.toString()) {
+    if (normalizeUrl(sect) === account.apiUrl.toString()) {
       throw new Error(`Cannot add ${account.apiUrl} to oscrc: already present`);
     }
   });

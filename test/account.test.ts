@@ -12,6 +12,7 @@ import { promisify } from "util";
 import {
   Account,
   addAccountToOscrc,
+  normalizeUrl,
   readAccountsFromOscrc
 } from "../src/account";
 
@@ -20,6 +21,14 @@ const readFileP = promisify(readFile);
 use(chaiThings);
 use(chaiAsPromised);
 should();
+
+describe("normalizeUrl", () => {
+  it("throws an exception when the url is invalid", () => {
+    expect(() => {
+      normalizeUrl("__asdf");
+    }).to.throw(TypeError, /invalid url/i);
+  });
+});
 
 describe("Account", () => {
   beforeEach(() => {
