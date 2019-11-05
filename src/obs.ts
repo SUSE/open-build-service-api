@@ -20,39 +20,6 @@ import { extractElementIfPresent, extractElementOrDefault } from "./util";
     return data[key];
 }*/
 
-export namespace User {
-  // roles of a Person or a Group belonging to a project
-  export const enum LocalRole {
-    Maintainer = "maintainer",
-    Bugowner = "bugowner",
-    Reviewer = "reviewer",
-    Downloader = "downloader",
-    Reader = "reader"
-  }
-
-  // A user belonging to a project
-  export class User {
-    public readonly userId: string;
-    public readonly role: LocalRole;
-
-    constructor(data: { $: { userid: string; role: LocalRole } }) {
-      this.userId = data.$.userid;
-      this.role = data.$.role;
-    }
-  }
-
-  // A group belonging to a project
-  export class Group {
-    public readonly groupId: string;
-    public readonly role: LocalRole;
-
-    constructor(data: { $: { groupid: string; role: LocalRole } }) {
-      this.groupId = data.$.groupid;
-      this.role = data.$.role;
-    }
-  }
-}
-
 export namespace Project {
   // Project types
   export const enum Kind {

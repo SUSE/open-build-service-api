@@ -1,6 +1,7 @@
 // Collection of base types shared by the API module and the user facing modules
 
-import { Project, User } from "../obs";
+import { Project } from "../obs";
+import { Group, User } from "../user";
 
 // Interface of a repository (= build target) on OBS
 export interface BaseRepository {
@@ -32,11 +33,11 @@ export interface BaseProject {
   mountProject?: string;
   kind?: Project.Kind;
   // list of users and their roles belonging to this project
-  person: User.User[];
+  person: User[];
 
   link: Project.Link[];
   // list of groups and their roles belonging to this project
-  group: User.Group[];
+  group: Group[];
 
   // Is this project locked from rebuilding (used for maintenance project)
   lock: boolean;

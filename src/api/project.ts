@@ -1,6 +1,7 @@
 import { assert } from "console";
 import { Connection } from "../connection";
-import { Project, User } from "../obs";
+import { Project } from "../obs";
+import { Group, User, groupFromApi, userFromApi } from "../user";
 import { extractElementAsArray, extractElementIfPresent } from "../util";
 import { BaseProject, BaseRepository } from "./base_types";
 
@@ -260,8 +261,8 @@ export async function getProject(
       construct: flagFromApi
     }),
     description: res.project.description,
-    group: extractElementAsArray<User.Group>(res.project, "group", {
-      type: User.Group
+    group: extractElementAsArray<Group>(res.project, "group", {
+      construct: groupFromApi
     }),
 
     kind: extractElementIfPresent<Project.Kind>(res.project, "kind"),
@@ -271,8 +272,8 @@ export async function getProject(
     lock: lockElem === undefined ? false : simpleFlagToBoolean(lockElem),
     mountproject: extractElementIfPresent<string>(res.project, "mountproject"),
     name: projName,
-    person: extractElementAsArray<User.User>(res.project, "person", {
-      type: User.User
+    person: extractElementAsArray<User>(res.project, "person", {
+      construct: userFromApi
     }),
     publish: extractElementIfPresent<Flag>(res.project, "publish", {
       construct: flagFromApi
