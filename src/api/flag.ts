@@ -8,9 +8,9 @@
 
 "use strict";
 
-import { extractElementIfPresent, extractElementAsArray } from "../util";
-import { Arch } from "../project";
 import { assert } from "console";
+import { Arch } from "../project";
+import { extractElementAsArray, extractElementIfPresent } from "../util";
 
 /** Representation of a FlagSwitch as extracted from OBS' API */
 export type FlagSwitchApiReply =
@@ -28,9 +28,7 @@ export interface FlagSwitch {
   arch?: Arch;
 }
 
-export function flagSwitchFromApi(
-  data: FlagSwitchApiReply
-): FlagSwitch | undefined {
+function flagSwitchFromApi(data: FlagSwitchApiReply): FlagSwitch | undefined {
   return data === ""
     ? undefined
     : {
@@ -39,15 +37,15 @@ export function flagSwitchFromApi(
       };
 }
 
-export function flagSwitchToApi(
-  flagSwitch: FlagSwitch | undefined
-): FlagSwitchApiReply {
-  if (flagSwitch === undefined) {
-    return "";
+function flagSwitchToApi(flagSwitch: FlagSwitch): FlagSwitchApiReply {
+  const inner: FlagSwitch = {};
+  if (flagSwitch.repository !== undefined) {
+    inner.repository = flagSwitch.repository;
   }
-  return {
-    $: { ...flagSwitch }
-  };
+  if (flagSwitch.arch !== undefined) {
+    inner.arch = flagSwitch.arch;
+  }
+  return { $: inner };
 }
 
 export const enum DefaultValue {
@@ -120,7 +118,50 @@ export function flagFromApi(data: FlagApiReply): Flag {
   };
 }
 
-// export function flagToApi(flag: Flag): FlagApiReply {}
+/** Converts a [[Flag]] back to the form that OBS' API expects */
+export function flagToApi(flag: Flag): FlagApiReply {
+  // start out with an empty array so that the default value is always at the
+  // beginning
+  const disable: FlagSwitchApiReply[] = [];
+  const enable: FlagSwitchApiReply[] = [];
+
+  // add the default value if specified
+  switch (flag.defaultValue) {
+    case DefaultValue.Enable:
+      enable.push("");
+      break;
+    case DefaultValue.Disable:
+      disable.push("");
+      break;
+    case DefaultValue.Unspecified:
+      break;
+  }
+
+  // now add the actual flags
+  flag.disable.forEach(flagSwitch => {
+    disable.push(flagSwitchToApi(flagSwitch));
+  });
+  flag.enable.forEach(flagSwitch => {
+    enable.push(flagSwitchToApi(flagSwitch));
+  });
+
+  // - only include enable/disable with more than 1 element as arrays,
+  // - single element enable/disable are included as the element only,
+  // - enable/disable without elements are omitted
+  const res: FlagApiReply = {};
+  if (enable.length === 1) {
+    res.enable = enable[0];
+  } else if (enable.length > 1) {
+    res.enable = enable;
+  }
+
+  if (disable.length === 1) {
+    res.disable = disable[0];
+  } else if (disable.length > 1) {
+    res.disable = disable;
+  }
+  return res;
+}
 
 export function projectSettingFromFlag(
   repositoryName: string,
@@ -198,7 +239,7 @@ export interface SimpleFlagApiReply {
 }
 
 /**
- * Convert a [[SimpleFlagElement]] to a boolean.
+ * Convert a [[SimpleFlagApiReply]] to a boolean.
  */
 export function simpleFlagToBoolean(data: SimpleFlagApiReply): boolean {
   if (
@@ -211,7 +252,7 @@ export function simpleFlagToBoolean(data: SimpleFlagApiReply): boolean {
 }
 
 /**
- * Converts a boolean back to a [[SimpleFlagElement]]
+ * Converts a boolean back to a [[SimpleFlagApiReply]]
  *
  * If `val` is undefined, then undefined is returned as well.
  */
