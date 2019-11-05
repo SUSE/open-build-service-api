@@ -1,0 +1,34 @@
+[
+    {
+        "scope": "https://api.opensuse.org:443",
+        "method": "GET",
+        "path": "/superInvalidRouteFromOuterSpace",
+        "body": "",
+        "status": 401,
+        "response": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"\n  \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n<html xmlns=\"http://www.w3.org/1999/xhtml\" lang=\"en\" xml:lang=\"en\">\n<head>\n<title>Authentication required!</title>\n<link rev=\"made\" href=\"mailto:%5bno%20address%20given%5d\" />\n<style type=\"text/css\"><!--/*--><![CDATA[/*><!--*/ \n    body { color: #000000; background-color: #FFFFFF; }\n    a:link { color: #0000CC; }\n    p, address {margin-left: 3em;}\n    span {font-size: smaller;}\n/*]]>*/--></style>\n</head>\n\n<body>\n<h1>Authentication required!</h1>\n<p>\n\n\n    This server could not verify that you are authorized to access\n    the URL \"/superInvalidRouteFromOuterSpace\".\n    You either supplied the wrong credentials (e.g., bad password), or your\n    browser doesn't understand how to supply the credentials required.\n\n  </p>\n<p>\n\n\n    In case you are allowed to request the document, please\n    check your user-id and password and try again.\n\n</p>\n<p>\nIf you think this is a server error, please contact\nthe <a href=\"mailto:%5bno%20address%20given%5d\">webmaster</a>.\n\n</p>\n\n<h2>Error 401</h2>\n<address>\n  <a href=\"/\">api.opensuse.org</a><br />\n  <span>Apache/2.4.23 (Linux/SUSE)</span>\n</address>\n</body>\n</html>\n\n",
+        "rawHeaders": [
+            "Date",
+            "Mon, 04 Nov 2019 22:07:10 GMT",
+            "Server",
+            "Apache/2.4.23 (Linux/SUSE)",
+            "WWW-Authenticate",
+            "Basic realm=\"Use your novell account\"",
+            "Vary",
+            "accept-language,accept-charset",
+            "Strict-Transport-Security",
+            "max-age=31536000",
+            "Upgrade",
+            "h2",
+            "Connection",
+            "Upgrade, close",
+            "Accept-Ranges",
+            "bytes",
+            "Transfer-Encoding",
+            "chunked",
+            "Content-Type",
+            "text/html; charset=utf-8",
+            "Content-Language",
+            "en"
+        ]
+    }
+]
