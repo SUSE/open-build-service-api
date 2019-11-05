@@ -5,8 +5,21 @@ import xml2js = require("xml2js");
 const xmlParser = new xml2js.Parser({ explicitArray: false, async: true });
 
 import { request } from "https";
+import { URL } from "url";
 
-// Class for storing the credentials to connect to a Open Build Service instance.
+/**
+ * Converts a url into a well defined format (e.g. whether `/` should be
+ * appended).
+ *
+ * @param url  The url to be normalized. An exception is thrown if this is not a
+ *     valid url.
+ */
+export function normalizeUrl(url: string): string {
+  return new URL(url).toString();
+}
+/**
+ * Class for storing the credentials to connect to a Open Build Service instance.
+ */
 export class Connection {
   // the username which will be used to connect to the API
   public readonly username: string;

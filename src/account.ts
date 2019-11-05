@@ -2,24 +2,14 @@
 
 import { readFile, writeFile } from "fs";
 import { homedir } from "os";
-import { URL } from "url";
 import { promisify } from "util";
+
+import { normalizeUrl } from "./connection";
 
 const ConfigIniParser = require("config-ini-parser").ConfigIniParser;
 
 const readFileP = promisify(readFile);
 const writeFileP = promisify(writeFile);
-
-/**
- * Converts a url into a well defined format (e.g. whether `/` should be
- * appended).
- *
- * @param url  The url to be normalized. An exception is thrown if this is not a
- *     valid url.
- */
-export function normalizeUrl(url: string): string {
-  return new URL(url).toString();
-}
 
 export class Account {
   public aliases: string[];
