@@ -3,17 +3,15 @@ import { describe, it } from "mocha";
 
 import {
   booleanToSimpleFlag,
-  projectSettingFromFlag,
-  simpleFlagToBoolean,
-  flagFromApi,
   DefaultValue,
   Flag,
   FlagApiReply,
-  flagToApi
+  flagFromApi,
+  flagToApi,
+  repositorySettingFromFlag,
+  simpleFlagToBoolean
 } from "../../src/api/flag";
 import { Arch } from "../../src/project";
-
-const arches = [Arch.Aarch64, Arch.X86_64];
 
 describe("SimpleFlag", () => {
   describe("#simpleFlagToBoolean", () => {
@@ -148,13 +146,15 @@ describe("Flag", () => {
 });
 
 describe("#projectSettingFromFlag", () => {
+  const arches = [Arch.Aarch64, Arch.X86_64];
+
   it("should return undefined when the flag is undefined", () => {
-    expect(projectSettingFromFlag("foo", [])).to.equal(undefined);
+    expect(repositorySettingFromFlag("foo", [])).to.equal(undefined);
   });
 
   it("should return true when the repository is enabled", () => {
     expect(
-      projectSettingFromFlag("foo", arches, {
+      repositorySettingFromFlag("foo", arches, {
         defaultValue: 2,
         disable: [],
         enable: [{ repository: "foo" }, { repository: "bar" }]
@@ -164,7 +164,7 @@ describe("#projectSettingFromFlag", () => {
 
   it("should return false when the repository is disabled", () => {
     expect(
-      projectSettingFromFlag("foo", arches, {
+      repositorySettingFromFlag("foo", arches, {
         defaultValue: 2,
         disable: [{ repository: "foo" }, { repository: "baz" }],
         enable: [{ repository: "bar" }]
@@ -173,7 +173,7 @@ describe("#projectSettingFromFlag", () => {
   });
 
   it("should return a Map when certain arches are enabled", () => {
-    const res = projectSettingFromFlag("foo", [...arches, ...[Arch.I686]], {
+    let res = repositorySettingFromFlag("foo", [...arches, ...[Arch.I686]], {
       defaultValue: 2,
       disable: [{ repository: "bar" }, { repository: "foo", arch: Arch.I686 }],
       enable: [
@@ -181,15 +181,19 @@ describe("#projectSettingFromFlag", () => {
         { repository: "foo", arch: Arch.Aarch64 }
       ]
     });
-    expect(res).to.be.a("Map");
+    expect(res)
+      .to.be.a("Map")
+      .and.to.have.property("size", 3);
 
-    expect((res as Map<Arch, boolean>).get(Arch.X86_64)).to.equal(true);
-    expect((res as Map<Arch, boolean>).get(Arch.Aarch64)).to.equal(true);
-    expect((res as Map<Arch, boolean>).get(Arch.I686)).to.equal(false);
+    res = res as Map<Arch, boolean | undefined>;
+
+    expect(res.get(Arch.X86_64)).to.be.true;
+    expect(res.get(Arch.Aarch64)).to.be.true;
+    expect(res.get(Arch.I686)).to.be.false;
   });
 
   it("should correctly set the default", () => {
-    const res = projectSettingFromFlag(
+    let res = repositorySettingFromFlag(
       "foo",
       [...arches, ...[Arch.I686, Arch.Ppc64]],
       {
@@ -202,22 +206,50 @@ describe("#projectSettingFromFlag", () => {
         enable: [{ repository: "foo", arch: Arch.X86_64 }]
       }
     );
-    expect(res).to.be.a("Map");
+    expect(res)
+      .to.be.a("Map")
+      .and.to.have.property("size", 4);
 
-    expect((res as Map<Arch, boolean>).get(Arch.X86_64)).to.equal(true);
-    expect((res as Map<Arch, boolean>).get(Arch.Aarch64)).to.equal(false);
-    expect((res as Map<Arch, boolean>).get(Arch.I686)).to.equal(false);
-    expect((res as Map<Arch, boolean>).get(Arch.Ppc64)).to.equal(true);
+    res = res as Map<Arch, boolean | undefined>;
+
+    expect(res.get(Arch.X86_64)).to.be.true;
+    expect(res.get(Arch.Aarch64)).to.be.false;
+    expect(res.get(Arch.I686)).to.be.false;
+    expect(res.get(Arch.Ppc64)).to.be.true;
   });
 
   it("should correctly set the default for simple cases", () => {
-    const res = projectSettingFromFlag("foo", [Arch.X86_64, Arch.Aarch64], {
+    const res = repositorySettingFromFlag("foo", [Arch.X86_64, Arch.Aarch64], {
       defaultValue: 0,
       disable: [],
       enable: []
     });
+    expect(res).to.be.a("boolean").and.to.be.true;
+  });
+
+  it("should respect globally disabled architectures", () => {
+    let res = repositorySettingFromFlag("foo", arches, {
+      defaultValue: DefaultValue.Unspecified,
+      disable: [{ arch: Arch.X86_64 }],
+      enable: []
+    });
+
+    expect(res).to.be.a("Map");
+
+    res = res as Map<Arch, boolean | undefined>;
+    expect(res.get(Arch.X86_64)).to.be.false;
+    expect(res.get(Arch.Aarch64)).to.be.undefined;
+  });
+
+  it("should not include globally disabled architectures not in the arch list", () => {
+    let res = repositorySettingFromFlag("foo", arches, {
+      defaultValue: DefaultValue.Unspecified,
+      disable: [{ arch: Arch.Riscv64 }],
+      enable: []
+    });
+
     expect(res)
-      .to.be.a("boolean")
-      .and.to.equal(true);
+      .to.be.a("Map")
+      .and.to.not.have.any.keys(Arch.Riscv64);
   });
 });

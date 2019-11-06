@@ -163,12 +163,14 @@ export function flagToApi(flag: Flag): FlagApiReply {
   return res;
 }
 
-export function projectSettingFromFlag(
+type RepositorySetting = Map<Arch, boolean | undefined> | boolean;
+
+export function repositorySettingFromFlag(
   repositoryName: string,
   architectures: Arch[],
   flag?: Flag,
   defaultSetting?: boolean
-): Map<Arch, boolean | undefined> | boolean | undefined {
+): RepositorySetting | undefined {
   // default value to be set/returned when no value can be determined:
   // use the defaultSetting if flag is undefined or defaulValue is Unspecified
   // otherwise true/false for Enable/Disable
@@ -184,11 +186,14 @@ export function projectSettingFromFlag(
     return globalDefault;
   }
 
+  // enable & disable matching for this repo
+  // this also includes enable/disable entries without a repository set (this
+  // means that the architecture is globally disabled/enabled)
   const matchingDisable = flag.disable.filter(
-    flg => flg.repository === repositoryName
+    flg => flg.repository === repositoryName || flg.repository === undefined
   );
   const matchingEnable = flag.enable.filter(
-    flg => flg.repository === repositoryName
+    flg => flg.repository === repositoryName || flg.repository === undefined
   );
 
   // if enable and disable are empty => the default it is again
@@ -207,16 +212,15 @@ export function projectSettingFromFlag(
   ];
 
   // check each matching <enable>/<disable>:
-  // no arch field? => return true/false directly
-  // arch field? => put it in the Map
+  // - no arch field? => return true/false directly
+  // - arch field? => put it in the Map, but only if the architecture is
+  //   actually one of those in architectures
   for (const { match, value } of matchesAndDefault) {
     for (const flg of match) {
-      if (flg.repository === repositoryName) {
-        if (flg.arch === undefined) {
-          return value;
-        } else {
-          res.set(flg.arch, value);
-        }
+      if (flg.arch === undefined) {
+        return value;
+      } else if (architectures.find(arch => arch === flg.arch) !== undefined) {
+        res.set(flg.arch, value);
       }
     }
   }
