@@ -2,11 +2,11 @@ import { expect } from "chai";
 import { afterEach, beforeEach, describe, it } from "mocha";
 
 import { afterEachRecorded, beforeEachRecorded } from "./nock-record";
-import { getTestConnection } from "./test-con";
+import { ApiType, getTestConnection } from "./test-con";
 
 import * as OBS from "../src/obs";
 
-const conn = getTestConnection();
+const conn = getTestConnection(ApiType.Production);
 
 const findRepoByNameBuilder = (proj: OBS.Project.Project) => (
   repoName: string
@@ -18,7 +18,7 @@ describe("Project", () => {
   afterEach(afterEachRecorded);
 
   it("should correctly parse openSUSE:Factory", async () => {
-    const proj = await OBS.Project.getProject(conn, "openSUSE:Factory");
+    const proj = await getProject(conn, "openSUSE:Factory");
 
     expect(proj.name).to.equal("openSUSE:Factory");
 
@@ -99,7 +99,7 @@ describe("Project", () => {
   });
 
   it("should correctly parse Virtualization:vagrant", async () => {
-    const proj = await OBS.Project.getProject(conn, "Virtualization:vagrant");
+    const proj = await getProject(conn, "Virtualization:vagrant");
 
     expect(proj.name).to.equal("Virtualization:vagrant");
 

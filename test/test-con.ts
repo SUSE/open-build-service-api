@@ -7,9 +7,17 @@ const envOrDefault = (envVar: string, defaultValue: string): string => {
   return envVarVal === undefined ? defaultValue : envVarVal;
 };
 
-export function getTestConnection(): Connection {
+export const enum ApiType {
+  Production = "https://api.opensuse.org",
+  Staging = "https://api-test.opensuse.org"
+}
+
+export function getTestConnection(
+  apiType: ApiType = ApiType.Staging
+): Connection {
   return new Connection(
     envOrDefault("OBS_USERNAME", "fakeUsername"),
-    envOrDefault("OBS_PASSWORD", "fakePassword")
+    envOrDefault("OBS_PASSWORD", "fakePassword"),
+    apiType
   );
 }
