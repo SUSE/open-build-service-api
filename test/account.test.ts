@@ -1,8 +1,6 @@
 import mock = require("mock-fs");
 
-import { expect, use, should } from "chai";
-import * as chaiAsPromised from "chai-as-promised";
-import * as chaiThings from "chai-things";
+import { expect } from "chai";
 import { describe, it } from "mocha";
 
 import { readFile } from "fs";
@@ -14,12 +12,9 @@ import {
   addAccountToOscrc,
   readAccountsFromOscrc
 } from "../src/account";
+import "./test-setup";
 
 const readFileP = promisify(readFile);
-
-use(chaiThings);
-use(chaiAsPromised);
-should();
 
 describe("Account", () => {
   beforeEach(() => {

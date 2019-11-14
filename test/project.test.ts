@@ -1,24 +1,39 @@
 import { expect } from "chai";
 import { afterEach, beforeEach, describe, it } from "mocha";
 
-import { afterEachRecorded, beforeEachRecorded } from "./nock-record";
-import { ApiType, getTestConnection } from "./test-con";
+import {
+  afterEachRecorded,
+  ApiType,
+  beforeEachRecorded,
+  getTestConnection,
+  beforeEachRecord,
+  afterEachRecord,
+  checkApiCall
+} from "./test-setup";
 
-import * as OBS from "../src/obs";
+import {
+  Arch,
+  BlockMode,
+  getProject,
+  modifyOrCreateProject,
+  Project,
+  deleteProject
+} from "../src/project";
+import { LocalRole } from "../src/user";
 
-const conn = getTestConnection(ApiType.Production);
+const findRepoByNameBuilder = (proj: Project) => (repoName: string) =>
+  proj.repositories.find(elem => elem.name === repoName);
 
-const findRepoByNameBuilder = (proj: OBS.Project.Project) => (
-  repoName: string
-) => proj.repositories.find(elem => elem.name === repoName);
+describe("#getProject", () => {
+  const prodCon = getTestConnection(ApiType.Production);
 
-describe("Project", () => {
   beforeEach(beforeEachRecorded);
 
   afterEach(afterEachRecorded);
 
   it("should correctly parse openSUSE:Factory", async () => {
-    const proj = await getProject(conn, "openSUSE:Factory");
+    const proj = await getProject(prodCon, "openSUSE:Factory").should.be
+      .fulfilled;
 
     expect(proj.name).to.equal("openSUSE:Factory");
 
@@ -99,7 +114,8 @@ describe("Project", () => {
   });
 
   it("should correctly parse Virtualization:vagrant", async () => {
-    const proj = await getProject(conn, "Virtualization:vagrant");
+    const proj = await getProject(prodCon, "Virtualization:vagrant").should.be
+      .fulfilled;
 
     expect(proj.name).to.equal("Virtualization:vagrant");
 
@@ -138,22 +154,22 @@ describe("Project", () => {
 
     const findRepoByName = findRepoByNameBuilder(proj);
     expect(findRepoByName("openSUSE_Tumbleweed")).to.deep.include({
-      name: "openSUSE_Tumbleweed",
       arch: ["i586", "x86_64"],
-      publish: true,
       build: true,
       debugInfo: true,
-      useForBuild: undefined,
-      path: [{ project: "openSUSE:Factory", repository: "snapshot" }]
+      name: "openSUSE_Tumbleweed",
+      path: [{ project: "openSUSE:Factory", repository: "snapshot" }],
+      publish: true,
+      useForBuild: undefined
     });
     expect(findRepoByName("openSUSE_Tumbleweed_default_ruby")).to.deep.include({
-      name: "openSUSE_Tumbleweed_default_ruby",
       arch: ["x86_64"],
-      publish: false,
       build: false,
       debugInfo: true,
-      useForBuild: false,
-      path: [{ project: "openSUSE:Factory", repository: "snapshot" }]
+      name: "openSUSE_Tumbleweed_default_ruby",
+      path: [{ project: "openSUSE:Factory", repository: "snapshot" }],
+      publish: false,
+      useForBuild: false
     });
     expect(findRepoByName("openSUSE_Tumbleweed_and_d_l_r_e")).to.deep.include({
       name: "openSUSE_Tumbleweed_and_d_l_r_e",

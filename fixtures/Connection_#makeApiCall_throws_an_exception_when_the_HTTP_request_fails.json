@@ -29,6 +29,7 @@
             "text/html; charset=utf-8",
             "Content-Language",
             "en"
-        ]
+        ],
+        "responseIsBinary": false
     }
 ]

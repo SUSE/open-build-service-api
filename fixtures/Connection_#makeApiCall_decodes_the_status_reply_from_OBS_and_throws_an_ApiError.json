@@ -1,6 +1,6 @@
 [
     {
-        "scope": "https://api-test.opensuse.org:443",
+        "scope": "https://api.opensuse.org:443",
         "method": "GET",
         "path": "/source/blablabbliiii/_meta",
         "body": "",

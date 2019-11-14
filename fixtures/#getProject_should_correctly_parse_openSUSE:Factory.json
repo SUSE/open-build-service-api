@@ -8,7 +8,7 @@
         "response": "<project name=\"openSUSE:Factory\">\n  <title>The next openSUSE distribution</title>\n  <description>Any user who wishes to have the newest packages that include, but are not limited to, the Linux kernel, SAMBA, git, desktops, office applications and many other packages, will want Tumbleweed. Tumbleweed appeals to Power Users, Software Developers and openSUSE Contributors. If you require the latest software stacks and Integrated Development Environment or need a stable platform closest to bleeding edge Linux, Tumbleweed is the best choice for you.\n\nStaging dashboard is located at: https://build.opensuse.org/project/dashboard/openSUSE:Factory\n\nList of known devel projects: https://build.opensuse.org/package/view_file/openSUSE:Factory:Staging/dashboard/devel_projects\n\nHave a look at http://en.opensuse.org/Portal:Factory for more details.</description>\n  <person userid=\"coolo-factory\" role=\"maintainer\"/>\n  <person userid=\"dimstar_suse\" role=\"maintainer\"/>\n  <person userid=\"factory-auto\" role=\"reviewer\"/>\n  <person userid=\"licensedigger\" role=\"reviewer\"/>\n  <group groupid=\"factory-maintainers\" role=\"maintainer\"/>\n  <group groupid=\"factory-staging\" role=\"reviewer\"/>\n  <lock>\n    <disable/>\n  </lock>\n  <build>\n    <disable repository=\"snapshot\"/>\n    <disable repository=\"ports\"/>\n  </build>\n  <publish>\n    <disable/>\n    <enable repository=\"standard\"/>\n  </publish>\n  <debuginfo>\n    <enable/>\n  </debuginfo>\n  <repository name=\"standard\" rebuild=\"local\">\n    <arch>x86_64</arch>\n    <arch>i586</arch>\n  </repository>\n  <repository name=\"snapshot\">\n    <path project=\"openSUSE:Tumbleweed\" repository=\"standard\"/>\n    <arch>x86_64</arch>\n    <arch>i586</arch>\n  </repository>\n  <repository name=\"ports\">\n    <arch>ppc64le</arch>\n    <arch>ppc64</arch>\n    <arch>ppc</arch>\n    <arch>armv6l</arch>\n    <arch>armv7l</arch>\n    <arch>aarch64</arch>\n  </repository>\n  <repository name=\"images\">\n    <releasetarget project=\"openSUSE:Factory:ToTest\" repository=\"images\" trigger=\"manual\"/>\n    <path project=\"openSUSE:Factory\" repository=\"standard\"/>\n    <arch>local</arch>\n    <arch>i586</arch>\n    <arch>x86_64</arch>\n  </repository>\n</project>\n",
         "rawHeaders": [
             "Date",
-            "Tue, 29 Oct 2019 22:10:48 GMT",
+            "Thu, 14 Nov 2019 14:03:07 GMT",
             "Server",
             "Apache/2.4.23 (Linux/SUSE)",
             "Strict-Transport-Security",
@@ -24,17 +24,17 @@
             "X-XSS-Protection",
             "1; mode=block",
             "X-Opensuse-Runtimes",
-            "{\"view\":0.18137693405151367,\"db\":13.798323459923267,\"backend\":0}",
+            "{\"view\":0.22387318313121796,\"db\":9.852579794824123,\"backend\":0}",
             "X-Request-Id",
-            "9c94a230-c671-4caf-adb5-ebb157963757",
+            "796dd02d-3601-40a4-8efb-0424e5c61d3e",
             "X-Opensuse-APIVersion",
-            "2.11~alpha.20191028T135720.44a21ab42d",
+            "2.11~alpha.20191112T141018.f43864e078",
             "X-Download-Options",
             "noopen",
             "X-Frame-Options",
             "SAMEORIGIN",
             "X-Runtime",
-            "0.033026",
+            "0.028305",
             "X-Content-Type-Options",
             "nosniff",
             "X-Powered-By",
@@ -46,11 +46,12 @@
             "Content-Type",
             "application/xml; charset=utf-8",
             "Set-Cookie",
-            "openSUSE_session=4bd9741697a94c571f9ac285c59d25a4; path=/; Max-Age=86400; Secure; HttpOnly; domain=.opensuse.org",
+            "openSUSE_session=0b1ddac429fe10f150db0b3ddff7309c; path=/; Max-Age=86400; Secure; HttpOnly; domain=.opensuse.org",
             "Connection",
             "close",
             "Transfer-Encoding",
             "chunked"
-        ]
+        ],
+        "responseIsBinary": false
     }
 ]

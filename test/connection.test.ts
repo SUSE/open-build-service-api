@@ -1,15 +1,15 @@
-import { expect, should, use } from "chai";
-import * as chaiAsPromised from "chai-as-promised";
+import { expect } from "chai";
 import { describe, it } from "mocha";
 
 import { Connection, normalizeUrl } from "../src/connection";
-import { afterEachRecorded, beforeEachRecorded } from "./nock-record";
+import {
+  ApiType,
+  afterEachRecorded,
+  beforeEachRecorded,
+  getTestConnection
+} from "./test-setup";
 import { ApiError } from "../src/error";
-import { getTestConnection } from "./test-con";
 import * as nock from "nock";
-
-use(chaiAsPromised);
-should();
 
 describe("normalizeUrl", () => {
   it("throws an exception when the url is invalid", () => {
@@ -42,7 +42,7 @@ describe("Connection", () => {
     });
 
     it("decodes the status reply from OBS and throws an ApiError", async () => {
-      const conn = getTestConnection();
+      const conn = getTestConnection(ApiType.Production);
       await conn
         .makeApiCall("source/blablabbliiii/_meta")
         .should.be.rejectedWith(ApiError)
@@ -50,8 +50,6 @@ describe("Connection", () => {
           method: "GET",
           status: {
             code: "unknown_project",
-            data: [],
-            details: undefined,
             summary: "blablabbliiii"
           },
           statusCode: 404
