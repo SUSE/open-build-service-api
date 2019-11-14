@@ -16,13 +16,14 @@
   "scripts": {
     "format": "prettier --write \"{src,test}/**/*.ts\"",
     "lint": "tslint --force --format verbose \"src/**/*.ts\"",
-    "prepare": "npm run build",
-    "prepublishOnly": "npm run build",
+    "prepare": "yarn run build",
+    "prepublishOnly": "yarn run build",
     "build": "tsc --pretty",
-    "test": "npm run build && mocha --require ts-node/register --recursive \"test/**/*.test.ts\"",
+    "test": "yarn run build && mocha --require ts-node/register --recursive \"test/**/*.test.ts\"",
     "coverage": "nyc --include=\"src/**/*.ts\" --reporter=text --reporter=html --reporter=lcov mocha --require ts-node/register --recursive \"test/**/*.test.ts\"",
-    "watch": "npm run build -- --watch",
-    "watch:test": "npm run test -- --watch"
+    "clean": "rm -rf ./lib ./coverage/ ./.nyc_output ./documentation",
+    "watch": "yarn run build -- --watch",
+    "watch:test": "yarn run test -- --watch",
     "documentation": "typedoc --mode modules --theme minimal --out ./documentation src/"
   },
   "dependencies": {
