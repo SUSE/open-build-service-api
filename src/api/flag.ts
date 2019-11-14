@@ -122,7 +122,11 @@ export function flagFromApi(data: FlagApiReply): Flag {
 }
 
 /** Converts a [[Flag]] back to the form that OBS' API expects */
-export function flagToApi(flag: Flag): FlagApiReply {
+export function flagToApi(flag: Flag | undefined): FlagApiReply | undefined {
+  if (flag === undefined) {
+    return undefined;
+  }
+
   // start out with an empty array so that the default value is always at the
   // beginning
   const disable: FlagSwitchApiReply[] = [];
@@ -166,7 +170,7 @@ export function flagToApi(flag: Flag): FlagApiReply {
   return res;
 }
 
-type RepositorySetting = Map<Arch, boolean | undefined> | boolean;
+export type RepositorySetting = Map<Arch, boolean | undefined> | boolean;
 
 export function repositorySettingFromFlag(
   repositoryName: string,
@@ -237,6 +241,75 @@ export function repositorySettingFromFlag(
   });
 
   return res;
+}
+
+export function repositorySettingToFlag(
+  repoSettings: Array<[string, RepositorySetting | undefined]>,
+  //  architectures: Arch[],
+  defaultSetting?: boolean
+): Flag | undefined {
+  if (repoSettings.length === 0) {
+    return undefined;
+  }
+
+  const disable: FlagSwitch[] = [];
+  const enable: FlagSwitch[] = [];
+
+  const pushFlagSwitchIfNotDefault = (
+    flagSwitch: FlagSwitch,
+    enableDisable: boolean
+  ) => {
+    if (enableDisable) {
+      if (
+        defaultSetting === undefined ||
+        (defaultSetting !== undefined && !defaultSetting)
+      ) {
+        enable.push(flagSwitch);
+      }
+    } else {
+      if (
+        defaultSetting === undefined ||
+        (defaultSetting !== undefined && defaultSetting)
+      ) {
+        disable.push(flagSwitch);
+      }
+    }
+  };
+
+  for (const [repoName, repoSetting] of repoSettings) {
+    if (repoSetting === undefined) {
+      continue;
+    }
+
+    if (typeof repoSetting === "boolean") {
+      const flagSwitch = { repository: repoName };
+      pushFlagSwitchIfNotDefault(flagSwitch, repoSetting);
+      continue;
+    }
+
+    assert(repoSetting instanceof Map, "repoSetting is expected to be a Map");
+
+    repoSetting.forEach((enableDisable, arch) => {
+      if (enableDisable !== undefined) {
+        const flagSwitch = { arch, repository: repoName };
+        pushFlagSwitchIfNotDefault(flagSwitch, enableDisable);
+      }
+    });
+  }
+
+  // FIXME: need to do some cleanup here, e.g. when one arch is universally
+  // disabled => drop all per repo disables and add { repository: undefined,
+  // arch: disabledArch } instead
+  return {
+    defaultValue:
+      defaultSetting === undefined
+        ? DefaultValue.Unspecified
+        : defaultSetting
+        ? DefaultValue.Enable
+        : DefaultValue.Disable,
+    disable,
+    enable
+  };
 }
 
 /** A boolean flag (see: https://build.opensuse.org/apidocs/obs.rng) */

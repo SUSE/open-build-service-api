@@ -9,7 +9,8 @@ import {
   flagFromApi,
   flagToApi,
   repositorySettingFromFlag,
-  simpleFlagToBoolean
+  simpleFlagToBoolean,
+  repositorySettingToFlag
 } from "../../src/api/flag";
 import { Arch } from "../../src/project";
 
@@ -145,7 +146,7 @@ describe("Flag", () => {
   });
 });
 
-describe("#projectSettingFromFlag", () => {
+describe("#repositorySettingFromFlag", () => {
   const arches = [Arch.Aarch64, Arch.X86_64];
 
   it("should return undefined when the flag is undefined", () => {
@@ -155,7 +156,7 @@ describe("#projectSettingFromFlag", () => {
   it("should return true when the repository is enabled", () => {
     expect(
       repositorySettingFromFlag("foo", arches, {
-        defaultValue: 2,
+        defaultValue: DefaultValue.Unspecified,
         disable: [],
         enable: [{ repository: "foo" }, { repository: "bar" }]
       })
@@ -165,7 +166,7 @@ describe("#projectSettingFromFlag", () => {
   it("should return false when the repository is disabled", () => {
     expect(
       repositorySettingFromFlag("foo", arches, {
-        defaultValue: 2,
+        defaultValue: DefaultValue.Unspecified,
         disable: [{ repository: "foo" }, { repository: "baz" }],
         enable: [{ repository: "bar" }]
       })
@@ -174,7 +175,7 @@ describe("#projectSettingFromFlag", () => {
 
   it("should return a Map when certain arches are enabled", () => {
     let res = repositorySettingFromFlag("foo", [...arches, ...[Arch.I686]], {
-      defaultValue: 2,
+      defaultValue: DefaultValue.Unspecified,
       disable: [{ repository: "bar" }, { repository: "foo", arch: Arch.I686 }],
       enable: [
         { repository: "foo", arch: Arch.X86_64 },
@@ -197,7 +198,7 @@ describe("#projectSettingFromFlag", () => {
       "foo",
       [...arches, ...[Arch.I686, Arch.Ppc64]],
       {
-        defaultValue: 0,
+        defaultValue: DefaultValue.Enable,
         disable: [
           { repository: "bar" },
           { repository: "foo", arch: Arch.I686 },
@@ -220,7 +221,7 @@ describe("#projectSettingFromFlag", () => {
 
   it("should correctly set the default for simple cases", () => {
     const res = repositorySettingFromFlag("foo", [Arch.X86_64, Arch.Aarch64], {
-      defaultValue: 0,
+      defaultValue: DefaultValue.Enable,
       disable: [],
       enable: []
     });
@@ -251,5 +252,89 @@ describe("#projectSettingFromFlag", () => {
     expect(res)
       .to.be.a("Map")
       .and.to.not.have.any.keys(Arch.Riscv64);
+  });
+});
+
+describe("#repositorySettingToFlag", () => {
+  it("returns undefined when passed empty settings", () => {
+    expect(repositorySettingToFlag([])).to.be.undefined;
+  });
+
+  it("doesn't include repositories with RepoSetting being undefined", () => {
+    expect(
+      repositorySettingToFlag([["foo", undefined], ["bar", true]])
+    ).to.deep.equal({
+      defaultValue: DefaultValue.Unspecified,
+      disable: [],
+      enable: [{ repository: "bar" }]
+    });
+  });
+
+  it("creates a enable for a single repository", () => {
+    expect(repositorySettingToFlag([["foo", true]])).to.deep.equal({
+      defaultValue: DefaultValue.Unspecified,
+      disable: [],
+      enable: [{ repository: "foo" }]
+    });
+  });
+
+  it("creates a disable for a single repository", () => {
+    expect(repositorySettingToFlag([["foo", false]])).to.deep.equal({
+      defaultValue: DefaultValue.Unspecified,
+      disable: [{ repository: "foo" }],
+      enable: []
+    });
+  });
+
+  it("creates per arch enable/disable fields", () => {
+    expect(
+      repositorySettingToFlag([
+        ["foo", new Map([[Arch.X86_64, true], [Arch.Aarch64, false]])],
+        ["bar", new Map([[Arch.X86_64, false], [Arch.I686, false]])]
+      ])
+    ).to.deep.equal({
+      defaultValue: DefaultValue.Unspecified,
+      disable: [
+        { repository: "foo", arch: Arch.Aarch64 },
+        { repository: "bar", arch: Arch.X86_64 },
+        { repository: "bar", arch: Arch.I686 }
+      ],
+      enable: [{ repository: "foo", arch: Arch.X86_64 }]
+    });
+  });
+
+  it("omits enable/disable fields when they match the default", () => {
+    // with a disable
+    expect(
+      repositorySettingToFlag(
+        [
+          ["foo", new Map([[Arch.X86_64, true], [Arch.Aarch64, false]])],
+          ["bar", new Map([[Arch.X86_64, false], [Arch.I686, false]])]
+        ],
+        false
+      )
+    ).to.deep.equal({
+      defaultValue: DefaultValue.Disable,
+      disable: [],
+      enable: [{ repository: "foo", arch: Arch.X86_64 }]
+    });
+
+    // and with an enable
+    expect(
+      repositorySettingToFlag(
+        [
+          ["foo", new Map([[Arch.X86_64, true], [Arch.Aarch64, false]])],
+          ["bar", new Map([[Arch.X86_64, false], [Arch.Ppc64, true]])]
+        ],
+        true
+      )
+    ).to.deep.equal({
+      defaultValue: DefaultValue.Enable,
+      disable: [
+        { repository: "foo", arch: Arch.Aarch64 },
+        { repository: "bar", arch: Arch.X86_64 }
+      ],
+      enable: []
+    });
   });
 });
