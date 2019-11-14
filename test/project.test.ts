@@ -293,3 +293,49 @@ describe("#getProject", () => {
     });
   });
 });
+
+describe("#modifyOrCreateProject", () => {
+  const stagingCon = getTestConnection(ApiType.Staging);
+
+  beforeEach(beforeEachRecord);
+
+  afterEach(afterEachRecord);
+
+  it("creates a new project", async function() {
+    this.timeout(5000);
+    const name = "home:dancermak:obs_ts_test";
+    const newProj: Project = {
+      description: `This is a project that has been created to test obs.ts
+It should be gone soon.`,
+      name,
+      title: "Testproject created by obs.ts",
+      person: [],
+      link: [],
+      group: [],
+      repositories: []
+    };
+
+    await checkApiCall(
+      this.scopes?.[0],
+      async () => modifyOrCreateProject(stagingCon, newProj),
+      {
+        code: "ok",
+        summary: "Ok"
+      }
+    );
+
+    newProj.person?.push({ userId: "dancermak", role: LocalRole.Maintainer });
+
+    await checkApiCall(
+      this.scopes?.[1],
+      async () => getProject(stagingCon, name),
+      newProj
+    );
+
+    await checkApiCall(
+      this.scopes?.[2],
+      async () => deleteProject(stagingCon, newProj),
+      { code: "ok", summary: "Ok" }
+    );
+  });
+});
