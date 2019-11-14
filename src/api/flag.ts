@@ -8,7 +8,7 @@
 
 "use strict";
 
-import { assert } from "console";
+import * as assert from "assert";
 import { Arch } from "../project";
 import { extractElementAsArray, extractElementIfPresent } from "../util";
 
@@ -99,7 +99,10 @@ export function flagFromApi(data: FlagApiReply): Flag {
     defaultValue = DefaultValue.Enable;
   }
   if (findGlobalSwitch(data.disable)) {
-    assert((defaultValue = DefaultValue.Unspecified));
+    assert(
+      (defaultValue = DefaultValue.Unspecified),
+      "flagFromApi: defaultValue must be Unspecified as a default disable was found"
+    );
     defaultValue = DefaultValue.Disable;
   }
 

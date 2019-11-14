@@ -5,7 +5,7 @@ import xml2js = require("xml2js");
 const xmlParser = new xml2js.Parser({ explicitArray: false, async: true });
 const xmlBuilder = new xml2js.Builder();
 
-import { assert } from "console";
+import * as assert from "assert";
 import { request } from "https";
 import { URL } from "url";
 import { ApiError } from "./error";

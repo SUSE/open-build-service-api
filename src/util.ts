@@ -3,7 +3,7 @@
 
 "use strict";
 
-import { assert } from "console";
+import * as assert from "assert";
 
 function makeConstruct<T>(
   construct?: (data: any) => T,
@@ -15,7 +15,10 @@ function makeConstruct<T>(
   if (construct !== undefined) {
     return construct;
   } else {
-    assert(type !== undefined);
+    assert(
+      type !== undefined,
+      "makeConstruct: type must not be undefined as construct is undefined"
+    );
     return (data: any) => new type!(data);
   }
 }

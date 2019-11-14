@@ -1,8 +1,8 @@
-import { assert } from "console";
 import { Connection } from "../connection";
 import { Project } from "../obs";
 import { Group, User, groupFromApi, userFromApi } from "../user";
 import { extractElementAsArray, extractElementIfPresent } from "../util";
+import * as assert from "assert";
 import { BaseProject, BaseRepository } from "./base_types";
 
 

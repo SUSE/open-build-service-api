@@ -1,6 +1,6 @@
 "use strict";
 
-import { assert } from "console";
+import * as assert from "assert";
 import { URL } from "url";
 import { RequestMethod } from "./connection";
 import { extractElementAsArray, extractElementIfPresent } from "./util";
