@@ -23,6 +23,49 @@ function makeConstruct<T>(
   }
 }
 
+/**
+ * Sets a property of an object to `value` if `condition` is true, otherwise do
+ * nothing.
+ */
+export function setPropertyOnCondition<T, K extends keyof T>(
+  obj: T,
+  key: K,
+  value: T[K],
+  condition: boolean
+): void {
+  if (condition) {
+    obj[key] = value;
+  }
+}
+
+/**
+ * Set a property of an object to `value` if value is not `undefined`.
+ */
+export function setPropertyIfDefined<T, K extends keyof T>(
+  obj: T,
+  key: K,
+  value: NonNullable<T[K]> | undefined
+): void {
+  // need to explicitly cast here as typescript cannot know that obj.key will
+  // only be assigned if value is defined
+  setPropertyOnCondition(obj, key, value as T[K], value !== undefined);
+}
+
+/**
+ * Removes all members of `obj` that are undefined and return the result.
+ *
+ * This function does not perform a deep removal and it relies implicitly on
+ */
+export function deleteUndefinedMembers<T>(obj: T): T {
+  Object.keys(obj).forEach(key => {
+    const castKey = key as keyof T;
+    if (obj[castKey] === undefined) {
+      delete obj[castKey];
+    }
+  });
+  return obj;
+}
+
 function extractPropertyFromObject<T>(
   data: any,
   key: string,

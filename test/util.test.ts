@@ -1,5 +1,5 @@
-import { describe, it } from "mocha";
 import { expect } from "chai";
+import { describe, it } from "mocha";
 
 import * as util from "../src/util";
 
@@ -19,7 +19,7 @@ describe("extractElementIfPresent", () => {
   });
 
   it("should create a new TestClass when passed the construct option", () => {
-    let res = util.extractElementIfPresent<TestClass>(obj, "foo", {
+    const res = util.extractElementIfPresent<TestClass>(obj, "foo", {
       construct: data => new TestClass(data)
     });
     expect(res).to.not.be.undefined;
@@ -29,7 +29,7 @@ describe("extractElementIfPresent", () => {
   });
 
   it("should create a new TestClass when passed TestClass as the type option", () => {
-    let res = util.extractElementIfPresent<TestClass>(obj, "foo", {
+    const res = util.extractElementIfPresent<TestClass>(obj, "foo", {
       type: TestClass
     });
     expect(res).to.not.be.undefined;
@@ -44,5 +44,20 @@ describe("extractElementOrDefault", () => {
     expect(util.extractElementOrDefault<string>(obj, "bar", "baz")).to.equal(
       "baz"
     );
+  });
+});
+
+describe("deleteUndefinedMembers", () => {
+  it("should drop undefined members", () => {
+    const someObj = { foo: 1, bar: 2, baz: undefined };
+    util.deleteUndefinedMembers(someObj);
+
+    expect(someObj).to.deep.equal({ foo: 1, bar: 2 });
+  });
+
+  it("should return the modified object", () => {
+    expect(
+      util.deleteUndefinedMembers({ Foo: "a", bar: ["foo"], Baz: undefined })
+    ).to.deep.equal({ Foo: "a", bar: ["foo"] });
   });
 });
