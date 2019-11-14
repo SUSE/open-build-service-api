@@ -79,7 +79,7 @@ export class Connection {
   /**
    * Perform a request to the API and return the reply's body decoded from XML.
    *
-   * @param route  route which to which the request will be sent
+   * @param route  route to which the request will be sent
    * @param method  The method used to perform the request. Defaults to
    *     [[GET|RequestMethod.GET]]
    * @param payload  An arbitrary object to be sent along with the request. This
