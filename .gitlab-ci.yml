@@ -2,16 +2,46 @@ image: node:latest
 
 stages:
   - test
+  - deploy
 
 cache:
   paths:
     - node_modules/
 
-run_tests:
-  stage: test
+.node_env: &setup_env
   before_script:
-    - npm install yarn
-    - yarn install
+    # make sure this succeeds even on occasional hiccups
+    - yarn install || yarn install || yarn install
+
+.node_test: &run_tests
   script:
-    - npm run test
-    - npm run coverage
+    - yarn run test
+    - yarn run coverage
+
+tests_node_10:
+  image: node:10
+  stage: test
+  <<: *setup_env
+  <<: *run_tests
+
+tests_node_12:
+  image: node:12
+  stage: test
+  <<: *setup_env
+  <<: *run_tests
+
+tests_node_13:
+  image: node:13
+  stage: test
+  <<: *setup_env
+  <<: *run_tests
+
+documentation:
+  image: node:latest
+  stage: deploy
+  <<: *setup_env
+  script:
+    - yarn run documentation
+  artifacts:
+    paths:
+      - documentation/
