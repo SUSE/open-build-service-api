@@ -241,4 +241,55 @@ describe("#getProject", () => {
       path: [{ project: "SUSE:SLE-15:GA", repository: "standard" }]
     });
   });
+
+  it("should correctly parse the Virtualization repositories", async () => {
+    const proj = await getProject(prodCon, "Virtualization").should.be
+      .fulfilled;
+    const findRepoByName = findRepoByNameBuilder(proj);
+
+    expect(proj.name).to.equal("Virtualization");
+
+    // see if we identify the downloader role correctly
+    expect(proj.person).to.deep.include({
+      role: "downloader",
+      userId: "christopolise"
+    });
+
+    // PowerPC repository has custom settings for the build flag and includes a
+    // block mode setting!
+    const ppcRepo = findRepoByName("openSUSE_Factory_PowerPC");
+    expect(ppcRepo)
+      .to.have.property("build")
+      .that.is.a("Map");
+
+    const ppcBuild = ppcRepo!.build as Map<Arch, boolean | undefined>;
+
+    expect(ppcBuild).to.have.keys("x86_64", "ppc64", "ppc64le", "ppc");
+
+    expect(ppcBuild.get(Arch.X86_64)).to.be.false;
+    expect(ppcBuild.get(Arch.Ppc)).to.be.false;
+    expect(ppcBuild.get(Arch.Ppc64le)).to.be.undefined;
+    expect(ppcBuild.get(Arch.Ppc64)).to.be.undefined;
+
+    expect(ppcRepo).to.have.property("block", BlockMode.Local);
+    expect(ppcRepo).to.have.property("debugInfo", true);
+
+    // the RISCV repo should have a disabled build for risv64, as that is
+    // globally turned off
+    const riscvRepo = findRepoByName("openSUSE_Factory_RISV");
+    expect(riscvRepo)
+      .to.have.property("build")
+      .that.is.a("Map");
+    const riscvBuild = riscvRepo!.build as Map<Arch, boolean | undefined>;
+    expect(riscvBuild.get(Arch.Riscv64)).to.be.false;
+
+    // the Kernel_stable_standard repo has globally disabled builds and
+    // publishing
+    const kernelStableRepo = findRepoByName("Kernel_stable_standard");
+    expect(kernelStableRepo).to.deep.include({
+      build: false,
+      debugInfo: true,
+      publish: false
+    });
+  });
 });
