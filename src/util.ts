@@ -1,10 +1,24 @@
-// this module contains utility functions to extract properties from arbitrary
-// data
+/**
+ * This module contains utility functions to extract properties from arbitrary
+ * data
+ */
 
 "use strict";
 
 import * as assert from "assert";
 
+/**
+ * Convert a constructor or a construct function into a common construction
+ * function.
+ *
+ * @param construct  A function taking some data and returning an instance of
+ *     [[T]]. If this function is provided, then it is returned.
+ * @param type  An implementation of [[T]] with a constructor.
+ *
+ * @return If both construct and type are undefined then the identity function
+ *     is returned. If construct is defined, then construct is returned,
+ *     otherwise a wrapper for the constructor of [[T]] is returned.
+ */
 function makeConstruct<T>(
   construct?: (data: any) => T,
   type?: new (data: any) => T
@@ -91,14 +105,16 @@ function extractPropertyFromObject<T>(
   return makeConstruct<T>(construct, type)(data[key]);
 }
 
-// Obtain an element from the object data with the given key.
-//
-// Returns the obtained element if found or undefined otherwise.
-//
-// The options parameter can be used to pass the extracted element into a
-// constructor. Either provide a class/type via the key `type` or a function
-// that accepts the extracted data and returns a new object of type `T` via the
-// key `construct`. Do **not** provide both at once.
+/**
+ * Obtain an element from the object data with the given key.
+ *
+ * @return the obtained element if found or `undefined` otherwise.
+ *
+ * @param options  Can be used to pass the extracted element into a
+ *     constructor. Either provide a class/type via the key `type` or a function
+ *     that accepts the extracted data and returns a new object of type `T` via
+ *     the key `construct`. Do **not** provide both at once.
+ */
 export function extractElementIfPresent<T>(
   data: any,
   key: string,
