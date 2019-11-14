@@ -3,7 +3,11 @@
 import * as assert from "assert";
 import { URL } from "url";
 import { RequestMethod } from "./connection";
-import { extractElementAsArray, extractElementIfPresent } from "./util";
+import {
+  extractElementAsArrayIfPresent,
+  extractElementIfPresent,
+  setPropertyIfDefined
+} from "./util";
 
 /**
  * Status reply that is received in response to PUT requests or on failed GET
@@ -25,7 +29,7 @@ export interface StatusReply {
    * Additional data tag that can be processed by the client.
    * Contains a list of target projects.
    */
-  data: string[];
+  data?: string[];
 }
 
 /** [[StatusReply]] as decoded via xml2js when received from the API */
@@ -40,12 +44,24 @@ export interface StatusReplyApiReply {
 
 /** Converts the status reply from the API into a [[StatusReply]] */
 export function statusReplyFromApi(data: StatusReplyApiReply): StatusReply {
-  return {
-    code: data.status.$.code,
-    data: extractElementAsArray<string>(data.status, "data"),
-    details: extractElementIfPresent<string>(data.status, "details"),
-    summary: extractElementIfPresent<string>(data.status, "summary")
-  };
+  const reply: StatusReply = { code: data.status.$.code };
+
+  setPropertyIfDefined(
+    reply,
+    "data",
+    extractElementAsArrayIfPresent<string>(data.status, "data")
+  );
+  setPropertyIfDefined(
+    reply,
+    "details",
+    extractElementIfPresent(data.status, "details")
+  );
+  setPropertyIfDefined(
+    reply,
+    "summary",
+    extractElementIfPresent<string>(data.status, "summary")
+  );
+  return reply;
 }
 
 /** Error that is thrown when a request to the API fails. */
