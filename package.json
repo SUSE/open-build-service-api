@@ -23,6 +23,7 @@
     "coverage": "nyc --include=\"src/**/*.ts\" --reporter=text --reporter=html --reporter=lcov mocha --require ts-node/register --recursive \"test/**/*.test.ts\"",
     "watch": "npm run build -- --watch",
     "watch:test": "npm run test -- --watch"
+    "documentation": "typedoc --mode modules --theme minimal --out ./documentation src/"
   },
   "dependencies": {
     "config-ini-parser": "^1.2.2",
@@ -47,6 +48,7 @@
     "ts-node": "^8.4.1",
     "tslint": "^5.11.0",
     "tslint-config-prettier": "^1.15.0",
+    "typedoc": "^0.15.0",
     "typescript": "^3.7.0"
   },
   "engines": {
