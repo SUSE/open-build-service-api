@@ -2,22 +2,24 @@ import { expect } from "chai";
 import { afterEach, beforeEach, describe, it } from "mocha";
 
 import {
+  afterEachRecord,
   afterEachRecorded,
   ApiType,
-  beforeEachRecorded,
-  getTestConnection,
   beforeEachRecord,
-  afterEachRecord,
-  checkApiCall
+  beforeEachRecorded,
+  checkApiCallFails,
+  checkApiCallSucceeds,
+  getTestConnection
 } from "./test-setup";
 
+import { StatusReply } from "../src/error";
 import {
   Arch,
   BlockMode,
+  deleteProject,
   getProject,
   modifyOrCreateProject,
-  Project,
-  deleteProject
+  Project
 } from "../src/project";
 import { LocalRole } from "../src/user";
 
@@ -314,28 +316,36 @@ It should be gone soon.`,
       group: [],
       repositories: []
     };
+    const statusOk = {
+      code: "ok",
+      summary: "Ok"
+    };
 
-    await checkApiCall(
+    let res: StatusReply | Project = await checkApiCallSucceeds(
       this.scopes?.[0],
-      async () => modifyOrCreateProject(stagingCon, newProj),
-      {
-        code: "ok",
-        summary: "Ok"
-      }
+      async () => modifyOrCreateProject(stagingCon, newProj)
     );
+    res.should.deep.equal(statusOk);
 
     newProj.person?.push({ userId: "dancermak", role: LocalRole.Maintainer });
 
-    await checkApiCall(
-      this.scopes?.[1],
-      async () => getProject(stagingCon, name),
-      newProj
+    res = await checkApiCallSucceeds(this.scopes?.[1], async () =>
+      getProject(stagingCon, name)
     );
+    res.should.deep.equal(newProj);
 
-    await checkApiCall(
-      this.scopes?.[2],
-      async () => deleteProject(stagingCon, newProj),
-      { code: "ok", summary: "Ok" }
+    res = await checkApiCallSucceeds(this.scopes?.[2], async () =>
+      deleteProject(stagingCon, newProj)
     );
+    res.should.deep.equal(statusOk);
+
+    const err = await checkApiCallFails(this.scopes?.[3], async () =>
+      getProject(stagingCon, name)
+    ).should.be.fulfilled;
+
+    expect(err.status).to.deep.equal({
+      code: "unknown_project",
+      summary: name
+    });
   });
 });
