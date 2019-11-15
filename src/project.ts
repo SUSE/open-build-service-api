@@ -146,21 +146,23 @@ export interface Link {
 }
 
 export interface LinkApiReply {
-  vrevmode?: VrevMode;
-  project: string;
+  $: {
+    vrevmode?: VrevMode;
+    project: string;
+  };
 }
 
 export function linkFromApi(data: LinkApiReply): Link {
-  let vrevmode = extractElementIfPresent<VrevMode>(data, "vrevmode");
+  let vrevmode = extractElementIfPresent<VrevMode>(data.$, "vrevmode");
   if (vrevmode === undefined) {
     vrevmode = VrevMode.Standard;
   }
 
-  return { project: data.project, vrevmode };
+  return { project: data.$.project, vrevmode };
 }
 
 export function linkToApi(link: Link): LinkApiReply {
-  return link;
+  return { $: link };
 }
 
 /** Architectures supported by OBS */
