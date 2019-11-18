@@ -61,3 +61,25 @@ describe("deleteUndefinedMembers", () => {
     ).to.deep.equal({ Foo: "a", bar: ["foo"] });
   });
 });
+
+describe("deleteUndefinedAndEmptyMembers", () => {
+  it("should remove undefined members", () => {
+    expect(
+      util.deleteUndefinedAndEmptyMembers({
+        Foo: "a",
+        bar: ["foo"],
+        Baz: undefined
+      })
+    ).to.deep.equal({ Foo: "a", bar: ["foo"] });
+  });
+
+  it("should remove zero length arrays", () => {
+    expect(
+      util.deleteUndefinedAndEmptyMembers({
+        Foo: [],
+        bar: ["foo"],
+        Baz: "baz"
+      })
+    ).to.deep.equal({ bar: ["foo"], Baz: "baz" });
+  });
+});

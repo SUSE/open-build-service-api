@@ -72,9 +72,25 @@ export function setPropertyIfDefined<T, K extends keyof T>(
  */
 export function deleteUndefinedMembers<T>(obj: T): T {
   Object.keys(obj).forEach(key => {
-    const castKey = key as keyof T;
-    if (obj[castKey] === undefined) {
-      delete obj[castKey];
+    if (obj[key as keyof T] === undefined) {
+      delete obj[key as keyof T];
+    }
+  });
+  return obj;
+}
+
+/**
+ * Removes all members of `obj` that are undefined or that are zero length
+ * arrays and return the result.
+ */
+export function deleteUndefinedAndEmptyMembers<T>(obj: T): T {
+  Object.keys(obj).forEach(key => {
+    if (
+      obj[key as keyof T] === undefined ||
+      (Array.isArray(obj[key as keyof T]) &&
+        ((obj[key as keyof T] as unknown) as any[]).length === 0)
+    ) {
+      delete obj[key as keyof T];
     }
   });
   return obj;
