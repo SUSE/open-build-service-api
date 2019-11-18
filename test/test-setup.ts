@@ -171,18 +171,19 @@ export async function checkApiCallSucceeds<T>(
   timeoutMs: number = 2000
 ): Promise<T> {
   let res: T | undefined;
+
   if (nockScope !== undefined) {
-    const intercepted: InterceptedApiCall<T> = await makeApiCallWithNockIntercept(
+    const intercepted = await makeApiCallWithNockIntercept(
       apiCallFunc,
       nockScope.scope,
       timeoutMs
-    ).should.be.fulfilled;
+    );
 
     expect(intercepted.body).to.deep.equal(nockScope.body);
 
     res = intercepted.result;
   } else {
-    res = await apiCallFunc().should.be.fulfilled;
+    res = await apiCallFunc();
   }
 
   // FIXME: what should we do if apiCallFunc() returns Promise<void>?
@@ -195,11 +196,11 @@ export async function checkApiCallFails<T>(
   timeoutMs: number = 2000
 ): Promise<Error> {
   if (nockScope !== undefined) {
-    const intercepted: InterceptedApiCall<T> = await makeApiCallWithNockIntercept(
+    const intercepted = await makeApiCallWithNockIntercept(
       apiCallFunc,
       nockScope.scope,
       timeoutMs
-    ).should.be.fulfilled;
+    );
 
     expect(intercepted.result).to.be.undefined;
     expect(intercepted.error).to.not.be.undefined;
