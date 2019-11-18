@@ -138,6 +138,13 @@ export function beforeEachRecord(this: Context) {
       .join("_") + ".json"
   );
 
+  // see: https://github.com/nock/nock/blob/master/lib/back.js#L142
+  // and: https://github.com/nock/nock/blob/master/lib/back.js#L188
+  nock.restore();
+  nock.recorder.clear();
+  nock.cleanAll();
+  nock.activate();
+
   if (existsSync(this.recordJsonPath)) {
     const nockDefs = nock.loadDefs(this.recordJsonPath);
     const rawData = JSON.parse(readFileSync(this.recordJsonPath).toString());
@@ -145,7 +152,9 @@ export function beforeEachRecord(this: Context) {
     this.scopes = extractedScopes.map((scopeElem: nock.Scope, i: number) => {
       return { scope: scopeElem, body: rawData[i].body };
     });
+    nock.disableNetConnect();
   } else {
+    nock.enableNetConnect();
     nock.recorder.rec({
       dont_print: true,
       // never ever record headers, as they contain the test user's password!
