@@ -107,7 +107,6 @@ interface ProjectApiReply {
     $: { name: string };
     access?: flag.SimpleFlagApiReply;
     build?: flag.FlagApiReply;
-    created?: string;
     debuginfo?: flag.FlagApiReply;
     description: string;
     group?: user.GroupApiReply[];
@@ -120,7 +119,6 @@ interface ProjectApiReply {
     repository?: BaseRepositoryApiReply[];
     sourceaccess?: flag.SimpleFlagApiReply;
     title: string;
-    updated?: string;
     url?: string;
     useforbuild?: flag.FlagApiReply;
   };
@@ -145,7 +143,6 @@ function projectFromApi(data: ProjectApiReply): Project {
     build: extractElementIfPresent<flag.Flag>(data.project, "build", {
       construct: flag.flagFromApi
     }),
-    created: extractElementIfPresent<string>(data.project, "created"),
     debugInfo: extractElementIfPresent<flag.Flag>(data.project, "debuginfo", {
       construct: flag.flagFromApi
     }),
@@ -172,7 +169,6 @@ function projectFromApi(data: ProjectApiReply): Project {
     }),
     sourceAccess: sourceAccessElem,
     title: data.project.title,
-    updated: extractElementIfPresent<string>(data.project, "updated"),
     url: extractElementIfPresent<string>(data.project, "url"),
     useForBuild: extractElementIfPresent<flag.Flag>(
       data.project,
@@ -200,7 +196,6 @@ function projectToApi(proj: Project): ProjectApiReply {
     flag.booleanToSimpleFlag(proj.access)
   );
   setPropertyIfDefined(projApi.project, "build", flag.flagToApi(proj.build));
-  setPropertyIfDefined(projApi.project, "created", proj.created);
   setPropertyIfDefined(
     projApi.project,
     "debuginfo",
@@ -244,7 +239,6 @@ function projectToApi(proj: Project): ProjectApiReply {
     "sourceaccess",
     flag.booleanToSimpleFlag(proj.sourceAccess)
   );
-  setPropertyIfDefined(projApi.project, "updated", proj.updated);
   setPropertyIfDefined(projApi.project, "url", proj.url);
   setPropertyIfDefined(
     projApi.project,

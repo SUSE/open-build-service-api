@@ -30,8 +30,6 @@ export interface BaseProject {
   readonly name: string;
   description: string;
   title: string;
-  created?: string;
-  updated?: string;
   url?: string;
 
   mountProject?: string;
