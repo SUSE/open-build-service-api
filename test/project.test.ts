@@ -18,8 +18,13 @@ import {
   BlockMode,
   deleteProject,
   getProject,
+  Kind,
+  LinkedBuildMode,
   modifyOrCreateProject,
-  Project
+  Project,
+  RebuildMode,
+  ReleaseTrigger,
+  VrevMode
 } from "../src/project";
 import { LocalRole } from "../src/user";
 
@@ -322,6 +327,120 @@ It should be gone soon.`,
     res = await checkApiCallSucceeds(this.scopes?.[2], async () =>
       deleteProject(stagingCon, newProj)
     );
+    res.should.deep.equal(statusOk);
+
+    const err = await checkApiCallFails(this.scopes?.[3], async () =>
+      getProject(stagingCon, name)
+    ).should.be.fulfilled;
+
+    expect(err.status).to.deep.equal({
+      code: "unknown_project",
+      summary: name
+    });
+  });
+
+  it("creates a new complicated project", async function() {
+    this.timeout(10000);
+    const name = "home:dancermak:set_as_many_properties_as_we_can";
+    const newProj: Project = {
+      description: `This is a project that has been created to test obs.ts
+It should be gone soon.
+
+Here we just try to set as many different options as possible, to check that the XML payload is correct`,
+      name,
+      title: "Testproject created by obs.ts ;-)",
+      person: [
+        { userId: "dancermak", role: LocalRole.Bugowner },
+        { userId: "hennevogel", role: LocalRole.Reader }
+      ],
+      link: [{ vrevmode: VrevMode.Unextend, project: "openSUSE:Factory" }],
+      group: [
+        { groupId: "factory-staging", role: LocalRole.Downloader },
+        { groupId: "suse-fuzzies", role: LocalRole.Reviewer }
+      ],
+      access: true,
+      sourceAccess: false,
+      lock: false,
+      kind: Kind.Maintenance,
+      url: "https://gitlab.suse.de/dancermak/obs.ts",
+      repositories: [
+        {
+          name: "test",
+          arch: [
+            Arch.X86_64,
+            Arch.Aarch64,
+            Arch.Ppc64,
+            Arch.S390x,
+            Arch.Riscv64
+          ],
+          rebuild: RebuildMode.Direct,
+          block: BlockMode.Local,
+          linkedbuild: LinkedBuildMode.LocalDep,
+          releasetarget: [
+            {
+              project: "openSUSE:Factory",
+              repository: "standard",
+              trigger: ReleaseTrigger.Manual
+            }
+          ],
+          build: true,
+          useForBuild: false,
+          debugInfo: new Map<Arch, boolean | undefined>([
+            [Arch.X86_64, true],
+            [Arch.Aarch64, false],
+            [Arch.Riscv64, true]
+          ]),
+          publish: true,
+          path: [
+            { project: "openSUSE:Factory", repository: "standard" },
+            { project: "openSUSE:Factory", repository: "ports" }
+          ]
+        },
+        { name: "anotherTest" }
+      ]
+    };
+    const statusOk = {
+      code: "ok",
+      summary: "Ok"
+    };
+
+    let res: StatusReply | Project = await checkApiCallSucceeds(
+      this.scopes?.[0],
+      async () => modifyOrCreateProject(stagingCon, newProj)
+    ).should.be.fulfilled;
+    res.should.deep.equal(statusOk);
+
+    // OBS adds the home project owner automatically as a maintainer
+    // ...unfortunately at another position
+    newProj.person?.splice(1, 0, {
+      userId: "dancermak",
+      role: LocalRole.Maintainer
+    });
+
+    // FIXME: the debugInfo setting which we get back will have the arches that
+    // we did not set explicitly set to undefined.
+    newProj.repositories![0]!.arch!.forEach(arch => {
+      if (
+        !(newProj.repositories![0]!.debugInfo as Map<
+          Arch,
+          boolean | undefined
+        >).has(arch)
+      ) {
+        (newProj.repositories![0]!.debugInfo as Map<
+          Arch,
+          boolean | undefined
+        >).set(arch, undefined);
+      }
+    });
+
+    res = await checkApiCallSucceeds(this.scopes?.[1], async () =>
+      getProject(stagingCon, name)
+    ).should.be.fulfilled;
+    res.should.deep.equal(newProj);
+
+    res = await checkApiCallSucceeds(this.scopes?.[2], async () =>
+      deleteProject(stagingCon, newProj)
+    ).should.be.fulfilled;
     res.should.deep.equal(statusOk);
 
     const err = await checkApiCallFails(this.scopes?.[3], async () =>
