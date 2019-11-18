@@ -104,13 +104,15 @@ function metaRoute(name: string): string {
 /** Layout of the project configuration as received from OBS' API */
 interface ProjectApiReply {
   project: {
-    $: { name: string };
+    $: {
+      name: string;
+      kind?: project.Kind;
+    };
     access?: flag.SimpleFlagApiReply;
     build?: flag.FlagApiReply;
     debuginfo?: flag.FlagApiReply;
     description: string;
     group?: user.GroupApiReply[];
-    kind?: project.Kind;
     link?: project.LinkApiReply[];
     lock?: flag.SimpleFlagApiReply;
     mountproject?: string;
@@ -150,8 +152,7 @@ function projectFromApi(data: ProjectApiReply): Project {
     group: extractElementAsArray<user.Group>(data.project, "group", {
       construct: user.groupFromApi
     }),
-
-    kind: extractElementIfPresent<project.Kind>(data.project, "kind"),
+    kind: extractElementIfPresent<project.Kind>(data.project.$, "kind"),
     link: extractElementAsArray<project.Link>(data.project, "link", {
       construct: project.linkFromApi
     }),
@@ -185,7 +186,7 @@ function projectFromApi(data: ProjectApiReply): Project {
 function projectToApi(proj: Project): ProjectApiReply {
   const projApi: ProjectApiReply = {
     project: {
-      $: { name: proj.name },
+      $: { name: proj.name, kind: proj.kind },
       title: proj.title,
       description: proj.description
     }
@@ -206,7 +207,6 @@ function projectToApi(proj: Project): ProjectApiReply {
     "group",
     proj.group?.map(grp => user.groupToApi(grp))
   );
-  setPropertyIfDefined(projApi.project, "kind", proj.kind);
   setPropertyIfDefined(
     projApi.project,
     "link",
