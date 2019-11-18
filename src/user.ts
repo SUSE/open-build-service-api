@@ -1,5 +1,5 @@
 /** roles of a Person or a Group belonging to a project */
-export const enum LocalRole {
+export enum LocalRole {
   /** This person or group maintains the project and has all rights */
   Maintainer = "maintainer",
 

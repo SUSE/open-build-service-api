@@ -17,7 +17,7 @@ import {
 } from "./util";
 
 /** Project types */
-export const enum Kind {
+export enum Kind {
   Standard = "standard",
   Maintenance = "maintenance",
   MaintenanceIncident = "maintenance_incident",
@@ -25,7 +25,7 @@ export const enum Kind {
 }
 
 /** Possible modes/policies used by OBS when to rebuild packages */
-export const enum RebuildMode {
+export enum RebuildMode {
   /**
    * DEFAULT: build on source change and all depending packages including
    * indirect dependencies
@@ -41,7 +41,7 @@ export const enum RebuildMode {
  * Possible modes how packages will be blocked from rebuilding on dependency
  * changes
  */
-export const enum BlockMode {
+export enum BlockMode {
   /** DEFAULT: block until all packages we depend on are built */
   All = "all",
   /** like all, but ignore packages from other repositories */
@@ -51,7 +51,7 @@ export const enum BlockMode {
 }
 
 /** Rebuild policy for linked projects */
-export const enum LinkedBuildMode {
+export enum LinkedBuildMode {
   /** DEFAULT: do not build packages from project links */
   Off = "off",
   /** only build project linked packages if they depend on a local package */
@@ -138,7 +138,7 @@ export function pathToApi(path: Path): PathApiReply {
 }
 
 /** TODO */
-export const enum VrevMode {
+export enum VrevMode {
   Standard = "standard",
   Unextend = "unextend",
   Extend = "extend"
@@ -171,7 +171,7 @@ export function linkToApi(link: Link): LinkApiReply {
 }
 
 /** Architectures supported by OBS */
-export const enum Arch {
+export enum Arch {
   Noarch = "noarch",
   Aarch64 = "aarch64",
   Aarch64Ilp32 = "aarch64_ilp32",
@@ -225,7 +225,7 @@ export interface RepositoryPath {
 }
 
 /** possible triggers for a release of a repository */
-export const enum ReleaseTrigger {
+export enum ReleaseTrigger {
   /** DEFAULT: not set, no release action possible */
   NoRelease = "no_release",
   /** only on manual commands the release gets started */
