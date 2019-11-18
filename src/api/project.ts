@@ -4,11 +4,10 @@ import { StatusReply, statusReplyFromApi } from "../error";
 import * as project from "../project";
 import * as user from "../user";
 import {
+  deleteUndefinedAndEmptyMembers,
+  deleteUndefinedMembers,
   extractElementAsArray,
-  extractElementIfPresent,
-  setPropertyIfDefined,
-  setPropertyOnCondition,
-  deleteUndefinedMembers
+  extractElementIfPresent
 } from "../util";
 import { BaseProject, BaseRepository } from "./base_types";
 import * as flag from "./flag";
@@ -21,13 +20,13 @@ interface BaseRepositoryApiReply {
     block?: string;
     linkedbuild?: string;
   };
-  arch: string[];
-  releasetarget: project.ReleaseTargetApiReply[];
-  path: project.PathApiReply[];
+  arch?: string[];
+  releasetarget?: project.ReleaseTargetApiReply[];
+  path?: project.PathApiReply[];
 }
 
 function baseRepositoryFromApi(data: BaseRepositoryApiReply): BaseRepository {
-  return {
+  return deleteUndefinedAndEmptyMembers({
     arch: extractElementAsArray(data, "arch"),
     block: extractElementIfPresent<project.BlockMode>(data.$, "block"),
     linkedbuild: extractElementIfPresent<project.LinkedBuildMode>(
@@ -42,23 +41,23 @@ function baseRepositoryFromApi(data: BaseRepositoryApiReply): BaseRepository {
     releasetarget: extractElementAsArray(data, "releasetarget", {
       construct: project.releaseTargetFromApi
     })
-  };
+  });
 }
 
 function baseRepositoryToApi(repo: BaseRepository): BaseRepositoryApiReply {
-  return {
-    $: {
+  return deleteUndefinedMembers({
+    $: deleteUndefinedMembers({
       block: repo.block,
       linkedbuild: repo.linkedbuild,
       name: repo.name,
       rebuild: repo.rebuild
-    },
+    }),
     arch: repo.arch,
-    path: repo.path.map(pth => project.pathToApi(pth)),
-    releasetarget: repo.releasetarget.map(relTgt =>
+    path: repo.path?.map(pth => project.pathToApi(pth)),
+    releasetarget: repo.releasetarget?.map(relTgt =>
       project.releaseTargetToApi(relTgt)
     )
-  };
+  });
 }
 
 /**
@@ -91,7 +90,7 @@ export interface Project extends BaseProject {
   // readonly binarydownload?: flag.Flag;
 
   /** repositories for this project */
-  readonly repository: BaseRepository[];
+  readonly repository?: BaseRepository[];
 }
 
 /**
@@ -179,7 +178,7 @@ function projectFromApi(data: ProjectApiReply): Project {
       }
     )
   };
-  deleteUndefinedMembers(res);
+  deleteUndefinedAndEmptyMembers(res);
   return res;
 }
 
@@ -188,63 +187,25 @@ function projectToApi(proj: Project): ProjectApiReply {
     project: {
       $: { name: proj.name, kind: proj.kind },
       title: proj.title,
-      description: proj.description
+      description: proj.description,
+      access: flag.booleanToSimpleFlag(proj.access),
+      build: flag.flagToApi(proj.build),
+      debuginfo: flag.flagToApi(proj.debugInfo),
+      group: proj.group?.map(grp => user.groupToApi(grp)),
+      link: proj.link?.map(lnk => project.linkToApi(lnk)),
+      lock: flag.booleanToSimpleFlag(proj.lock),
+      mountproject: proj.mountProject,
+      person: proj.person?.map(pers => user.userToApi(pers)),
+      publish: flag.flagToApi(proj.publish),
+      repository: proj.repository?.map(repo => baseRepositoryToApi(repo)),
+      sourceaccess: flag.booleanToSimpleFlag(proj.sourceAccess),
+      url: proj.url,
+      useforbuild: flag.flagToApi(proj.useForBuild)
     }
   };
-  setPropertyIfDefined(
-    projApi.project,
-    "access",
-    flag.booleanToSimpleFlag(proj.access)
-  );
-  setPropertyIfDefined(projApi.project, "build", flag.flagToApi(proj.build));
-  setPropertyIfDefined(
-    projApi.project,
-    "debuginfo",
-    flag.flagToApi(proj.debugInfo)
-  );
-  setPropertyIfDefined(
-    projApi.project,
-    "group",
-    proj.group?.map(grp => user.groupToApi(grp))
-  );
-  setPropertyIfDefined(
-    projApi.project,
-    "link",
-    proj.link?.map(lnk => project.linkToApi(lnk))
-  );
-  setPropertyIfDefined(
-    projApi.project,
-    "lock",
-    flag.booleanToSimpleFlag(proj.lock)
-  );
-  setPropertyIfDefined(projApi.project, "mountproject", proj.mountProject);
-  setPropertyIfDefined(
-    projApi.project,
-    "person",
-    proj.person?.map(pers => user.userToApi(pers))
-  );
-  setPropertyIfDefined(
-    projApi.project,
-    "publish",
-    flag.flagToApi(proj.publish)
-  );
-  setPropertyOnCondition(
-    projApi.project,
-    "repository",
-    proj.repository.map(repo => baseRepositoryToApi(repo)),
-    proj.repository.length > 0
-  );
-  setPropertyIfDefined(
-    projApi.project,
-    "sourceaccess",
-    flag.booleanToSimpleFlag(proj.sourceAccess)
-  );
-  setPropertyIfDefined(projApi.project, "url", proj.url);
-  setPropertyIfDefined(
-    projApi.project,
-    "useforbuild",
-    flag.flagToApi(proj.useForBuild)
-  );
+
+  deleteUndefinedAndEmptyMembers(projApi.project.$);
+  deleteUndefinedAndEmptyMembers(projApi.project);
 
   return projApi;
 }

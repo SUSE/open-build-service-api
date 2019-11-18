@@ -9,19 +9,19 @@ import { Group, User } from "../user";
 export interface BaseRepository {
   /** Name of this repository */
   name: string;
-  /** Mode in which the project */
+  /** Mode in which the project is rebuilding dependencies for this repository */
   rebuild?: project.RebuildMode;
   block?: project.BlockMode;
   linkedbuild?: project.LinkedBuildMode;
 
   /** architectures which this repository builds for */
-  arch: project.Arch[];
+  arch?: project.Arch[];
 
   /** repositories that should be released */
-  releasetarget: project.ReleaseTarget[];
+  releasetarget?: project.ReleaseTarget[];
 
   /** Array of included repositories from other projects */
-  path: project.Path[];
+  path?: project.Path[];
 
   hostsystem?: project.HostSystem;
 }
@@ -41,12 +41,12 @@ export interface BaseProject {
   /** list of groups and their roles belonging to this project */
   group?: Group[];
 
-  // Is this project locked from rebuilding (used for maintenance project)
+  /** Is this project locked from rebuilding (used for maintenance project) */
   lock?: boolean;
 
-  // if set to false, then this hides the entire project from being visible
+  /** if set to false, then this hides the entire project from being visible */
   access?: boolean;
 
-  // if set to false, then this hides source in packages and build logs and stuff
+  /** if set to false, then this hides source in packages and build logs and stuff */
   sourceAccess?: boolean;
 }

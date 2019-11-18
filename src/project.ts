@@ -9,7 +9,12 @@ import {
 import * as api from "./api/project";
 import { Connection, RequestMethod } from "./connection";
 import { StatusReply, statusReplyFromApi } from "./error";
-import { extractElementIfPresent, extractElementOrDefault } from "./util";
+import {
+  deleteUndefinedAndEmptyMembers,
+  deleteUndefinedMembers,
+  extractElementIfPresent,
+  extractElementOrDefault
+} from "./util";
 
 /** Project types */
 export const enum Kind {
@@ -240,14 +245,14 @@ export interface HostSystem {
 // type Flag = undefined | boolean | Map<Arch, boolean | undefined>;
 
 export interface Repository extends BaseRepository {
-  readonly build: RepositorySetting | undefined;
-  readonly publish: RepositorySetting | undefined;
-  readonly useForBuild: RepositorySetting | undefined;
-  readonly debugInfo: RepositorySetting | undefined;
+  readonly build?: RepositorySetting;
+  readonly publish?: RepositorySetting;
+  readonly useForBuild?: RepositorySetting;
+  readonly debugInfo?: RepositorySetting;
 }
 
 export interface Project extends BaseProject {
-  readonly repositories: Repository[];
+  readonly repositories?: Repository[];
 }
 
 function convertFromApiProject(apiProject: api.Project): Project {
@@ -260,27 +265,36 @@ function convertFromApiProject(apiProject: api.Project): Project {
     ...rest
   } = apiProject;
 
-  const repos: Repository[] = [];
-  if (repository !== undefined) {
-    repository.forEach(repo => {
-      const arches = repo.arch;
-      repos.push({
-        build: repositorySettingFromFlag(repo.name, arches, build),
-        debugInfo: repositorySettingFromFlag(repo.name, arches, debugInfo),
-        publish: repositorySettingFromFlag(repo.name, arches, publish),
-        useForBuild: repositorySettingFromFlag(repo.name, arches, useForBuild),
-        ...repo
-      });
-    });
+  if (repository === undefined || repository.length === 0) {
+    return deleteUndefinedAndEmptyMembers({ ...rest });
   }
 
-  return { repositories: repos, ...rest };
+  const repos: Repository[] = [];
+
+  repository.forEach(repo => {
+    const arches = repo.arch ?? [];
+    const newRepo: Repository = {
+      build: repositorySettingFromFlag(repo.name, arches, build),
+      debugInfo: repositorySettingFromFlag(repo.name, arches, debugInfo),
+      publish: repositorySettingFromFlag(repo.name, arches, publish),
+      useForBuild: repositorySettingFromFlag(repo.name, arches, useForBuild),
+      ...repo
+    };
+
+    repos.push(deleteUndefinedMembers(newRepo));
+  });
+
+  return deleteUndefinedAndEmptyMembers({ repositories: repos, ...rest });
 }
 
 function convertToApiProject(proj: Project): api.Project {
   const { repositories, ...rest } = proj;
 
-  return {
+  if (repositories === undefined || repositories.length === 0) {
+    return deleteUndefinedAndEmptyMembers({ ...rest });
+  }
+
+  return deleteUndefinedMembers({
     build: repositorySettingToFlag(
       repositories.map(repo => [repo.name, repo.build])
     ),
@@ -301,10 +315,10 @@ function convertToApiProject(proj: Project): api.Project {
         debugInfo,
         ...commonSettings
       } = repo;
-      return { ...commonSettings };
+      return deleteUndefinedAndEmptyMembers({ ...commonSettings });
     }),
     ...rest
-  };
+  });
 }
 
 export async function getProject(

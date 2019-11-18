@@ -24,7 +24,7 @@ import {
 import { LocalRole } from "../src/user";
 
 const findRepoByNameBuilder = (proj: Project) => (repoName: string) =>
-  proj.repositories.find(elem => elem.name === repoName);
+  proj.repositories?.find(elem => elem.name === repoName);
 
 describe("#getProject", () => {
   const prodCon = getTestConnection(ApiType.Production);
@@ -78,7 +78,6 @@ describe("#getProject", () => {
     // check all repositories manually...
     expect(findRepoByName("standard")).to.deep.include({
       arch: defaultArch,
-      build: undefined,
       debugInfo: true,
       name: "standard",
       publish: true,
@@ -100,7 +99,6 @@ describe("#getProject", () => {
     });
     expect(findRepoByName("images")).to.deep.include({
       arch: ["local", "i586", "x86_64"],
-      build: undefined,
       debugInfo: true,
       name: "images",
       path: [{ project: "openSUSE:Factory", repository: "standard" }],
@@ -139,9 +137,7 @@ describe("#getProject", () => {
     });
 
     // no groups defined
-    expect(proj.group)
-      .to.be.a("array")
-      .and.to.have.length(0);
+    expect(proj.group).to.be.undefined;
 
     // title & description
     expect(proj.title).to.equal("Devel project for Vagrant");
@@ -161,8 +157,7 @@ describe("#getProject", () => {
       debugInfo: true,
       name: "openSUSE_Tumbleweed",
       path: [{ project: "openSUSE:Factory", repository: "snapshot" }],
-      publish: true,
-      useForBuild: undefined
+      publish: true
     });
     expect(findRepoByName("openSUSE_Tumbleweed_default_ruby")).to.deep.include({
       arch: ["x86_64"],
@@ -179,7 +174,6 @@ describe("#getProject", () => {
       publish: false,
       build: true,
       debugInfo: true,
-      useForBuild: undefined,
       path: [
         {
           project: "devel:languages:ruby:extensions",
@@ -194,7 +188,6 @@ describe("#getProject", () => {
       publish: true,
       build: true,
       debugInfo: true,
-      useForBuild: undefined,
       path: [{ project: "openSUSE:Leap:15.1:ARM", repository: "ports" }]
     });
     expect(findRepoByName("openSUSE_Leap_15.1")).to.deep.include({
@@ -203,7 +196,6 @@ describe("#getProject", () => {
       publish: true,
       build: false,
       debugInfo: true,
-      useForBuild: undefined,
       path: [{ project: "openSUSE:Leap:15.1", repository: "standard" }]
     });
     expect(findRepoByName("openSUSE_Leap_15.0")).to.deep.include({
@@ -212,7 +204,6 @@ describe("#getProject", () => {
       publish: true,
       build: true,
       debugInfo: true,
-      useForBuild: undefined,
       path: [{ project: "openSUSE:Leap:15.0", repository: "standard" }]
     });
     expect(findRepoByName("openSUSE_Factory_ARM")).to.deep.include({
@@ -221,7 +212,6 @@ describe("#getProject", () => {
       publish: true,
       build: true,
       debugInfo: true,
-      useForBuild: undefined,
       path: [{ project: "openSUSE:Factory:ARM", repository: "standard" }]
     });
     expect(findRepoByName("SLE_15-SP1")).to.deep.include({
@@ -230,7 +220,6 @@ describe("#getProject", () => {
       publish: true,
       build: false,
       debugInfo: true,
-      useForBuild: undefined,
       path: [{ project: "SUSE:SLE-15-SP1:GA", repository: "standard" }]
     });
     expect(findRepoByName("SLE_15")).to.deep.include({
@@ -239,7 +228,6 @@ describe("#getProject", () => {
       publish: true,
       build: true,
       debugInfo: true,
-      useForBuild: undefined,
       path: [{ project: "SUSE:SLE-15:GA", repository: "standard" }]
     });
   });
@@ -310,11 +298,7 @@ describe("#modifyOrCreateProject", () => {
       description: `This is a project that has been created to test obs.ts
 It should be gone soon.`,
       name,
-      title: "Testproject created by obs.ts",
-      person: [],
-      link: [],
-      group: [],
-      repositories: []
+      title: "Testproject created by obs.ts"
     };
     const statusOk = {
       code: "ok",
@@ -327,7 +311,8 @@ It should be gone soon.`,
     );
     res.should.deep.equal(statusOk);
 
-    newProj.person?.push({ userId: "dancermak", role: LocalRole.Maintainer });
+    // OBS automatically adds the owner of the home project as the maintainer
+    newProj.person = [{ userId: "dancermak", role: LocalRole.Maintainer }];
 
     res = await checkApiCallSucceeds(this.scopes?.[1], async () =>
       getProject(stagingCon, name)
