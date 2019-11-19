@@ -1,9 +1,6 @@
-"use strict";
-
 import { readFile, writeFile } from "fs";
 import { homedir } from "os";
 import { promisify } from "util";
-
 import { normalizeUrl } from "./connection";
 
 const ConfigIniParser = require("config-ini-parser").ConfigIniParser;

@@ -1,5 +1,3 @@
-"use strict";
-
 import { expect, should, use } from "chai";
 import * as chaiAsPromised from "chai-as-promised";
 import * as chaiThings from "chai-things";
@@ -7,7 +5,6 @@ import { existsSync, readFileSync, writeFileSync } from "fs";
 import { Context } from "mocha";
 import * as nock from "nock";
 import { join } from "path";
-
 import { Connection } from "../src/connection";
 
 /** Payload that has been extracted from the nock and received from the API call */

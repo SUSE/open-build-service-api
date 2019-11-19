@@ -1,5 +1,3 @@
-"use strict";
-
 import xml2js = require("xml2js");
 
 const xmlParser = new xml2js.Parser({ explicitArray: false, async: true });
