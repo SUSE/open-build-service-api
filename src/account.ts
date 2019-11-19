@@ -78,28 +78,26 @@ export async function readAccountsFromOscrc(
 
   const sections: string[] = oscrcContents.sections();
 
-  return Promise.all(
-    sections
-      .filter(sect => {
-        return sect !== "general";
-      })
-      .map(async sect => {
-        const sectionElementGetter = (optionName: string) => {
-          const res: string | 1 = oscrcContents.get(sect, optionName, 1);
-          return res === 1 ? undefined : res;
-        };
+  return sections
+    .filter(sect => {
+      return sect !== "general";
+    })
+    .map(sect => {
+      const sectionElementGetter = (optionName: string) => {
+        const res: string | 1 = oscrcContents.get(sect, optionName, 1);
+        return res === 1 ? undefined : res;
+      };
 
-        const aliases = sectionElementGetter("aliases");
-        return new Account({
-          aliases: aliases === undefined ? [] : aliases.split(","),
-          apiUrl: sect,
-          email: sectionElementGetter("email"),
-          password: sectionElementGetter("pass"),
-          realname: sectionElementGetter("realname"),
-          username: oscrcContents.get(sect, "user")
-        });
-      })
-  );
+      const aliases = sectionElementGetter("aliases");
+      return new Account({
+        aliases: aliases === undefined ? [] : aliases.split(","),
+        apiUrl: sect,
+        email: sectionElementGetter("email"),
+        password: sectionElementGetter("pass"),
+        realname: sectionElementGetter("realname"),
+        username: oscrcContents.get(sect, "user")
+      });
+    });
 }
 
 /**
