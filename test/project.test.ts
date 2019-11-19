@@ -17,18 +17,18 @@ import {
   Arch,
   BlockMode,
   deleteProject,
-  getProject,
+  getProjectMeta,
   Kind,
   LinkedBuildMode,
   modifyOrCreateProject,
-  Project,
+  ProjectMeta,
   RebuildMode,
   ReleaseTrigger,
   VrevMode
-} from "../src/project";
+} from "../src/project-meta";
 import { LocalRole } from "../src/user";
 
-const findRepoByNameBuilder = (proj: Project) => (repoName: string) =>
+const findRepoByNameBuilder = (proj: ProjectMeta) => (repoName: string) =>
   proj.repositories?.find(elem => elem.name === repoName);
 
 describe("#getProject", () => {
@@ -39,7 +39,7 @@ describe("#getProject", () => {
   afterEach(afterEachRecorded);
 
   it("should correctly parse openSUSE:Factory", async () => {
-    const proj = await getProject(prodCon, "openSUSE:Factory").should.be
+    const proj = await getProjectMeta(prodCon, "openSUSE:Factory").should.be
       .fulfilled;
 
     expect(proj.name).to.equal("openSUSE:Factory");
@@ -119,8 +119,8 @@ describe("#getProject", () => {
   });
 
   it("should correctly parse Virtualization:vagrant", async () => {
-    const proj = await getProject(prodCon, "Virtualization:vagrant").should.be
-      .fulfilled;
+    const proj = await getProjectMeta(prodCon, "Virtualization:vagrant").should
+      .be.fulfilled;
 
     expect(proj.name).to.equal("Virtualization:vagrant");
 
@@ -238,7 +238,7 @@ describe("#getProject", () => {
   });
 
   it("should correctly parse the Virtualization repositories", async () => {
-    const proj = await getProject(prodCon, "Virtualization").should.be
+    const proj = await getProjectMeta(prodCon, "Virtualization").should.be
       .fulfilled;
     const findRepoByName = findRepoByNameBuilder(proj);
 
@@ -299,7 +299,7 @@ describe("#modifyOrCreateProject", () => {
   it("creates a new project", async function() {
     this.timeout(5000);
     const name = "home:dancermak:obs_ts_test";
-    const newProj: Project = {
+    const newProj: ProjectMeta = {
       description: `This is a project that has been created to test obs.ts
 It should be gone soon.`,
       name,
@@ -310,7 +310,7 @@ It should be gone soon.`,
       summary: "Ok"
     };
 
-    let res: StatusReply | Project = await checkApiCallSucceeds(
+    let res: StatusReply | ProjectMeta = await checkApiCallSucceeds(
       this.scopes?.[0],
       async () => modifyOrCreateProject(stagingCon, newProj)
     );
@@ -320,7 +320,7 @@ It should be gone soon.`,
     newProj.person = [{ userId: "dancermak", role: LocalRole.Maintainer }];
 
     res = await checkApiCallSucceeds(this.scopes?.[1], async () =>
-      getProject(stagingCon, name)
+      getProjectMeta(stagingCon, name)
     );
     res.should.deep.equal(newProj);
 
@@ -330,7 +330,7 @@ It should be gone soon.`,
     res.should.deep.equal(statusOk);
 
     const err = await checkApiCallFails(this.scopes?.[3], async () =>
-      getProject(stagingCon, name)
+      getProjectMeta(stagingCon, name)
     ).should.be.fulfilled;
 
     expect(err.status).to.deep.equal({
@@ -342,7 +342,7 @@ It should be gone soon.`,
   it("creates a new complicated project", async function() {
     this.timeout(10000);
     const name = "home:dancermak:set_as_many_properties_as_we_can";
-    const newProj: Project = {
+    const newProj: ProjectMeta = {
       description: `This is a project that has been created to test obs.ts
 It should be gone soon.
 
@@ -404,7 +404,7 @@ Here we just try to set as many different options as possible, to check that the
       summary: "Ok"
     };
 
-    let res: StatusReply | Project = await checkApiCallSucceeds(
+    let res: StatusReply | ProjectMeta = await checkApiCallSucceeds(
       this.scopes?.[0],
       async () => modifyOrCreateProject(stagingCon, newProj)
     ).should.be.fulfilled;
@@ -434,7 +434,7 @@ Here we just try to set as many different options as possible, to check that the
     });
 
     res = await checkApiCallSucceeds(this.scopes?.[1], async () =>
-      getProject(stagingCon, name)
+      getProjectMeta(stagingCon, name)
     ).should.be.fulfilled;
     res.should.deep.equal(newProj);
 
@@ -444,7 +444,7 @@ Here we just try to set as many different options as possible, to check that the
     res.should.deep.equal(statusOk);
 
     const err = await checkApiCallFails(this.scopes?.[3], async () =>
-      getProject(stagingCon, name)
+      getProjectMeta(stagingCon, name)
     ).should.be.fulfilled;
 
     expect(err.status).to.deep.equal({

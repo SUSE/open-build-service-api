@@ -6,10 +6,8 @@
  * schema.
  */
 
-"use strict";
-
 import * as assert from "assert";
-import { Arch } from "../project";
+import { Arch } from "../project-meta";
 import { extractElementAsArray, extractElementIfPresent } from "../util";
 
 /** Representation of a FlagSwitch as extracted from OBS' API */

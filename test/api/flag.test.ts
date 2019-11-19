@@ -1,6 +1,5 @@
 import { expect } from "chai";
 import { describe, it } from "mocha";
-
 import {
   booleanToSimpleFlag,
   DefaultValue,
@@ -9,10 +8,10 @@ import {
   flagFromApi,
   flagToApi,
   repositorySettingFromFlag,
-  simpleFlagToBoolean,
-  repositorySettingToFlag
+  repositorySettingToFlag,
+  simpleFlagToBoolean
 } from "../../src/api/flag";
-import { Arch } from "../../src/project";
+import { Arch } from "../../src/project-meta";
 
 describe("SimpleFlag", () => {
   describe("#simpleFlagToBoolean", () => {

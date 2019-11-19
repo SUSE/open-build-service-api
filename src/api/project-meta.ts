@@ -1,7 +1,7 @@
 import * as assert from "assert";
 import { Connection, RequestMethod } from "../connection";
 import { StatusReply, statusReplyFromApi } from "../error";
-import * as project from "../project";
+import * as project from "../project-meta";
 import * as user from "../user";
 import {
   deleteUndefinedAndEmptyMembers,
@@ -9,7 +9,7 @@ import {
   extractElementAsArray,
   extractElementIfPresent
 } from "../util";
-import { BaseProject, BaseRepository } from "./base_types";
+import { BaseProjectMeta, BaseRepository } from "./base-types";
 import * as flag from "./flag";
 
 /** Layout of a repository element as converted from OBS' API via xml2js */
@@ -69,7 +69,7 @@ function baseRepositoryToApi(repo: BaseRepository): BaseRepositoryApiReply {
  * the actual repository). This is merely an intermediate state that is used to
  * convert it to a more useful form later.
  */
-export interface Project extends BaseProject {
+export interface ProjectMeta extends BaseProjectMeta {
   /** building enabled/disabled for certain repositories */
   readonly build?: flag.Flag;
 
@@ -101,7 +101,7 @@ function metaRoute(name: string): string {
 }
 
 /** Layout of the project configuration as received from OBS' API */
-interface ProjectApiReply {
+interface ProjectMetaApiReply {
   project: {
     $: {
       name: string;
@@ -125,7 +125,7 @@ interface ProjectApiReply {
   };
 }
 
-function projectFromApi(data: ProjectApiReply): Project {
+function projectMetaFromApi(data: ProjectMetaApiReply): ProjectMeta {
   const lock = extractElementIfPresent(data.project, "lock", {
     construct: flag.simpleFlagToBoolean
   });
@@ -182,8 +182,8 @@ function projectFromApi(data: ProjectApiReply): Project {
   return res;
 }
 
-function projectToApi(proj: Project): ProjectApiReply {
-  const projApi: ProjectApiReply = {
+function projectMetaToApi(proj: ProjectMeta): ProjectMetaApiReply {
+  const projApi: ProjectMetaApiReply = {
     project: {
       $: { name: proj.name, kind: proj.kind },
       title: proj.title,
@@ -213,25 +213,25 @@ function projectToApi(proj: Project): ProjectApiReply {
 /**
  *
  */
-export async function getProject(
+export async function getProjectMeta(
   conn: Connection,
   projName: string
-): Promise<Project> {
+): Promise<ProjectMeta> {
   const res = await conn.makeApiCall(metaRoute(projName));
   assert(
     res.project.$.name === projName,
     "Expected the received project name and the sent project name to be equal"
   );
-  return projectFromApi(res);
+  return projectMetaFromApi(res);
 }
 
 export async function modifyOrCreateProject(
   conn: Connection,
-  proj: Project
+  proj: ProjectMeta
 ): Promise<StatusReply> {
   const resp = await conn.makeApiCall("/source/".concat(proj.name, "/_meta"), {
     method: RequestMethod.PUT,
-    payload: projectToApi(proj)
+    payload: projectMetaToApi(proj)
   });
   return statusReplyFromApi(resp);
 }

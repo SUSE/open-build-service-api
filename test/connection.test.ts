@@ -1,15 +1,14 @@
 import { expect } from "chai";
 import { describe, it } from "mocha";
-
+import * as nock from "nock";
 import { Connection, normalizeUrl } from "../src/connection";
+import { ApiError } from "../src/error";
 import {
-  ApiType,
   afterEachRecorded,
+  ApiType,
   beforeEachRecorded,
   getTestConnection
 } from "./test-setup";
-import { ApiError } from "../src/error";
-import * as nock from "nock";
 
 describe("normalizeUrl", () => {
   it("throws an exception when the url is invalid", () => {
