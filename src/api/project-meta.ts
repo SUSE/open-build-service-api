@@ -1,16 +1,22 @@
 import * as assert from "assert";
 import { Connection, RequestMethod } from "../connection";
 import { StatusReply, statusReplyFromApi } from "../error";
-import * as project from "../project-meta";
-import * as user from "../user";
 import {
   deleteUndefinedAndEmptyMembers,
   deleteUndefinedMembers,
   extractElementAsArray,
   extractElementIfPresent
 } from "../util";
-import { BaseProjectMeta, BaseRepository } from "./base-types";
+import * as base_types from "./base-types";
 import * as flag from "./flag";
+
+/** Project types */
+export enum Kind {
+  Standard = "standard",
+  Maintenance = "maintenance",
+  MaintenanceIncident = "maintenance_incident",
+  MaintenanceRelease = "maintenance_release"
+}
 
 /** Layout of a repository element as converted from OBS' API via xml2js */
 interface BaseRepositoryApiReply {
@@ -21,30 +27,34 @@ interface BaseRepositoryApiReply {
     linkedbuild?: string;
   };
   arch?: string[];
-  releasetarget?: project.ReleaseTargetApiReply[];
-  path?: project.PathApiReply[];
+  releasetarget?: base_types.ReleaseTargetApiReply[];
+  path?: base_types.PathApiReply[];
 }
 
-function baseRepositoryFromApi(data: BaseRepositoryApiReply): BaseRepository {
+function baseRepositoryFromApi(
+  data: BaseRepositoryApiReply
+): base_types.BaseRepository {
   return deleteUndefinedAndEmptyMembers({
     arch: extractElementAsArray(data, "arch"),
-    block: extractElementIfPresent<project.BlockMode>(data.$, "block"),
-    linkedbuild: extractElementIfPresent<project.LinkedBuildMode>(
+    block: extractElementIfPresent<base_types.BlockMode>(data.$, "block"),
+    linkedbuild: extractElementIfPresent<base_types.LinkedBuildMode>(
       data.$,
       "linkedbuild"
     ),
     name: data.$.name,
     path: extractElementAsArray(data, "path", {
-      construct: project.pathFromApi
+      construct: base_types.pathFromApi
     }),
-    rebuild: extractElementIfPresent<project.RebuildMode>(data.$, "rebuild"),
+    rebuild: extractElementIfPresent<base_types.RebuildMode>(data.$, "rebuild"),
     releasetarget: extractElementAsArray(data, "releasetarget", {
-      construct: project.releaseTargetFromApi
+      construct: base_types.releaseTargetFromApi
     })
   });
 }
 
-function baseRepositoryToApi(repo: BaseRepository): BaseRepositoryApiReply {
+function baseRepositoryToApi(
+  repo: base_types.BaseRepository
+): BaseRepositoryApiReply {
   return deleteUndefinedMembers({
     $: deleteUndefinedMembers({
       block: repo.block,
@@ -53,9 +63,9 @@ function baseRepositoryToApi(repo: BaseRepository): BaseRepositoryApiReply {
       rebuild: repo.rebuild
     }),
     arch: repo.arch,
-    path: repo.path?.map(pth => project.pathToApi(pth)),
+    path: repo.path?.map(pth => base_types.pathToApi(pth)),
     releasetarget: repo.releasetarget?.map(relTgt =>
-      project.releaseTargetToApi(relTgt)
+      base_types.releaseTargetToApi(relTgt)
     )
   });
 }
@@ -69,28 +79,15 @@ function baseRepositoryToApi(repo: BaseRepository): BaseRepositoryApiReply {
  * the actual repository). This is merely an intermediate state that is used to
  * convert it to a more useful form later.
  */
-export interface ProjectMeta extends BaseProjectMeta {
-  /** building enabled/disabled for certain repositories */
-  readonly build?: flag.Flag;
-
-  /** publishing of certain repositories enabled or disabled? */
-  readonly publish?: flag.Flag;
-
-  /**
-   * useforbuild (build results from packages will be used to build other
-   * packages in contrast to external dependencies) disabled?
-   */
-  readonly useForBuild?: flag.Flag;
-
-  /** debuginfo generation settings */
-  readonly debugInfo?: flag.Flag;
-
+export interface ProjectMeta
+  extends base_types.CommonMeta,
+    base_types.BaseProjectMeta {
   // <binarydownload> field is used for things...
   // No idea what for and according to Adrian it should be hidden better, so here we go ;-)
   // readonly binarydownload?: flag.Flag;
 
   /** repositories for this project */
-  readonly repository?: BaseRepository[];
+  readonly repository?: base_types.BaseRepository[];
 }
 
 /**
@@ -105,78 +102,33 @@ interface ProjectMetaApiReply {
   project: {
     $: {
       name: string;
-      kind?: project.Kind;
+      kind?: Kind;
     };
     access?: flag.SimpleFlagApiReply;
-    build?: flag.FlagApiReply;
-    debuginfo?: flag.FlagApiReply;
-    description: string;
-    group?: user.GroupApiReply[];
-    link?: project.LinkApiReply[];
-    lock?: flag.SimpleFlagApiReply;
+    link?: base_types.LinkApiReply[];
     mountproject?: string;
-    person?: user.UserApiReply[];
-    publish?: flag.FlagApiReply;
     repository?: BaseRepositoryApiReply[];
-    sourceaccess?: flag.SimpleFlagApiReply;
-    title: string;
-    url?: string;
-    useforbuild?: flag.FlagApiReply;
-  };
+  } & base_types.CommonMetaApiReply;
 }
 
 function projectMetaFromApi(data: ProjectMetaApiReply): ProjectMeta {
-  const lock = extractElementIfPresent(data.project, "lock", {
-    construct: flag.simpleFlagToBoolean
-  });
-
   const access = extractElementIfPresent<boolean>(data.project, "access", {
     construct: flag.simpleFlagToBoolean
   });
-  const sourceAccessElem = extractElementIfPresent<boolean>(
-    data.project,
-    "sourceaccess",
-    { construct: flag.simpleFlagToBoolean }
-  );
 
   const res = {
     access,
-    build: extractElementIfPresent<flag.Flag>(data.project, "build", {
-      construct: flag.flagFromApi
+    kind: extractElementIfPresent<Kind>(data.project.$, "kind"),
+    link: extractElementAsArray<base_types.Link>(data.project, "link", {
+      construct: base_types.linkFromApi
     }),
-    debugInfo: extractElementIfPresent<flag.Flag>(data.project, "debuginfo", {
-      construct: flag.flagFromApi
-    }),
-    description: data.project.description,
-    group: extractElementAsArray<user.Group>(data.project, "group", {
-      construct: user.groupFromApi
-    }),
-    kind: extractElementIfPresent<project.Kind>(data.project.$, "kind"),
-    link: extractElementAsArray<project.Link>(data.project, "link", {
-      construct: project.linkFromApi
-    }),
-    lock,
+
     mountProject: extractElementIfPresent<string>(data.project, "mountproject"),
     name: data.project.$.name,
-    person: extractElementAsArray<user.User>(data.project, "person", {
-      construct: user.userFromApi
-    }),
-    publish: extractElementIfPresent<flag.Flag>(data.project, "publish", {
-      construct: flag.flagFromApi
-    }),
     repository: extractElementAsArray(data.project, "repository", {
       construct: baseRepositoryFromApi
     }),
-    sourceAccess: sourceAccessElem,
-    title: data.project.title,
-    url: extractElementIfPresent<string>(data.project, "url"),
-    useForBuild: extractElementIfPresent<flag.Flag>(
-      data.project,
-      "useforbuild",
-      {
-        construct: flag.flagFromApi
-      }
-    )
+    ...base_types.commonMetaFromApi(data.project)
   };
   deleteUndefinedAndEmptyMembers(res);
   return res;
@@ -186,21 +138,11 @@ function projectMetaToApi(proj: ProjectMeta): ProjectMetaApiReply {
   const projApi: ProjectMetaApiReply = {
     project: {
       $: { name: proj.name, kind: proj.kind },
-      title: proj.title,
-      description: proj.description,
+      ...base_types.commonMetaToApi(proj),
       access: flag.booleanToSimpleFlag(proj.access),
-      build: flag.flagToApi(proj.build),
-      debuginfo: flag.flagToApi(proj.debugInfo),
-      group: proj.group?.map(grp => user.groupToApi(grp)),
-      link: proj.link?.map(lnk => project.linkToApi(lnk)),
-      lock: flag.booleanToSimpleFlag(proj.lock),
+      link: proj.link?.map(lnk => base_types.linkToApi(lnk)),
       mountproject: proj.mountProject,
-      person: proj.person?.map(pers => user.userToApi(pers)),
-      publish: flag.flagToApi(proj.publish),
-      repository: proj.repository?.map(repo => baseRepositoryToApi(repo)),
-      sourceaccess: flag.booleanToSimpleFlag(proj.sourceAccess),
-      url: proj.url,
-      useforbuild: flag.flagToApi(proj.useForBuild)
+      repository: proj.repository?.map(repo => baseRepositoryToApi(repo))
     }
   };
 
@@ -214,10 +156,10 @@ function projectMetaToApi(proj: ProjectMeta): ProjectMetaApiReply {
  *
  */
 export async function getProjectMeta(
-  conn: Connection,
+  con: Connection,
   projName: string
 ): Promise<ProjectMeta> {
-  const res = await conn.makeApiCall(metaRoute(projName));
+  const res = await con.makeApiCall(metaRoute(projName));
   assert(
     res.project.$.name === projName,
     "Expected the received project name and the sent project name to be equal"
@@ -225,11 +167,11 @@ export async function getProjectMeta(
   return projectMetaFromApi(res);
 }
 
-export async function modifyOrCreateProject(
-  conn: Connection,
+export async function modifyProjectMeta(
+  con: Connection,
   proj: ProjectMeta
 ): Promise<StatusReply> {
-  const resp = await conn.makeApiCall("/source/".concat(proj.name, "/_meta"), {
+  const resp = await con.makeApiCall("/source/".concat(proj.name, "/_meta"), {
     method: RequestMethod.PUT,
     payload: projectMetaToApi(proj)
   });

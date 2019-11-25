@@ -1,5 +1,6 @@
 import { expect } from "chai";
 import { describe, it } from "mocha";
+import { Arch } from "../../src/api/base-types";
 import {
   booleanToSimpleFlag,
   DefaultValue,
@@ -11,7 +12,6 @@ import {
   repositorySettingToFlag,
   simpleFlagToBoolean
 } from "../../src/api/flag";
-import { Arch } from "../../src/project-meta";
 
 describe("SimpleFlag", () => {
   describe("#simpleFlagToBoolean", () => {
@@ -58,7 +58,7 @@ describe("Flag", () => {
       {
         defaultValue: DefaultValue.Unspecified,
         disable: [],
-        enable: [{ repository: "foo", arch: undefined }]
+        enable: [{ repository: "foo" }]
       },
       { enable: { $: { repository: "foo" } } }
     ],
@@ -84,8 +84,8 @@ describe("Flag", () => {
       {
         defaultValue: DefaultValue.Enable,
         disable: [
-          { repository: undefined, arch: Arch.Ppc64 },
-          { repository: "bar", arch: undefined },
+          { arch: Arch.Ppc64 },
+          { repository: "bar" },
           { repository: "baz", arch: Arch.Aarch64 }
         ],
         enable: [{ repository: "foo", arch: Arch.X86_64 }]
@@ -261,7 +261,10 @@ describe("#repositorySettingToFlag", () => {
 
   it("doesn't include repositories with RepoSetting being undefined", () => {
     expect(
-      repositorySettingToFlag([["foo", undefined], ["bar", true]])
+      repositorySettingToFlag([
+        ["foo", undefined],
+        ["bar", true]
+      ])
     ).to.deep.equal({
       defaultValue: DefaultValue.Unspecified,
       disable: [],
@@ -288,8 +291,20 @@ describe("#repositorySettingToFlag", () => {
   it("creates per arch enable/disable fields", () => {
     expect(
       repositorySettingToFlag([
-        ["foo", new Map([[Arch.X86_64, true], [Arch.Aarch64, false]])],
-        ["bar", new Map([[Arch.X86_64, false], [Arch.I686, false]])]
+        [
+          "foo",
+          new Map([
+            [Arch.X86_64, true],
+            [Arch.Aarch64, false]
+          ])
+        ],
+        [
+          "bar",
+          new Map([
+            [Arch.X86_64, false],
+            [Arch.I686, false]
+          ])
+        ]
       ])
     ).to.deep.equal({
       defaultValue: DefaultValue.Unspecified,
@@ -307,8 +322,20 @@ describe("#repositorySettingToFlag", () => {
     expect(
       repositorySettingToFlag(
         [
-          ["foo", new Map([[Arch.X86_64, true], [Arch.Aarch64, false]])],
-          ["bar", new Map([[Arch.X86_64, false], [Arch.I686, false]])]
+          [
+            "foo",
+            new Map([
+              [Arch.X86_64, true],
+              [Arch.Aarch64, false]
+            ])
+          ],
+          [
+            "bar",
+            new Map([
+              [Arch.X86_64, false],
+              [Arch.I686, false]
+            ])
+          ]
         ],
         false
       )
@@ -322,8 +349,20 @@ describe("#repositorySettingToFlag", () => {
     expect(
       repositorySettingToFlag(
         [
-          ["foo", new Map([[Arch.X86_64, true], [Arch.Aarch64, false]])],
-          ["bar", new Map([[Arch.X86_64, false], [Arch.Ppc64, true]])]
+          [
+            "foo",
+            new Map([
+              [Arch.X86_64, true],
+              [Arch.Aarch64, false]
+            ])
+          ],
+          [
+            "bar",
+            new Map([
+              [Arch.X86_64, false],
+              [Arch.Ppc64, true]
+            ])
+          ]
         ],
         true
       )

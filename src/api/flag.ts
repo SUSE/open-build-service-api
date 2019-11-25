@@ -7,8 +7,12 @@
  */
 
 import * as assert from "assert";
-import { Arch } from "../project-meta";
-import { extractElementAsArray, extractElementIfPresent } from "../util";
+import {
+  deleteUndefinedMembers,
+  extractElementAsArray,
+  extractElementIfPresent
+} from "../util";
+import { Arch } from "./base-types";
 
 /** Representation of a FlagSwitch as extracted from OBS' API */
 export type FlagSwitchApiReply =
@@ -29,10 +33,10 @@ export interface FlagSwitch {
 function flagSwitchFromApi(data: FlagSwitchApiReply): FlagSwitch | undefined {
   return data === ""
     ? undefined
-    : {
+    : deleteUndefinedMembers({
         arch: extractElementIfPresent<Arch>(data.$, "arch"),
         repository: extractElementIfPresent<string>(data.$, "repository")
-      };
+      });
 }
 
 function flagSwitchToApi(flagSwitch: FlagSwitch): FlagSwitchApiReply {
@@ -62,7 +66,9 @@ export const enum DefaultValue {
  */
 export interface Flag {
   defaultValue: DefaultValue;
+  // FIXME: make this field optional
   disable: FlagSwitch[];
+  // FIXME: make this field optional
   enable: FlagSwitch[];
 }
 
@@ -72,7 +78,11 @@ export interface FlagApiReply {
 }
 
 /** Converts the reply from OBS' API to a [[Flag]] interface */
-export function flagFromApi(data: FlagApiReply): Flag {
+export function flagFromApi(data: FlagApiReply | undefined): Flag | undefined {
+  if (data === undefined) {
+    return undefined;
+  }
+
   let defaultValue: DefaultValue = DefaultValue.Unspecified;
 
   const findGlobalSwitch = (

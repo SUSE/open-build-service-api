@@ -1,6 +1,23 @@
 import { expect } from "chai";
 import { afterEach, beforeEach, describe, it } from "mocha";
-
+import {
+  Arch,
+  BlockMode,
+  LinkedBuildMode,
+  RebuildMode,
+  ReleaseTrigger,
+  VrevMode
+} from "../../src/api/base-types";
+import { DefaultValue } from "../../src/api/flag";
+import {
+  getProjectMeta,
+  Kind,
+  modifyProjectMeta,
+  ProjectMeta
+} from "../../src/api/project-meta";
+import { StatusReply } from "../../src/error";
+import { deleteProject } from "../../src/project";
+import { LocalRole } from "../../src/user";
 import {
   afterEachRecord,
   afterEachRecorded,
@@ -10,28 +27,12 @@ import {
   checkApiCallFails,
   checkApiCallSucceeds,
   getTestConnection
-} from "./test-setup";
-
-import { StatusReply } from "../src/error";
-import {
-  Arch,
-  BlockMode,
-  deleteProject,
-  getProjectMeta,
-  Kind,
-  LinkedBuildMode,
-  modifyOrCreateProject,
-  ProjectMeta,
-  RebuildMode,
-  ReleaseTrigger,
-  VrevMode
-} from "../src/project-meta";
-import { LocalRole } from "../src/user";
+} from "./../test-setup";
 
 const findRepoByNameBuilder = (proj: ProjectMeta) => (repoName: string) =>
-  proj.repositories?.find(elem => elem.name === repoName);
+  proj.repository?.find(elem => elem.name === repoName);
 
-describe("#getProject", () => {
+describe("#getProjectMeta", () => {
   const prodCon = getTestConnection(ApiType.Production);
 
   beforeEach(beforeEachRecorded);
@@ -76,38 +77,29 @@ describe("#getProject", () => {
 
     const findRepoByName = findRepoByNameBuilder(proj);
 
-    expect(proj.repositories)
+    expect(proj.repository)
       .to.be.a("array")
       .and.have.length(4);
 
     // check all repositories manually...
-    expect(findRepoByName("standard")).to.deep.include({
+    expect(findRepoByName("standard")).to.deep.equal({
       arch: defaultArch,
-      debugInfo: true,
       name: "standard",
-      publish: true,
       rebuild: "local"
     });
-    expect(findRepoByName("ports")).to.deep.include({
+    expect(findRepoByName("ports")).to.deep.equal({
       arch: ["ppc64le", "ppc64", "ppc", "armv6l", "armv7l", "aarch64"],
-      build: false,
-      debugInfo: true,
-      name: "ports",
-      publish: false
+      name: "ports"
     });
-    expect(findRepoByName("snapshot")).to.deep.include({
+    expect(findRepoByName("snapshot")).to.deep.equal({
       arch: defaultArch,
-      build: false,
-      debugInfo: true,
-      name: "snapshot",
-      publish: false
+      path: [{ project: "openSUSE:Tumbleweed", repository: "standard" }],
+      name: "snapshot"
     });
     expect(findRepoByName("images")).to.deep.include({
       arch: ["local", "i586", "x86_64"],
-      debugInfo: true,
       name: "images",
       path: [{ project: "openSUSE:Factory", repository: "standard" }],
-      publish: false,
       releasetarget: [
         {
           project: "openSUSE:Factory:ToTest",
@@ -151,34 +143,24 @@ describe("#getProject", () => {
     );
 
     // repositories...
-    expect(proj.repositories)
+    expect(proj.repository)
       .to.be.a("array")
       .and.have.length(9);
 
     const findRepoByName = findRepoByNameBuilder(proj);
-    expect(findRepoByName("openSUSE_Tumbleweed")).to.deep.include({
+    expect(findRepoByName("openSUSE_Tumbleweed")).to.deep.equal({
       arch: ["i586", "x86_64"],
-      build: true,
-      debugInfo: true,
       name: "openSUSE_Tumbleweed",
-      path: [{ project: "openSUSE:Factory", repository: "snapshot" }],
-      publish: true
+      path: [{ project: "openSUSE:Factory", repository: "snapshot" }]
     });
-    expect(findRepoByName("openSUSE_Tumbleweed_default_ruby")).to.deep.include({
+    expect(findRepoByName("openSUSE_Tumbleweed_default_ruby")).to.deep.equal({
       arch: ["x86_64"],
-      build: false,
-      debugInfo: true,
       name: "openSUSE_Tumbleweed_default_ruby",
-      path: [{ project: "openSUSE:Factory", repository: "snapshot" }],
-      publish: false,
-      useForBuild: false
+      path: [{ project: "openSUSE:Factory", repository: "snapshot" }]
     });
-    expect(findRepoByName("openSUSE_Tumbleweed_and_d_l_r_e")).to.deep.include({
-      name: "openSUSE_Tumbleweed_and_d_l_r_e",
+    expect(findRepoByName("openSUSE_Tumbleweed_and_d_l_r_e")).to.deep.equal({
       arch: ["x86_64"],
-      publish: false,
-      build: true,
-      debugInfo: true,
+      name: "openSUSE_Tumbleweed_and_d_l_r_e",
       path: [
         {
           project: "devel:languages:ruby:extensions",
@@ -187,52 +169,34 @@ describe("#getProject", () => {
         { project: "openSUSE:Factory", repository: "snapshot" }
       ]
     });
-    expect(findRepoByName("openSUSE_Leap_15.1_ARM")).to.deep.include({
+    expect(findRepoByName("openSUSE_Leap_15.1_ARM")).to.deep.equal({
       name: "openSUSE_Leap_15.1_ARM",
       arch: ["aarch64", "armv7l"],
-      publish: true,
-      build: true,
-      debugInfo: true,
       path: [{ project: "openSUSE:Leap:15.1:ARM", repository: "ports" }]
     });
-    expect(findRepoByName("openSUSE_Leap_15.1")).to.deep.include({
+    expect(findRepoByName("openSUSE_Leap_15.1")).to.deep.equal({
       name: "openSUSE_Leap_15.1",
       arch: ["x86_64"],
-      publish: true,
-      build: false,
-      debugInfo: true,
       path: [{ project: "openSUSE:Leap:15.1", repository: "standard" }]
     });
-    expect(findRepoByName("openSUSE_Leap_15.0")).to.deep.include({
+    expect(findRepoByName("openSUSE_Leap_15.0")).to.deep.equal({
       name: "openSUSE_Leap_15.0",
       arch: ["x86_64"],
-      publish: true,
-      build: true,
-      debugInfo: true,
       path: [{ project: "openSUSE:Leap:15.0", repository: "standard" }]
     });
-    expect(findRepoByName("openSUSE_Factory_ARM")).to.deep.include({
+    expect(findRepoByName("openSUSE_Factory_ARM")).to.deep.equal({
       name: "openSUSE_Factory_ARM",
       arch: ["armv7l", "aarch64"],
-      publish: true,
-      build: true,
-      debugInfo: true,
       path: [{ project: "openSUSE:Factory:ARM", repository: "standard" }]
     });
-    expect(findRepoByName("SLE_15-SP1")).to.deep.include({
+    expect(findRepoByName("SLE_15-SP1")).to.deep.equal({
       name: "SLE_15-SP1",
       arch: ["x86_64", "aarch64"],
-      publish: true,
-      build: false,
-      debugInfo: true,
       path: [{ project: "SUSE:SLE-15-SP1:GA", repository: "standard" }]
     });
-    expect(findRepoByName("SLE_15")).to.deep.include({
+    expect(findRepoByName("SLE_15")).to.deep.equal({
       name: "SLE_15",
       arch: ["x86_64", "aarch64"],
-      publish: true,
-      build: true,
-      debugInfo: true,
       path: [{ project: "SUSE:SLE-15:GA", repository: "standard" }]
     });
   });
@@ -250,41 +214,61 @@ describe("#getProject", () => {
       userId: "christopolise"
     });
 
-    // PowerPC repository has custom settings for the build flag and includes a
-    // block mode setting!
+    // PowerPC repository includes a block mode setting!
     const ppcRepo = findRepoByName("openSUSE_Factory_PowerPC");
-    expect(ppcRepo)
-      .to.have.property("build")
-      .that.is.a("Map");
-
-    const ppcBuild = ppcRepo!.build as Map<Arch, boolean | undefined>;
-
-    expect(ppcBuild).to.have.keys("x86_64", "ppc64", "ppc64le", "ppc");
-
-    expect(ppcBuild.get(Arch.X86_64)).to.be.false;
-    expect(ppcBuild.get(Arch.Ppc)).to.be.false;
-    expect(ppcBuild.get(Arch.Ppc64le)).to.be.undefined;
-    expect(ppcBuild.get(Arch.Ppc64)).to.be.undefined;
-
     expect(ppcRepo).to.have.property("block", BlockMode.Local);
-    expect(ppcRepo).to.have.property("debugInfo", true);
+
+    expect(proj)
+      .to.have.property("build")
+      .that.deep.equals({
+        defaultValue: DefaultValue.Unspecified,
+        disable: [
+          { repository: "Kernel_HEAD_standard" },
+          { repository: "Kernel_stable_standard" },
+          { arch: "ppc", repository: "openSUSE_Factory_PowerPC" },
+          { arch: "x86_64", repository: "openSUSE_Factory_PowerPC" },
+          { arch: "x86_64", repository: "openSUSE_Factory_ARM" },
+          { arch: "x86_64", repository: "openSUSE_Factory_zSystems" },
+          { arch: "riscv64" }
+        ],
+        enable: []
+      });
+
+    expect(proj)
+      .to.have.property("debugInfo")
+      .that.deep.equals({
+        defaultValue: DefaultValue.Enable,
+        disable: [],
+        enable: []
+      });
+
+    expect(proj)
+      .to.have.property("publish")
+      .that.deep.equals({
+        defaultValue: DefaultValue.Unspecified,
+        disable: [
+          { repository: "Kernel_HEAD_standard" },
+          { repository: "Kernel_stable_standard" }
+        ],
+        enable: []
+      });
 
     // the RISCV repo should have a disabled build for risv64, as that is
     // globally turned off
     const riscvRepo = findRepoByName("openSUSE_Factory_RISV");
-    expect(riscvRepo)
-      .to.have.property("build")
-      .that.is.a("Map");
-    const riscvBuild = riscvRepo!.build as Map<Arch, boolean | undefined>;
-    expect(riscvBuild.get(Arch.Riscv64)).to.be.false;
+    expect(riscvRepo).to.deep.equal({
+      name: "openSUSE_Factory_RISV",
+      path: [{ project: "openSUSE:Factory:RISCV", repository: "standard" }],
+      arch: ["x86_64", "riscv64"]
+    });
 
     // the Kernel_stable_standard repo has globally disabled builds and
     // publishing
     const kernelStableRepo = findRepoByName("Kernel_stable_standard");
-    expect(kernelStableRepo).to.deep.include({
-      build: false,
-      debugInfo: true,
-      publish: false
+    expect(kernelStableRepo).to.deep.equal({
+      name: "Kernel_stable_standard",
+      path: [{ project: "Kernel:stable", repository: "standard" }],
+      arch: ["i586", "x86_64"]
     });
   });
 });
@@ -312,7 +296,7 @@ It should be gone soon.`,
 
     let res: StatusReply | ProjectMeta = await checkApiCallSucceeds(
       this.scopes?.[0],
-      async () => modifyOrCreateProject(stagingCon, newProj)
+      async () => modifyProjectMeta(stagingCon, newProj)
     );
     res.should.deep.equal(statusOk);
 
@@ -325,7 +309,7 @@ It should be gone soon.`,
     res.should.deep.equal(newProj);
 
     res = await checkApiCallSucceeds(this.scopes?.[2], async () =>
-      deleteProject(stagingCon, newProj)
+      deleteProject(stagingCon, name)
     );
     res.should.deep.equal(statusOk);
 
@@ -363,7 +347,26 @@ Here we just try to set as many different options as possible, to check that the
       lock: false,
       kind: Kind.Maintenance,
       url: "https://gitlab.suse.de/dancermak/obs.ts",
-      repositories: [
+      build: { defaultValue: DefaultValue.Enable, enable: [], disable: [] },
+      useForBuild: {
+        defaultValue: DefaultValue.Disable,
+        enable: [],
+        disable: []
+      },
+      debugInfo: {
+        defaultValue: DefaultValue.Unspecified,
+        enable: [
+          { arch: Arch.X86_64, repository: "test" },
+          { arch: Arch.Riscv64, repository: "test" }
+        ],
+        disable: [{ arch: Arch.Aarch64, repository: "test" }]
+      },
+      publish: {
+        defaultValue: DefaultValue.Unspecified,
+        enable: [{ repository: "test" }],
+        disable: []
+      },
+      repository: [
         {
           name: "test",
           arch: [
@@ -383,14 +386,6 @@ Here we just try to set as many different options as possible, to check that the
               trigger: ReleaseTrigger.Manual
             }
           ],
-          build: true,
-          useForBuild: false,
-          debugInfo: new Map<Arch, boolean | undefined>([
-            [Arch.X86_64, true],
-            [Arch.Aarch64, false],
-            [Arch.Riscv64, true]
-          ]),
-          publish: true,
           path: [
             { project: "openSUSE:Factory", repository: "standard" },
             { project: "openSUSE:Factory", repository: "ports" }
@@ -406,7 +401,7 @@ Here we just try to set as many different options as possible, to check that the
 
     let res: StatusReply | ProjectMeta = await checkApiCallSucceeds(
       this.scopes?.[0],
-      async () => modifyOrCreateProject(stagingCon, newProj)
+      async () => modifyProjectMeta(stagingCon, newProj)
     ).should.be.fulfilled;
     res.should.deep.equal(statusOk);
 
@@ -417,29 +412,13 @@ Here we just try to set as many different options as possible, to check that the
       role: LocalRole.Maintainer
     });
 
-    // FIXME: the debugInfo setting which we get back will have the arches that
-    // we did not set explicitly set to undefined.
-    newProj.repositories![0]!.arch!.forEach(arch => {
-      if (
-        !(newProj.repositories![0]!.debugInfo as Map<
-          Arch,
-          boolean | undefined
-        >).has(arch)
-      ) {
-        (newProj.repositories![0]!.debugInfo as Map<
-          Arch,
-          boolean | undefined
-        >).set(arch, undefined);
-      }
-    });
-
     res = await checkApiCallSucceeds(this.scopes?.[1], async () =>
       getProjectMeta(stagingCon, name)
     ).should.be.fulfilled;
     res.should.deep.equal(newProj);
 
     res = await checkApiCallSucceeds(this.scopes?.[2], async () =>
-      deleteProject(stagingCon, newProj)
+      deleteProject(stagingCon, name)
     ).should.be.fulfilled;
     res.should.deep.equal(statusOk);
 
