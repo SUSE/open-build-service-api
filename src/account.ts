@@ -1,12 +1,8 @@
-import { readFile, writeFile } from "fs";
+import { promises as fsPromises } from "fs";
 import { homedir } from "os";
-import { promisify } from "util";
 import { normalizeUrl } from "./connection";
 
 const ConfigIniParser = require("config-ini-parser").ConfigIniParser;
-
-const readFileP = promisify(readFile);
-const writeFileP = promisify(writeFile);
 
 export class Account {
   public aliases: string[];
@@ -49,7 +45,7 @@ function getDefaultOscrcLocation(): string {
 
 async function readOsrc(oscrcLocation?: string): Promise<string | undefined> {
   try {
-    const oscrc = await readFileP(
+    const oscrc = await fsPromises.readFile(
       oscrcLocation === undefined ? getDefaultOscrcLocation() : oscrcLocation
     );
     return oscrc === undefined ? undefined : oscrc.toString();
@@ -153,7 +149,7 @@ export async function addAccountToOscrc(
 `;
   }
 
-  await writeFileP(
+  await fsPromises.writeFile(
     oscrcLocation === undefined ? getDefaultOscrcLocation() : oscrcLocation,
     oscrc
   );

@@ -1,20 +1,15 @@
 import mock = require("mock-fs");
 
 import { expect } from "chai";
+import { promises as fsPromises } from "fs";
 import { describe, it } from "mocha";
-
-import { readFile } from "fs";
 import { homedir } from "os";
-import { promisify } from "util";
-
 import {
   Account,
   addAccountToOscrc,
   readAccountsFromOscrc
 } from "../src/account";
 import "./test-setup";
-
-const readFileP = promisify(readFile);
 
 describe("Account", () => {
   beforeEach(() => {
@@ -147,7 +142,9 @@ pass = you
       });
       await addAccountToOscrc(acc);
 
-      const newOscrc = await readFileP(`${homedir()}/.config/osc/oscrc`);
+      const newOscrc = await fsPromises.readFile(
+        `${homedir()}/.config/osc/oscrc`
+      );
       expect(newOscrc.toString()).to.eql(`
 [general]
 [http://api.obs.fake]
@@ -161,7 +158,7 @@ user = barUser
     it("creates a new oscrc when no content is present", async () => {
       await addAccountToOscrc(account, ".oscrc_empty");
 
-      const newOscrc = await readFileP(".oscrc_empty");
+      const newOscrc = await fsPromises.readFile(".oscrc_empty");
       expect(newOscrc.toString()).to.eql(`
 [general]
 [https://api-test.opensuse.org/]
