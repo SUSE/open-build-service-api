@@ -4,7 +4,7 @@ import { DefaultValue } from "../../src/api/flag";
 import {
   getPackageMeta,
   PackageMeta,
-  setProjectMeta
+  setPackageMeta
 } from "../../src/api/package-meta";
 import { StatusReply } from "../../src/error";
 import { deletePackage } from "../../src/package";
@@ -94,7 +94,7 @@ It should be gone soon-ish.`,
 
     let res: StatusReply = await checkApiCallSucceeds(
       this.scopes?.[0],
-      async () => setProjectMeta(con, project, name, newPkg)
+      async () => setPackageMeta(con, project, name, newPkg)
     );
     res.should.deep.equal(statusOk);
 
@@ -129,7 +129,7 @@ It will be deleted when everything works out.
 
     let res: StatusReply = await checkApiCallSucceeds(
       this.scopes?.[0],
-      async () => setProjectMeta(con, project, name, newPkg)
+      async () => setPackageMeta(con, project, name, newPkg)
     );
     res.should.deep.equal(statusOk);
 
@@ -145,7 +145,7 @@ It will be deleted when everything works out.
   });
 
   it("throws an error when the project & package names don't match", async () => {
-    await setProjectMeta(con, "fooProj", "barPkg", {
+    await setPackageMeta(con, "fooProj", "barPkg", {
       project: "barProj",
       name: "fooPkg",
       description: "",

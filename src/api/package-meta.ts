@@ -128,7 +128,7 @@ export async function getPackageMeta(
  *
  * @return The [[StatusReply]] that is received from OBS.
  */
-export async function setProjectMeta(
+export async function setPackageMeta(
   con: Connection,
   projectName: string,
   packageName: string,
