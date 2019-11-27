@@ -221,14 +221,6 @@ export enum Arch {
   Local = "local"
 }
 
-/** Repository of another project on OBS, e.g. `openSUSE:Factory/standard` */
-export interface RepositoryPath {
-  /** full name of the project */
-  readonly project: string;
-  /** name of the repository of the other project */
-  readonly repository: string;
-}
-
 /** possible triggers for a release of a repository */
 export enum ReleaseTrigger {
   /** DEFAULT: not set, no release action possible */
