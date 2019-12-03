@@ -14,6 +14,8 @@ import { ApiError } from "./error";
  *
  * @param url  The url to be normalized. An exception is thrown if this is not a
  *     valid url.
+ *
+ * @throw `TypeError` when the parameter `url` is not valid.
  */
 export function normalizeUrl(url: string): string {
   return new URL(url).toString();
