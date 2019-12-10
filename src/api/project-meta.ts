@@ -111,7 +111,15 @@ interface ProjectMetaApiReply {
   } & base_types.CommonMetaApiReply;
 }
 
-function projectMetaFromApi(data: ProjectMetaApiReply): ProjectMeta {
+/**
+ * Convert a reply from OBS' API that has been processed by xml2js into a
+ * [[ProjectMeta]] object.
+ *
+ * @return A [[ProjectMeta]] converted from the received `data`. All elements of
+ *     the resulting object that would be `undefined` or empty are removed
+ *     before being returned.
+ */
+export function projectMetaFromApi(data: ProjectMetaApiReply): ProjectMeta {
   const access = extractElementIfPresent<boolean>(data.project, "access", {
     construct: flag.simpleFlagToBoolean
   });
@@ -134,7 +142,11 @@ function projectMetaFromApi(data: ProjectMetaApiReply): ProjectMeta {
   return res;
 }
 
-function projectMetaToApi(proj: ProjectMeta): ProjectMetaApiReply {
+/**
+ * Convert a [[ProjectMeta]] into an Object that can be converted via xml2js to
+ * a form that is accepted by OBS' API.
+ */
+export function projectMetaToApi(proj: ProjectMeta): ProjectMetaApiReply {
   const projApi: ProjectMetaApiReply = {
     project: {
       $: { name: proj.name, kind: proj.kind },
