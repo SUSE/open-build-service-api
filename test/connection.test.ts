@@ -77,5 +77,21 @@ describe("Connection", () => {
         .makeApiCall("foo")
         .should.be.rejectedWith(Error, /certificate has expired/);
     });
+
+    it("does not parse the reply when decodeReply is false", async () => {
+      const con = new Connection(
+        "don'tCare",
+        "neitherHere",
+        "https://jsonplaceholder.typicode.com"
+      );
+      const todo = await con.makeApiCall("todos/1", { decodeReply: false })
+        .should.be.fulfilled;
+      expect(JSON.parse(todo)).to.deep.equal({
+        userId: 1,
+        id: 1,
+        title: "delectus aut autem",
+        completed: false
+      });
+    });
   });
 });

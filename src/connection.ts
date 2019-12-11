@@ -77,7 +77,8 @@ export class Connection {
   }
 
   /**
-   * Perform a request to the API and return the reply's body decoded from XML.
+   * Perform a request to the API and return the replies body (by default
+   * decoded from XML).
    *
    * @param route  route to which the request will be sent
    * @param method  The method used to perform the request. Defaults to
@@ -85,8 +86,10 @@ export class Connection {
    * @param payload  An arbitrary object to be sent along with the request. This
    *     object is encoded to XML via xml2js'
    *     [Builder](https://github.com/Leonidas-from-XIV/node-xml2js#xml-builder-usage).
+   * @param decodeReply  Flag whether the reply should be assumed to be XML and
+   *     be decoded via `xml2js`. Defaults to `true`.
    *
-   * @return The body of the reply decoded from XML via xml2js'
+   * @return The body of the reply, optionally decoded from XML via xml2js'
    *     [parseString](https://github.com/Leonidas-from-XIV/node-xml2js#usage). The
    *     reply is only decoded when the request succeeds (`200 <= statusCode <=
    *     299`)
@@ -96,7 +99,15 @@ export class Connection {
    */
   public async makeApiCall(
     route: string,
-    { method, payload }: { method?: RequestMethod; payload?: any } = {}
+    {
+      method,
+      payload,
+      decodeReply
+    }: {
+      method?: RequestMethod;
+      payload?: any;
+      decodeReply?: boolean;
+    } = {}
   ): Promise<any> {
     const url = new URL(route, this.url);
     const reqMethod = method === undefined ? RequestMethod.GET : method;
@@ -124,7 +135,10 @@ export class Connection {
           // until the "end" event occurs
           response.on("end", async () => {
             try {
-              const data = await xmlParser.parseStringPromise(body.join(""));
+              const data =
+                decodeReply !== undefined && !decodeReply
+                  ? body.join("")
+                  : await xmlParser.parseStringPromise(body.join(""));
 
               if (response.statusCode! < 200 || response.statusCode! > 299) {
                 reject(
