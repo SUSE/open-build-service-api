@@ -1,7 +1,7 @@
-import { Revision } from "./../../src/revision";
 import { PackageFile } from "./../../src/file";
+import { Revision } from "./../../src/revision";
 
-export const vagrantSshfsHistory: Revision[] = [
+export const vagrantSshfsHistory: Revision[] = Object.freeze([
   {
     revision: 1,
     versionRevision: 1,
@@ -76,7 +76,7 @@ export const vagrantSshfsHistory: Revision[] = [
     comment: "baserev update by copy to link target",
     requestId: 746427
   }
-];
+]) as Revision[];
 
 const dotChangesRev1 = `-------------------------------------------------------------------
 Tue Sep 17 21:34:25 UTC 2019 - Dan Čermák <dcermak@suse.com>
@@ -112,20 +112,21 @@ Thu Nov  7 21:05:53 UTC 2019 - Dan Čermák <dcermak@suse.com>
 
 `.concat(dotChangesRev5);
 
-export const vagrantSshfsDotChanges: PackageFile = {
+export const vagrantSshfsDotChanges: PackageFile = Object.freeze({
   name: "vagrant-sshfs.changes",
   projectName: "Virtualization:vagrant",
-  packageName: "vagrant-sshfs",
-  contents: dotChangesRev7
-};
+  packageName: "vagrant-sshfs"
+});
 
-export const vagrantSshfsDotChangesFileHistory: Array<[Revision, string]> = [
-  [vagrantSshfsHistory[0], dotChangesRev1],
-  [vagrantSshfsHistory[1], dotChangesRev1],
-  [vagrantSshfsHistory[2], dotChangesRev3],
-  [vagrantSshfsHistory[3], dotChangesRev3],
-  [vagrantSshfsHistory[4], dotChangesRev5],
-  [vagrantSshfsHistory[5], dotChangesRev5],
-  [vagrantSshfsHistory[6], dotChangesRev7],
-  [vagrantSshfsHistory[7], dotChangesRev7]
-];
+export const vagrantSshfsDotChangesContents = Object.freeze(dotChangesRev7);
+
+export const vagrantSshfsDotChangesFileHistory: string[] = Object.freeze([
+  dotChangesRev1,
+  dotChangesRev1,
+  dotChangesRev3,
+  dotChangesRev3,
+  dotChangesRev5,
+  dotChangesRev5,
+  dotChangesRev7,
+  dotChangesRev7
+]) as string[];
