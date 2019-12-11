@@ -131,7 +131,7 @@ export function beforeEachRecord(this: Context) {
     "..",
     "fixtures",
     this.currentTest!.titlePath()
-      .map(elem => elem.replace(/\s+/g, "_"))
+      .map(elem => elem.replace(/(\s+|\/)/g, "_"))
       .join("_") + ".json"
   );
 
