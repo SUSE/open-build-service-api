@@ -31,8 +31,13 @@ export interface Revision {
   /** Time at which this revision was committed */
   commitTime: Date;
 
-  /** User ID of the user that committed this revision. */
-  userId: string;
+  /**
+   * User ID of the user that committed this revision.
+   *
+   * Most commits *should* have a userId available, but in case accounts get
+   * deleted this information is lost and then .
+   */
+  userId?: string;
 
   /** A commit message of this revision, if present */
   comment?: string;
@@ -60,6 +65,9 @@ interface RevisionApiReply {
 interface RevisionListApiReply {
   revisionlist: { revision: RevisionApiReply[] };
 }
+
+const valueOrUndefined = (value: string) =>
+  value === "unknown" ? undefined : value;
 
 export async function fetchRevisions(
   con: Connection,
@@ -101,9 +109,9 @@ export async function fetchRevisions(
       revision: parseInt(rev.$.rev, 10),
       versionRevision: parseInt(rev.$.vrev, 10),
       md5Hash: rev.srcmd5,
-      version: rev.version === "unknown" ? undefined : rev.version,
-      userId: rev.user,
+      version: valueOrUndefined(rev.version),
       commitTime: dateFromUnixTimeStamp(rev.time),
+      userId: valueOrUndefined(rev.user),
       comment: rev.comment,
       requestId:
         rev.requestid === undefined ? undefined : parseInt(rev.requestid, 10)

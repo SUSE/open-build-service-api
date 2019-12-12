@@ -46,5 +46,19 @@ describe("Revision", () => {
         comment: "run format_spec_file"
       });
     });
+
+    it("omits the userId when the user is not known", async () => {
+      const hist = await fetchRevisions(con, "openSUSE:Factory", "make").should
+        .be.fulfilled;
+
+      hist.should.contain.a.thing.that.deep.equals({
+        revision: 1,
+        versionRevision: 16,
+        md5Hash: "74349037c1f2d2d21a09f17d419d8906",
+        version: "3.81",
+        commitTime: new Date("Tue, 19 Dec 2006 00:17:05 +0100")
+      });
+      hist[0].should.not.have.property("userId");
+    });
   });
 });
