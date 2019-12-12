@@ -1,7 +1,7 @@
 import { Connection } from "./connection";
 import { Package } from "./package";
 import { Project } from "./project";
-import { deleteUndefinedMembers } from "./util";
+import { deleteUndefinedMembers, dateFromUnixTimeStamp } from "./util";
 
 /** A commit of a package on OBS */
 export interface Revision {
@@ -102,8 +102,8 @@ export async function fetchRevisions(
       versionRevision: parseInt(rev.$.vrev, 10),
       md5Hash: rev.srcmd5,
       version: rev.version === "unknown" ? undefined : rev.version,
-      commitTime: new Date(rev.time * 1000),
       userId: rev.user,
+      commitTime: dateFromUnixTimeStamp(rev.time),
       comment: rev.comment,
       requestId:
         rev.requestid === undefined ? undefined : parseInt(rev.requestid, 10)

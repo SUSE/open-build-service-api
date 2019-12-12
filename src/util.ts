@@ -5,6 +5,13 @@
 
 import * as assert from "assert";
 
+/** Convert a UNIX time stamp to a Date */
+export function dateFromUnixTimeStamp(unixTime: string | number): Date {
+  return new Date(
+    (typeof unixTime === "string" ? parseInt(unixTime, 10) : unixTime) * 1000
+  );
+}
+
 /**
  * Convert a constructor or a construct function into a common construction
  * function.

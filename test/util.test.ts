@@ -1,6 +1,5 @@
 import { expect } from "chai";
 import { describe, it } from "mocha";
-
 import * as util from "../src/util";
 
 class TestClass {
@@ -8,6 +7,20 @@ class TestClass {
 }
 
 const obj = { foo: "Foo" };
+
+describe("#dateFromUnixTimeStamp", () => {
+  it("converts the time from a string", () => {
+    expect(util.dateFromUnixTimeStamp("1573160909")).to.deep.equal(
+      new Date("Thu, 07 Nov 2019 22:08:29 +0100")
+    );
+  });
+
+  it("converts the time from a number", () => {
+    expect(util.dateFromUnixTimeStamp(1552575139)).to.deep.equal(
+      new Date("Thu, 14 Mar 2019 15:52:19 +0100")
+    );
+  });
+});
 
 describe("#extractElementIfPresent", () => {
   it("should return undefined if the property is not present", () => {
