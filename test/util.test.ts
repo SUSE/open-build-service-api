@@ -9,7 +9,7 @@ class TestClass {
 
 const obj = { foo: "Foo" };
 
-describe("extractElementIfPresent", () => {
+describe("#extractElementIfPresent", () => {
   it("should return undefined if the property is not present", () => {
     expect(util.extractElementIfPresent<string>(obj, "bar")).to.be.undefined;
   });
@@ -39,7 +39,7 @@ describe("extractElementIfPresent", () => {
   });
 });
 
-describe("extractElementOrDefault", () => {
+describe("#extractElementOrDefault", () => {
   it("should return the default if the property is not present", () => {
     expect(util.extractElementOrDefault<string>(obj, "bar", "baz")).to.equal(
       "baz"
@@ -47,7 +47,7 @@ describe("extractElementOrDefault", () => {
   });
 });
 
-describe("deleteUndefinedMembers", () => {
+describe("#deleteUndefinedMembers", () => {
   it("should drop undefined members", () => {
     const someObj = { foo: 1, bar: 2, baz: undefined };
     util.deleteUndefinedMembers(someObj);
@@ -62,7 +62,7 @@ describe("deleteUndefinedMembers", () => {
   });
 });
 
-describe("deleteUndefinedAndEmptyMembers", () => {
+describe("#deleteUndefinedAndEmptyMembers", () => {
   it("should remove undefined members", () => {
     expect(
       util.deleteUndefinedAndEmptyMembers({
