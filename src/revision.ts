@@ -1,12 +1,12 @@
 import { Connection } from "./connection";
 import { Package } from "./package";
 import { Project } from "./project";
-import { deleteUndefinedMembers, dateFromUnixTimeStamp } from "./util";
+import { dateFromUnixTimeStamp, deleteUndefinedMembers } from "./util";
 
 /** A commit of a package on OBS */
 export interface Revision {
   /** The number of this Revision */
-  revision: number;
+  readonly revision: number;
 
   /**
    * Counter that is monotonically increasing for every version.
@@ -18,18 +18,18 @@ export interface Revision {
    * yet. Together with the build counter this forms the version-release of the
    * resulting binary.
    */
-  versionRevision: number;
+  readonly versionRevision: number;
 
   /** MD5 hash of this revision as identifier */
-  md5Hash: string;
+  readonly md5Hash: string;
 
   /**
    * Version (e.g. 1.5.0) of the package at this revision parsed from the source
    */
-  version?: string;
+  readonly version?: string;
 
   /** Time at which this revision was committed */
-  commitTime: Date;
+  readonly commitTime: Date;
 
   /**
    * User ID of the user that committed this revision.
@@ -37,16 +37,16 @@ export interface Revision {
    * Most commits *should* have a userId available, but in case accounts get
    * deleted this information is lost and then .
    */
-  userId?: string;
+  readonly userId?: string;
 
   /** A commit message of this revision, if present */
-  comment?: string;
+  readonly comment?: string;
 
   /**
    * If this revision was created by accepting a request, then the request's ID
    * is available in this field.
    */
-  requestId?: number;
+  readonly requestId?: number;
 }
 
 interface RevisionApiReply {
@@ -73,13 +73,13 @@ export async function fetchRevisions(
   con: Connection,
   projectName: string,
   packageName: string
-): Promise<Revision[]>;
+): Promise<ReadonlyArray<Revision>>;
 
 export async function fetchRevisions(
   con: Connection,
   proj: Project,
   pkg: Package
-): Promise<Revision[]>;
+): Promise<ReadonlyArray<Revision>>;
 
 /**
  * Fetch the revisions of the given package from the API.
@@ -88,7 +88,7 @@ export async function fetchRevisions(
   con: Connection,
   proj: Project | string,
   pkg: Package | string
-): Promise<Revision[]> {
+): Promise<ReadonlyArray<Revision>> {
   if (typeof proj !== "string") {
     if (proj.apiUrl !== con.url) {
       throw new Error(
@@ -104,17 +104,19 @@ export async function fetchRevisions(
     `/source/${projectName}/${packageName}/_history`
   )) as RevisionListApiReply;
 
-  return revs.revisionlist.revision.map(rev => {
-    return deleteUndefinedMembers({
-      revision: parseInt(rev.$.rev, 10),
-      versionRevision: parseInt(rev.$.vrev, 10),
-      md5Hash: rev.srcmd5,
-      version: valueOrUndefined(rev.version),
-      commitTime: dateFromUnixTimeStamp(rev.time),
-      userId: valueOrUndefined(rev.user),
-      comment: rev.comment,
-      requestId:
-        rev.requestid === undefined ? undefined : parseInt(rev.requestid, 10)
-    });
-  });
+  return Object.freeze(
+    revs.revisionlist.revision.map(rev => {
+      return deleteUndefinedMembers({
+        revision: parseInt(rev.$.rev, 10),
+        versionRevision: parseInt(rev.$.vrev, 10),
+        md5Hash: rev.srcmd5,
+        version: valueOrUndefined(rev.version),
+        commitTime: dateFromUnixTimeStamp(rev.time),
+        userId: valueOrUndefined(rev.user),
+        comment: rev.comment,
+        requestId:
+          rev.requestid === undefined ? undefined : parseInt(rev.requestid, 10)
+      });
+    })
+  );
 }
