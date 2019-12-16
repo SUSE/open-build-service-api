@@ -1,12 +1,8 @@
-import xml2js = require("xml2js");
-
-const xmlParser = new xml2js.Parser({ explicitArray: false, async: true });
-const xmlBuilder = new xml2js.Builder();
-
 import * as assert from "assert";
 import { request } from "https";
 import { URL } from "url";
 import { ApiError } from "./error";
+import { newXmlBuilder, newXmlParser } from "./xml";
 
 /**
  * Converts a url into a well defined format (e.g. whether `/` should be
@@ -135,10 +131,11 @@ export class Connection {
           // until the "end" event occurs
           response.on("end", async () => {
             try {
+              const fullBody = body.join("");
               const data =
                 decodeReply !== undefined && !decodeReply
-                  ? body.join("")
-                  : await xmlParser.parseStringPromise(body.join(""));
+                  ? fullBody
+                  : await newXmlParser().parseStringPromise(fullBody);
 
               if (response.statusCode! < 200 || response.statusCode! > 299) {
                 reject(
@@ -156,7 +153,7 @@ export class Connection {
       req.on("error", err => reject(err));
 
       if (payload !== undefined) {
-        req.write(xmlBuilder.buildObject(payload));
+        req.write(newXmlBuilder().buildObject(payload));
       }
       req.end();
     });
