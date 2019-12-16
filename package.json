@@ -2,9 +2,13 @@
   "name": "obs-ts",
   "version": "0.0.1",
   "description": "obs-ts",
-  "license": "LGPL-3.0-only",
+  "license": "MIT",
   "repository": "https://gitlab.suse.de/dancermak/obs.ts",
-  "author": "Dan Čermák <dcermak@suse.com>",
+  "author": {
+    "name": "Dan Čermák",
+    "email": "dcermak@suse.com",
+    "url": "https://github.com/dcermak/"
+  },
   "keywords": [
     ""
   ],
