@@ -13,26 +13,20 @@
  *   change in the future.
  */
 
-import xml2js = require("xml2js");
-
-const xmlParser = new xml2js.Parser({ explicitArray: false, async: true });
-const xmlBuilder = new xml2js.Builder();
-
 import * as assert from "assert";
-import { promises as fsPromises, existsSync } from "fs";
+import { existsSync, promises as fsPromises } from "fs";
 import { join } from "path";
 import { getDirectory } from "./api/directory";
 import {
   getProjectMeta,
   modifyProjectMeta,
-  ProjectMeta,
-  projectMetaFromApi,
-  projectMetaToApi
+  ProjectMeta
 } from "./api/project-meta";
 import { Connection, normalizeUrl, RequestMethod } from "./connection";
 import { StatusReply, statusReplyFromApi } from "./error";
 import { Package } from "./package";
 import { deleteUndefinedAndEmptyMembers } from "./util";
+import { newXmlBuilder, newXmlParser } from "./xml";
 
 /**
  * The files in the `.osc` subdirectory where the information about each project
@@ -174,16 +168,16 @@ async function writeProjectUnderscoreFiles(
       return { $: { name: pkg.name, state: " " } };
     });
   }
-  const underscorePackagesContents = xmlBuilder.buildObject(underscorePackages);
+  const underscorePackagesContents = newXmlBuilder().buildObject(
+    underscorePackages
+  );
 
   if (proj.meta !== undefined) {
     // it's ok to use recursive here as path is guaranteed to exist
     await fsPromises.mkdir(join(path, dotOscPluginSubdir), { recursive: true });
   }
-  const projMetaApiXml =
-    proj.meta !== undefined
-      ? xmlBuilder.buildObject(projectMetaToApi(proj.meta))
-      : undefined;
+  const projMetaApiJson =
+    proj.meta !== undefined ? JSON.stringify(proj.meta) : undefined;
 
   await Promise.all(
     [
@@ -195,7 +189,7 @@ async function writeProjectUnderscoreFiles(
       },
       {
         fname: join(path, dotOscPluginSubdir, "_project_meta"),
-        contents: projMetaApiXml
+        contents: projMetaApiJson
       }
     ].map(({ fname, contents }) => {
       return contents === undefined
@@ -271,7 +265,7 @@ export async function readInCheckedOutProject(path: string): Promise<Project> {
 
   // let's just assume that the contents of the file are well formed,
   // otherwise something will blow up later anyway.
-  const underscorePackages = (await xmlParser.parseStringPromise(
+  const underscorePackages = (await newXmlParser().parseStringPromise(
     underscorePackagesContents
   )) as UnderscorePackages;
   if (
@@ -284,9 +278,7 @@ export async function readInCheckedOutProject(path: string): Promise<Project> {
   }
 
   const meta =
-    projMetaContents !== ""
-      ? projectMetaFromApi(await xmlParser.parseStringPromise(projMetaContents))
-      : undefined;
+    projMetaContents !== "" ? JSON.parse(projMetaContents) : undefined;
 
   return deleteUndefinedAndEmptyMembers({
     apiUrl: normalizeUrl(apiUrl),

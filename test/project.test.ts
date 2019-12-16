@@ -110,34 +110,7 @@ const setupFsMocks = () => {
 
   options[
     `${targetDir}_with_meta/.osc_obs_ts/_project_meta`
-  ] = `<project name="Virtualization:Appliances:Images:openSUSE-Tumbleweed">
-  <title>openSUSE Tumbleweed Images</title>
-  <description>Contains the Live CD, JeOS, Vagrant boxes and possibly more.</description>
-  <person userid="dancermak" role="maintainer"/>
-  <person userid="dcassany" role="maintainer"/>
-  <person userid="favogt" role="maintainer"/>
-  <person userid="gmoro" role="maintainer"/>
-  <repository name="rpm">
-    <path project="openSUSE:Factory" repository="snapshot"/>
-    <arch>x86_64</arch>
-    <arch>i586</arch>
-  </repository>
-  <repository name="openSUSE_Tumbleweed_vanilla">
-    <path project="openSUSE:Factory" repository="snapshot"/>
-    <arch>x86_64</arch>
-  </repository>
-  <repository name="openSUSE_Tumbleweed_ARM">
-    <path project="openSUSE:Factory:ARM" repository="standard"/>
-    <arch>aarch64</arch>
-  </repository>
-  <repository name="openSUSE_Tumbleweed">
-    <path project="Virtualization:Appliances:Images:openSUSE-Tumbleweed" repository="rpm"/>
-    <path project="openSUSE:Factory" repository="snapshot"/>
-    <arch>x86_64</arch>
-    <arch>i586</arch>
-  </repository>
-</project>
-`;
+  ] = `{"name":"Virtualization:Appliances:Images:openSUSE-Tumbleweed","title":"openSUSE Tumbleweed Images","description":"Contains the Live CD, JeOS, Vagrant boxes and possibly more.","person":[{"userId":"dancermak","role":"maintainer"},{"userId":"dcassany","role":"maintainer"},{"userId":"favogt","role":"maintainer"},{"userId":"gmoro","role":"maintainer"}],"repository":[{"name":"rpm","path":[{"project":"openSUSE:Factory","repository":"snapshot"}],"arch":["x86_64","i586"]},{"name":"openSUSE_Tumbleweed_vanilla","path":[{"project":"openSUSE:Factory","repository":"snapshot"}],"arch":["x86_64"]},{"name":"openSUSE_Tumbleweed_ARM","path":[{"project":"openSUSE:Factory:ARM","repository":"standard"}],"arch":["aarch64"]},{"name":"openSUSE_Tumbleweed","path":[{"project":"Virtualization:Appliances:Images:openSUSE-Tumbleweed","repository":"rpm"},{"project":"openSUSE:Factory","repository":"snapshot"}],"arch":["x86_64","i586"]}]}`;
 
   mock(options);
 };
@@ -222,13 +195,11 @@ describe("Project", () => {
 
       await checkOut(projWithMeta, dir).should.be.fulfilled;
 
-      (await fsPromises.readFile(`${dir}/.osc_obs_ts/_project_meta`)).toString()
-        .should.equal(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<project name="${projWithMeta.name}">
-  <title>${projWithMeta.meta!.title}</title>
-  <description>${projWithMeta.meta!.description}</description>
-  <repository name="foo"/>
-</project>`);
+      JSON.parse(
+        (
+          await fsPromises.readFile(`${dir}/.osc_obs_ts/_project_meta`)
+        ).toString()
+      ).should.deep.equal(projWithMeta.meta);
     });
   });
 
