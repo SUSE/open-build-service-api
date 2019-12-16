@@ -5,6 +5,21 @@
 
 import * as assert from "assert";
 
+/**
+ * Convert two arrays into an array of Tuples.
+ *
+ * @return An array of tuples where the first element is the i-th element of
+ *     `arr1` and the second the i-h element of `arr2`. If the arrays differ in
+ *     length, then result is as long as the shortest of both.
+ */
+export function zip<T, U>(arr1: T[], arr2: U[]): Array<[T, U]> {
+  const res: Array<[T, U]> = [];
+  for (let i = 0; i < Math.min(arr1.length, arr2.length); i++) {
+    res.push([arr1[i], arr2[i]]);
+  }
+  return res;
+}
+
 /** Convert a UNIX time stamp to a Date */
 export function dateFromUnixTimeStamp(unixTime: string | number): Date {
   return new Date(

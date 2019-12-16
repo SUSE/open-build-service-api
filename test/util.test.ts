@@ -8,6 +8,24 @@ class TestClass {
 
 const obj = { foo: "Foo" };
 
+describe("#zip", () => {
+  it("zips two equally long arrays", () => {
+    expect(util.zip([1, 2, 3], ["a", "b", "c"])).to.deep.equal([
+      [1, "a"],
+      [2, "b"],
+      [3, "c"]
+    ]);
+  });
+
+  it("zips two arrays with different lengths", () => {
+    expect(util.zip(["asdf", "bsdf", "caui"], [1, 2, 3, 4, 5])).to.deep.equal([
+      ["asdf", 1],
+      ["bsdf", 2],
+      ["caui", 3]
+    ]);
+  });
+});
+
 describe("#dateFromUnixTimeStamp", () => {
   it("converts the time from a string", () => {
     expect(util.dateFromUnixTimeStamp("1573160909")).to.deep.equal(
