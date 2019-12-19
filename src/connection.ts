@@ -68,16 +68,22 @@ export class Connection {
    * Construct a connection using the provided username and password
    * @param username  username used for authentication
    * @param password  password of the user
-   * @param url URL to the API, **must** use `https`.
+   * @param url  URL to the API, **must** use `https`.
    *     CAUTION: this is **not** the URL to the webpage of the buildservice
    *     instance (usually you have to swap the initial `build.` to `api.`).
+   * @param serverCaCertificate  A custom root certificate in the PEM format that
+   *     should be used to connect to the API.
+   *     If not provided, nodejs will by default use its certificate chain,
+   *     which may or may not include the system certificates. Thus connections
+   *     to servers with certificates signed by custom CAs *can* fail.
    *
    * @throw Error when the url is invalid or when it does not use https.
    */
   constructor(
     username: string,
     password: string,
-    url: string = "https://api.opensuse.org"
+    url: string = "https://api.opensuse.org",
+    private readonly serverCaCertificate?: string
   ) {
     this.password = password!;
     this.username = username!;
@@ -138,7 +144,8 @@ export class Connection {
         url,
         {
           auth: this.headers,
-          method: reqMethod
+          method: reqMethod,
+          ca: this.serverCaCertificate
         },
         response => {
           const body: any[] = [];

@@ -190,6 +190,7 @@ export function afterEachRecord(this: Context) {
       JSON.stringify(nockCallObjects, undefined, 4)
     );
   }
+  nock.enableNetConnect();
 }
 
 export async function checkApiCallSucceeds<T>(
