@@ -28,8 +28,8 @@
  * `osc checkout`.
  *
  * Differences to `osc`'s behavior:
- * - We create & read out the `.osc_obs_ts/_project_meta` file, into which we
- *   save the project's `_meta`.
+ * - We create & read out the `.osc_obs_ts/_project_meta.json` file, into which
+ *   we save the project's `_meta`.
  * - We do not use the `state` field from `.osc/_packages`. This behavior might
  *   change in the future.
  */
@@ -56,7 +56,7 @@ import { newXmlBuilder, newXmlParser } from "./xml";
 const projectUnderscoreFiles = ["_apiurl", "_project", "_packages"];
 
 /** The files that are stored in the [[dotOscPluginSubdir]] subdirectory. */
-const obsTsProjectUnderscoreFiles = ["_project_meta"];
+const obsTsProjectUnderscoreFiles = ["_project_meta.json"];
 
 /**
  * The subdirectory into which we put additional files that are related to the
@@ -166,7 +166,7 @@ interface UnderscorePackages {
 /**
  * Write the project settings into the `_apiurl`, `_project` and `_packages`
  * file into the `.osc` subdirectory of `path`. Save the project's `_meta` into
- * `.osc_obs_ts/_project_meta` if `proj.meta` is not undefined.
+ * `.osc_obs_ts/_project_meta.json` if `proj.meta` is not undefined.
  *
  * If these files exist, then their contents are overwritten. If `path/.osc`
  * does not exist, then an exception will be thrown. If `path/.osc_obs_ts` does
@@ -209,7 +209,7 @@ async function writeProjectUnderscoreFiles(
         contents: underscorePackagesContents
       },
       {
-        fname: join(path, dotOscPluginSubdir, "_project_meta"),
+        fname: join(path, dotOscPluginSubdir, "_project_meta.json"),
         contents: projMetaApiJson
       }
     ].map(({ fname, contents }) => {

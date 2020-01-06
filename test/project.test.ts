@@ -130,7 +130,7 @@ const setupFsMocks = () => {
   addVirtApplImg(`${targetDir}_with_meta`);
 
   options[
-    `${targetDir}_with_meta/.osc_obs_ts/_project_meta`
+    `${targetDir}_with_meta/.osc_obs_ts/_project_meta.json`
   ] = `{"name":"Virtualization:Appliances:Images:openSUSE-Tumbleweed","title":"openSUSE Tumbleweed Images","description":"Contains the Live CD, JeOS, Vagrant boxes and possibly more.","person":[{"userId":"dancermak","role":"maintainer"},{"userId":"dcassany","role":"maintainer"},{"userId":"favogt","role":"maintainer"},{"userId":"gmoro","role":"maintainer"}],"repository":[{"name":"rpm","path":[{"project":"openSUSE:Factory","repository":"snapshot"}],"arch":["x86_64","i586"]},{"name":"openSUSE_Tumbleweed_vanilla","path":[{"project":"openSUSE:Factory","repository":"snapshot"}],"arch":["x86_64"]},{"name":"openSUSE_Tumbleweed_ARM","path":[{"project":"openSUSE:Factory:ARM","repository":"standard"}],"arch":["aarch64"]},{"name":"openSUSE_Tumbleweed","path":[{"project":"Virtualization:Appliances:Images:openSUSE-Tumbleweed","repository":"rpm"},{"project":"openSUSE:Factory","repository":"snapshot"}],"arch":["x86_64","i586"]}]}`;
 
   mock(options);
@@ -211,14 +211,14 @@ describe("Project", () => {
         ]);
     });
 
-    it("creates a .osc_obs_ts/_project_meta when proj.meta is defined", async () => {
+    it("creates a .osc_obs_ts/_project_meta.json when proj.meta is defined", async () => {
       const dir = "./anotherDir";
 
       await checkOut(projWithMeta, dir).should.be.fulfilled;
 
       JSON.parse(
         (
-          await fsPromises.readFile(`${dir}/.osc_obs_ts/_project_meta`)
+          await fsPromises.readFile(`${dir}/.osc_obs_ts/_project_meta.json`)
         ).toString()
       ).should.deep.equal(projWithMeta.meta);
     });
@@ -243,11 +243,11 @@ describe("Project", () => {
         .fulfilled;
 
       expect(VirtAppImgTw).to.deep.equal(VirtApplImgOpenSUSETWProj);
-      // no _project_meta file => no meta property
+      // no _project_meta.json file => no meta property
       expect(VirtAppImgTw).to.not.have.property("meta");
     });
 
-    it("correctly reads in an Virtualization:Appliances:Images:openSUSE-Tumbleweed with a _project_meta", async () => {
+    it("correctly reads in an Virtualization:Appliances:Images:openSUSE-Tumbleweed with a _project_meta.json", async () => {
       const VirtAppImgTw = await readInCheckedOutProject(
         `${targetDir}_with_meta`
       ).should.be.fulfilled;
