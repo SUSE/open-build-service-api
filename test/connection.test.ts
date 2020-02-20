@@ -180,4 +180,28 @@ describe("Connection", () => {
         .should.be.rejectedWith(Error, /certificate has expired/);
     });
   });
+
+  describe("#clone", () => {
+    const con = new Connection("fake", "fakePw", "https://build.opensuse.org");
+
+    it("creates an exact copy if no parameters are provided", () => {
+      expect(con.clone()).to.deep.equal(con);
+    });
+
+    it("uses the new parameters if supplied", () => {
+      const newParams = {
+        username: "fake2",
+        url: "https://api-test.opensuse.org/",
+        serverCaCertificate: "looks legit"
+      };
+      expect(con.clone(newParams)).to.deep.include({
+        ...newParams,
+        password: "fakePw"
+      });
+    });
+
+    it("rejects new invalid parameters", () => {
+      expect(() => con.clone({ url: "" })).to.throw(TypeError, /invalid url/i);
+    });
+  });
 });

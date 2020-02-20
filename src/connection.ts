@@ -100,6 +100,37 @@ export class Connection {
   }
 
   /**
+   * Create a copy of the current Connection preserving its password with
+   * optional new settings. If some of the parameters are not provided, then the
+   * current values are used.
+   *
+   * @param username  An optional new username.
+   * @param url  An optional new URL to the API.
+   * @param serverCaCertificate  An optional new server certificate.
+   *
+   * @return A new Connection that has the same password as the current
+   *     Connection object.
+   *
+   * @throw Same errors as the constructor.
+   */
+  public clone({
+    username,
+    url,
+    serverCaCertificate
+  }: {
+    username?: string;
+    url?: string;
+    serverCaCertificate?: string;
+  } = {}): Connection {
+    return new Connection(
+      username ?? this.username,
+      this.password,
+      url ?? this.url,
+      serverCaCertificate ?? this.serverCaCertificate
+    );
+  }
+
+  /**
    * Perform a request to the API and return the replies body (by default
    * decoded from XML).
    *
