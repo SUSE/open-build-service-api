@@ -143,6 +143,42 @@ describe("Connection", () => {
         completed: false
       });
     });
+
+    it("stores cookies persistently in the Connection", async () => {
+      const con = getTestConnection(ApiType.Production);
+      const route = "/source/Virtualization:vagrant/";
+
+      const virtVagrant = await con.makeApiCall(route).should.be.fulfilled;
+      // OBS should reply with a openSUSE_session cookie and only that
+      con.should.have
+        .property("cookies")
+        .that.is.an("array")
+        .and.includes.a.thing.that.matches(/opensuse.*session/i);
+
+      // we are now nasty and drop an internal field of the Connection object,
+      // so the resulting Connection *must* use the session Cookie
+      // tslint:disable-next-line: no-string-literal
+      const oldHeaders = (con as any)["headers"];
+      // tslint:disable-next-line: no-string-literal
+      (con as any)["headers"] = "";
+
+      await con
+        .makeApiCall(route)
+        .should.be.fulfilled.and.eventually.deep.equal(virtVagrant);
+
+      // now insert a faulty session cookie and ensure that we don't get an error
+      // tslint:disable-next-line: no-string-literal
+      (con as any)["cookies"] = [
+        "openSUSE_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; path=/; Max-Age=86400; Secure; HttpOnly; domain=.opensuse.org"
+      ];
+      // of course we have to reinsert the old headers
+      // tslint:disable-next-line: no-string-literal
+      (con as any)["headers"] = oldHeaders;
+
+      await con
+        .makeApiCall(route)
+        .should.be.fulfilled.and.eventually.deep.equal(virtVagrant);
+    });
   });
 
   describe("#makeApiCall live tests", () => {

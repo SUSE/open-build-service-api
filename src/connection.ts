@@ -49,7 +49,12 @@ export const enum RequestMethod {
 }
 
 /**
- * Class for storing the credentials to connect to a Open Build Service instance.
+ * Class for storing the credentials to connect to an Open Build Service
+ * instance.
+ *
+ * It stores cookies persistently between requests, so that instances of the
+ * Open Build Service that send session cookies can use these and don't have to
+ * issue a new session per request.
  */
 export class Connection {
   /** the username which will be used to connect to the API */
@@ -63,6 +68,8 @@ export class Connection {
 
   /** HTTP simple auth header containing the necessary credentials */
   private readonly headers: string;
+
+  private cookies: string[] = [];
 
   /**
    * Construct a connection using the provided username and password
@@ -101,8 +108,10 @@ export class Connection {
 
   /**
    * Create a copy of the current Connection preserving its password with
-   * optional new settings. If some of the parameters are not provided, then the
-   * current values are used.
+   * optional new settings.
+   *
+   * If some of the parameters are not provided, then the current values are
+   * used. Note that the cookies are **not** cloned into the new Connection!
    *
    * @param username  An optional new username.
    * @param url  An optional new URL to the API.
@@ -176,7 +185,10 @@ export class Connection {
         {
           auth: this.headers,
           method: reqMethod,
-          ca: this.serverCaCertificate
+          ca: this.serverCaCertificate,
+          headers: {
+            Cookie: this.cookies
+          }
         },
         response => {
           const body: any[] = [];
@@ -189,6 +201,11 @@ export class Connection {
           // detailed error messages in the body, but the body is not available
           // until the "end" event occurs
           response.on("end", async () => {
+            const cookies = response.headers["set-cookie"];
+            if (cookies !== undefined) {
+              this.cookies = cookies;
+            }
+
             try {
               const fullBody = body.join("");
               const data =
