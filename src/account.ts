@@ -23,6 +23,7 @@ import { promises as fsPromises } from "fs";
 import { homedir } from "os";
 import { normalizeUrl } from "./connection";
 
+// tslint:disable-next-line: no-var-requires
 const ConfigIniParser = require("config-ini-parser").ConfigIniParser;
 
 export class Account {

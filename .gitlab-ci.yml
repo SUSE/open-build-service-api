@@ -49,6 +49,13 @@ license_check:
     - ${GOPATH}/bin/addlicense -c "SUSE LLC" -l mit $(fd '.*\.ts$')
     - git diff --exit-code
 
+tslint:
+  image: node:latest
+  stage: lint
+  <<: *setup_env
+  script:
+    - yarn run lint
+
 documentation:
   image: node:latest
   stage: deploy
