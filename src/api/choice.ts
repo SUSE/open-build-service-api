@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2019-2020 SUSE LLC
+ * Copyright (c) 2020 SUSE LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -19,12 +19,22 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-export { Account, addAccountToOscrc, readAccountsFromOscrc } from "./account";
-export { Arch, BaseRepository, Path } from "./api/base-types";
-export * from "./api/project-meta";
-export * from "./configuration";
-export { Connection, normalizeUrl } from "./connection";
-export { Distribution, fetchHostedDistributions } from "./distributions";
-export * from "./package";
-export * from "./project";
-export { Group, User } from "./user";
+/**
+ * Options of the `<choice>` element as used in the configuration.xml API route:
+ * https://build.opensuse.org/apidocs/configuration.rng
+ */
+export const enum ChoiceOption {
+  On = "on",
+  Off = "off"
+}
+
+/**
+ * Convert a ChoiceOption to a boolean.
+ *
+ * @return
+ *     - `undefined` if choice is `undefined`
+ *     - `true` if choice equals [[ChoiceOption.On]] or false otherwise
+ */
+export function choiceToBoolean(choice?: ChoiceOption): boolean | undefined {
+  return choice === undefined ? undefined : choice === ChoiceOption.On;
+}
