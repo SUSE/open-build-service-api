@@ -46,7 +46,7 @@ license_check:
     - zypper --non-interactive ref
     - zypper --non-interactive in fd go git
     - go get -u github.com/google/addlicense
-    - ${GOPATH}/bin/addlicense -c "SUSE LLC" -l mit $(fd '.*\.ts')
+    - ${GOPATH}/bin/addlicense -c "SUSE LLC" -l mit $(fd '.*\.ts$')
     - git diff --exit-code
 
 documentation:
