@@ -25,6 +25,7 @@ export * from "./api/project-meta";
 export * from "./configuration";
 export { Connection, normalizeUrl } from "./connection";
 export { Distribution, fetchHostedDistributions } from "./distributions";
+export * from "./file";
 export * from "./package";
 export * from "./project";
 export { Group, User } from "./user";
