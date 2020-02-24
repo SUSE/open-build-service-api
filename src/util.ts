@@ -107,34 +107,36 @@ export function setPropertyIfDefined<T, K extends keyof T>(
 }
 
 /**
- * Removes all members of `obj` that are undefined and return the result.
- *
- * This function does not perform a deep removal and it relies implicitly on
+ * Returns a new object that contains only the elements of `obj` that are not
+ * undefined.
  */
 export function deleteUndefinedMembers<T>(obj: T): T {
+  const res: any = {};
+
   Object.keys(obj).forEach(key => {
-    if (obj[key as keyof T] === undefined) {
-      delete obj[key as keyof T];
+    if (obj[key as keyof T] !== undefined) {
+      res[key] = obj[key as keyof T];
     }
   });
-  return obj;
+  return res as T;
 }
 
 /**
- * Removes all members of `obj` that are undefined or that are zero length
- * arrays and return the result.
+ * Returns a new object that contains only the members of `obj` that are not
+ * undefined and that are arrays with more than 0 elements.
  */
 export function deleteUndefinedAndEmptyMembers<T>(obj: T): T {
+  const res: any = {};
+
   Object.keys(obj).forEach(key => {
-    if (
-      obj[key as keyof T] === undefined ||
-      (Array.isArray(obj[key as keyof T]) &&
-        ((obj[key as keyof T] as unknown) as any[]).length === 0)
-    ) {
-      delete obj[key as keyof T];
+    const elem = obj[key as keyof T];
+    if (elem !== undefined) {
+      if (!Array.isArray(elem) || ((elem as unknown) as any[]).length > 0) {
+        res[key] = elem;
+      }
     }
   });
-  return obj;
+  return res;
 }
 
 function extractPropertyFromObject<T>(

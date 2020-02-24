@@ -94,20 +94,20 @@ function packageMetaFromApi(
     develPackage: develPackageFromApi(packageMetaApiReply.package.devel),
     ...commonMetaFromApi(packageMetaApiReply.package)
   };
-  deleteUndefinedAndEmptyMembers(res);
-  return res;
+  return deleteUndefinedAndEmptyMembers(res);
 }
 
 function packageMetaToApi(packageMeta: PackageMeta): PackageMetaApiReply {
   const res: PackageMetaApiReply = {
-    package: {
-      $: { name: packageMeta.name, project: packageMeta.project },
+    package: deleteUndefinedAndEmptyMembers({
+      $: deleteUndefinedMembers({
+        name: packageMeta.name,
+        project: packageMeta.project
+      }),
       ...commonMetaToApi(packageMeta),
       devel: develPackageToApi(packageMeta.develPackage)
-    }
+    })
   };
-  deleteUndefinedMembers(res.package.$);
-  deleteUndefinedAndEmptyMembers(res.package);
   return res;
 }
 

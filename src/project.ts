@@ -128,9 +128,7 @@ export async function getProject(
     ? await fetchPackageList(con, projectName)
     : undefined;
 
-  const res = { apiUrl: con.url, name: projectName, meta, packages };
-  deleteUndefinedAndEmptyMembers(res);
-  return res;
+  return deleteUndefinedAndEmptyMembers({ apiUrl: con.url, name: projectName, meta, packages });
 }
 
 /** A package entry in `.osc/_packages` */

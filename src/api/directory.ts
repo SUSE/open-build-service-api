@@ -130,6 +130,5 @@ export async function getDirectory(
     )
   };
 
-  deleteUndefinedAndEmptyMembers(dir);
-  return dir;
+  return deleteUndefinedAndEmptyMembers(dir);
 }

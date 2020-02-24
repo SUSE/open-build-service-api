@@ -159,8 +159,7 @@ export function projectMetaFromApi(data: ProjectMetaApiReply): ProjectMeta {
     }),
     ...base_types.commonMetaFromApi(data.project)
   };
-  deleteUndefinedAndEmptyMembers(res);
-  return res;
+  return deleteUndefinedAndEmptyMembers(res);
 }
 
 /**
@@ -169,18 +168,15 @@ export function projectMetaFromApi(data: ProjectMetaApiReply): ProjectMeta {
  */
 export function projectMetaToApi(proj: ProjectMeta): ProjectMetaApiReply {
   const projApi: ProjectMetaApiReply = {
-    project: {
-      $: { name: proj.name, kind: proj.kind },
+    project: deleteUndefinedMembers({
+      $: deleteUndefinedAndEmptyMembers({ name: proj.name, kind: proj.kind }),
       ...base_types.commonMetaToApi(proj),
       access: flag.booleanToSimpleFlag(proj.access),
       link: proj.link?.map(lnk => base_types.linkToApi(lnk)),
       mountproject: proj.mountProject,
       repository: proj.repository?.map(repo => baseRepositoryToApi(repo))
-    }
+    })
   };
-
-  deleteUndefinedAndEmptyMembers(projApi.project.$);
-  deleteUndefinedAndEmptyMembers(projApi.project);
 
   return projApi;
 }

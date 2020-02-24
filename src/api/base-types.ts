@@ -413,8 +413,7 @@ export function commonMetaFromApi(
         : simpleFlagToBoolean(sourceaccess),
     useForBuild: flagFromApi(useforbuild)
   };
-  deleteUndefinedAndEmptyMembers(res);
-  return res;
+  return deleteUndefinedAndEmptyMembers(res);
 }
 
 export function commonMetaToApi(commonMeta: CommonMeta): CommonMetaApiReply {
@@ -445,6 +444,5 @@ export function commonMetaToApi(commonMeta: CommonMeta): CommonMetaApiReply {
     person: person?.map(pers => userToApi(pers)),
     group: group?.map(grp => groupToApi(grp))
   };
-  deleteUndefinedAndEmptyMembers(res);
-  return res;
+  return deleteUndefinedAndEmptyMembers(res);
 }
