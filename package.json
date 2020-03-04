@@ -1,16 +1,16 @@
 {
-  "name": "obs-ts",
+  "name": "@dcermak/open-build-service-api",
   "version": "0.0.1",
-  "description": "obs-ts",
+  "description": "Typescript wrapper for the API of the Open Build Service",
   "license": "MIT",
-  "repository": "https://gitlab.suse.de/dancermak/obs.ts",
+  "repository": "https://github.com/dcermak/open-build-service-api",
   "author": {
     "name": "Dan Čermák",
     "email": "dcermak@suse.com",
     "url": "https://github.com/dcermak/"
   },
   "keywords": [
-    ""
+    "open-build-service", "api", "api-wrapper", "api-client", "typescript"
   ],
   "files": [
     "lib"
