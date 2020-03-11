@@ -141,7 +141,7 @@ export function afterEachRecorded(this: Context) {
   nock.back.setMode("wild");
 }
 
-export interface IScope {
+interface IScope {
   scope: nock.Scope;
   body: string;
 }
