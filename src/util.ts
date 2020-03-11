@@ -94,19 +94,6 @@ export function setPropertyOnCondition<T, K extends keyof T>(
 }
 
 /**
- * Set a property of an object to `value` if value is not `undefined`.
- */
-export function setPropertyIfDefined<T, K extends keyof T>(
-  obj: T,
-  key: K,
-  value: NonNullable<T[K]> | undefined
-): void {
-  // need to explicitly cast here as typescript cannot know that obj.key will
-  // only be assigned if value is defined
-  setPropertyOnCondition(obj, key, value as T[K], value !== undefined);
-}
-
-/**
  * Returns a new object that contains only the elements of `obj` that are not
  * undefined.
  */
