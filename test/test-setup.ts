@@ -167,9 +167,11 @@ export function beforeEachRecord(this: Context) {
     const nockDefs = nock.loadDefs(this.recordJsonPath);
     const rawData = JSON.parse(readFileSync(this.recordJsonPath).toString());
     const extractedScopes = nock.define(nockDefs);
-    this.scopes = extractedScopes.map((scopeElem: nock.Scope, i: number) => {
-      return { scope: scopeElem, body: rawData[i].body };
-    });
+
+    this.scopes = extractedScopes.map((scopeElem: nock.Scope, i: number) => ({
+      scope: scopeElem,
+      body: rawData[i].body
+    }));
     nock.disableNetConnect();
   } else {
     nock.enableNetConnect();
