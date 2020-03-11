@@ -22,11 +22,7 @@
 import * as assert from "assert";
 import { URL } from "url";
 import { RequestMethod } from "./connection";
-import {
-  extractElementAsArrayIfPresent,
-  extractElementIfPresent,
-  setPropertyIfDefined
-} from "./util";
+import { deleteUndefinedMembers } from "./util";
 
 /**
  * Status reply that is received in response to PUT requests or on failed GET
@@ -52,7 +48,7 @@ export interface StatusReply {
 }
 
 /** [[StatusReply]] as decoded via xml2js when received from the API */
-export interface StatusReplyApiReply {
+interface StatusReplyApiReply {
   status: {
     $: { code: string };
     data?: string[];
@@ -63,24 +59,22 @@ export interface StatusReplyApiReply {
 
 /** Converts the status reply from the API into a [[StatusReply]] */
 export function statusReplyFromApi(data: StatusReplyApiReply): StatusReply {
-  const reply: StatusReply = { code: data.status.$.code };
+  const reply: StatusReply = {
+    code: data.status.$.code,
+    data: data.status.data,
+    summary: data.status.summary,
+    details: data.status.details
+  };
+  return deleteUndefinedMembers(reply);
+}
 
-  setPropertyIfDefined(
-    reply,
-    "data",
-    extractElementAsArrayIfPresent<string>(data.status, "data")
+/** Typeguard for the custom [[ApiError]] type */
+export function isApiError(err: Error): err is ApiError {
+  return (
+    (err as any).statusCode !== undefined &&
+    (err as any).url !== undefined &&
+    (err as any).method !== undefined
   );
-  setPropertyIfDefined(
-    reply,
-    "details",
-    extractElementIfPresent(data.status, "details")
-  );
-  setPropertyIfDefined(
-    reply,
-    "summary",
-    extractElementIfPresent<string>(data.status, "summary")
-  );
-  return reply;
 }
 
 /** Error that is thrown when a request to the API fails. */
