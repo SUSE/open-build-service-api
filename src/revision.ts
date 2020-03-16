@@ -22,12 +22,16 @@
 import { Connection } from "./connection";
 import { Package } from "./package";
 import { Project } from "./project";
-import { dateFromUnixTimeStamp, deleteUndefinedMembers } from "./util";
+import {
+  dateFromUnixTimeStamp,
+  deleteUndefinedMembers,
+  mapOrApply
+} from "./util";
 
 /** A commit of a package on OBS */
 export interface Revision {
-  /** The number of this Revision */
-  readonly revision: number;
+  /** The revision number of this Revision. If this  or hash of this Revision */
+  readonly revision: number | string;
 
   /**
    * Counter that is monotonically increasing for every version.
@@ -39,9 +43,9 @@ export interface Revision {
    * yet. Together with the build counter this forms the version-release of the
    * resulting binary.
    */
-  readonly versionRevision: number;
+  readonly versionRevision?: number;
 
-  /** MD5 hash of this revision as identifier */
+  /** MD5 hash of the files at this revision. */
   readonly md5Hash: string;
 
   /**
@@ -56,7 +60,7 @@ export interface Revision {
    * User ID of the user that committed this revision.
    *
    * Most commits *should* have a userId available, but in case accounts get
-   * deleted this information is lost and then .
+   * deleted this information is lost and then this field is undefined.
    */
   readonly userId?: string;
 
@@ -84,7 +88,7 @@ interface RevisionApiReply {
 }
 
 interface RevisionListApiReply {
-  revisionlist: { revision: RevisionApiReply[] };
+  revisionlist: { revision: RevisionApiReply | RevisionApiReply[] };
 }
 
 const valueOrUndefined = (value: string) =>
@@ -104,6 +108,16 @@ export async function fetchRevisions(
 
 /**
  * Fetch the revisions of the given package from the API.
+ *
+ * @param con  The [[Connection]] to use for the API calls
+ * @param proj  Either the project name or a [[Project]] object to which the
+ *     package which revisions should be retrieved belongs.
+ * @param pkg  Either the package name or a [[Package]] object which revisions
+ *     should be retrieved
+ *
+ * @return The revisions of the requested package. The revisions are ordered
+ *     with ascending [[Revision.revision]] (at least OBS appears to return them
+ *     this way).
  */
 export async function fetchRevisions(
   con: Connection,
@@ -121,12 +135,12 @@ export async function fetchRevisions(
   const projectName = typeof proj === "string" ? proj : proj.name;
   const packageName = typeof pkg === "string" ? pkg : pkg.name;
 
-  const revs = (await con.makeApiCall(
+  const revs: RevisionListApiReply = await con.makeApiCall(
     `/source/${projectName}/${packageName}/_history`
-  )) as RevisionListApiReply;
+  );
 
   return Object.freeze(
-    revs.revisionlist.revision.map(rev => {
+    mapOrApply(revs.revisionlist.revision, rev => {
       return deleteUndefinedMembers({
         revision: parseInt(rev.$.rev, 10),
         versionRevision: parseInt(rev.$.vrev, 10),
