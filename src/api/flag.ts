@@ -239,10 +239,10 @@ export function repositorySettingFromFlag(
 
   const res = new Map();
 
-  const matchesAndDefault: Array<{
+  const matchesAndDefault: {
     match: FlagSwitch[];
     value: boolean;
-  }> = [
+  }[] = [
     { match: matchingEnable, value: true },
     { match: matchingDisable, value: false }
   ];
@@ -273,7 +273,7 @@ export function repositorySettingFromFlag(
 }
 
 export function repositorySettingToFlag(
-  repoSettings: Array<[string, RepositorySetting | undefined]>,
+  repoSettings: [string, RepositorySetting | undefined][],
   //  architectures: Arch[],
   defaultSetting?: boolean
 ): Flag | undefined {

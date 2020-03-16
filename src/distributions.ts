@@ -105,7 +105,7 @@ interface IconApiReply {
  */
 interface DistributionApiReply {
   distributions: {
-    distribution: Array<{
+    distribution: {
       $: { vendor: string; version: string; id: string };
       name: string;
       project: string;
@@ -114,7 +114,7 @@ interface DistributionApiReply {
       link: string;
       architecture?: Arch[] | Arch;
       icon?: IconApiReply[] | IconApiReply;
-    }>;
+    }[];
   };
 }
 

@@ -155,7 +155,7 @@ export async function addAccountToOscrc(
   oscrc += `[${account.apiUrl}]
 `;
 
-  const props: Array<{ prop: keyof Account; propName?: string }> = [
+  const props: { prop: keyof Account; propName?: string }[] = [
     { prop: "username", propName: "user" },
     { prop: "email" },
     { prop: "realname" }

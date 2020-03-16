@@ -36,8 +36,8 @@ import * as assert from "assert";
 export function zip<T, U>(
   arr1: T[] | ReadonlyArray<T>,
   arr2: U[] | ReadonlyArray<U>
-): Array<[T, U]> {
-  const res: Array<[T, U]> = [];
+): [T, U][] {
+  const res: [T, U][] = [];
   for (let i = 0; i < Math.min(arr1.length, arr2.length); i++) {
     res.push([arr1[i], arr2[i]]);
   }
