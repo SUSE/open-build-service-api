@@ -44,6 +44,25 @@ export function zip<T, U>(
   return res;
 }
 
+/**
+ * Call `callbackfn` on `arrayOrObj` the same way `map` does, but just calls
+ * `callbackfn(arrayOrObj)` in the case that `arrayOrObj` is not an array.
+ *
+ * @param arrayOrObj  An arbitrary array of objects or a single object.
+ * @param callbackfn A call back function that can be passed to
+ *     `Array.prototype.map`.
+ */
+export function mapOrApply<T, U>(
+  arrayOrObj: T | T[],
+  callbackfn: (value: T, index: number, array: T[]) => U
+): U[] {
+  if (Array.isArray(arrayOrObj)) {
+    return arrayOrObj.map(callbackfn);
+  } else {
+    return [callbackfn(arrayOrObj, 0, [arrayOrObj])];
+  }
+}
+
 /** Convert a UNIX time stamp to a Date */
 export function dateFromUnixTimeStamp(unixTime: string | number): Date {
   return new Date(
