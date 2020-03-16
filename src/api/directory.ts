@@ -88,7 +88,7 @@ function serviceInfoFromApi(serviceInfo: ServiceInfoApiReply): ServiceInfo {
 interface DirectoryApiReply {
   /**  Directory listing */
   directory: {
-    $: { rev?: string; srcmd5?: string; count?: number };
+    $: { rev?: string; vrev?: string; srcmd5?: string; count?: number };
     entry?: DirectoryEntryApiReply[];
     linkinfo?: LinkInfoApiReply[];
     serviceinfo?: ServiceInfoApiReply[];
@@ -97,6 +97,7 @@ interface DirectoryApiReply {
 
 export interface Directory {
   readonly revision?: string;
+  readonly versionRevision?: string;
   readonly sourceMd5?: string;
   readonly count?: number;
 
@@ -105,30 +106,62 @@ export interface Directory {
   readonly serviceInfos?: ServiceInfo[];
 }
 
-export async function getDirectory(
-  con: Connection,
-  route: string
-): Promise<Directory> {
-  const response: DirectoryApiReply = await con.makeApiCall(route);
-
+export function directoryFromApi(
+  directoryApiReply: DirectoryApiReply
+): Directory {
   const dir: Directory = {
-    revision: response.directory.$.rev,
-    sourceMd5: response.directory.$.srcmd5,
-    count: response.directory.$.count,
+    revision: directoryApiReply.directory.$.rev,
+    versionRevision: directoryApiReply.directory.$.vrev,
+    sourceMd5: directoryApiReply.directory.$.srcmd5,
+    count: directoryApiReply.directory.$.count,
     directoryEntries: extractElementAsArrayIfPresent(
-      response.directory,
+      directoryApiReply.directory,
       "entry",
       { construct: directoryEntryFromApi }
     ),
-    linkInfos: extractElementAsArrayIfPresent(response.directory, "linkinfo", {
-      construct: linkInfoFromApi
-    }),
+    linkInfos: extractElementAsArrayIfPresent(
+      directoryApiReply.directory,
+      "linkinfo",
+      {
+        construct: linkInfoFromApi
+      }
+    ),
     serviceInfos: extractElementAsArrayIfPresent(
-      response.directory,
+      directoryApiReply.directory,
       "serviceinfo",
       { construct: serviceInfoFromApi }
     )
   };
 
   return deleteUndefinedAndEmptyMembers(dir);
+}
+
+export function directoryToApi(directory: Directory): DirectoryApiReply {
+  return {
+    directory: {
+      $: {
+        rev: directory.revision,
+        vrev: directory.versionRevision,
+        srcmd5: directory.sourceMd5,
+        count: directory.count
+      },
+      entry: directory.directoryEntries?.map(dentry => ({ $: dentry })),
+      linkinfo: directory.linkInfos?.map(link => ({ $: link })),
+      serviceinfo: directory.serviceInfos?.map(service => ({ $: service }))
+    }
+  };
+}
+
+/**
+ * Fetch a [[Directory]] from one of the routes that return a [directory
+ * listing](https://build.opensuse.org/apidocs/directory.xsd).
+ *
+ * @param con  The Connection via which the API call will be performed
+ * @param route  A route that returns a directory listing
+ */
+export async function fetchDirectory(
+  con: Connection,
+  route: string
+): Promise<Directory> {
+  return directoryFromApi(await con.makeApiCall(route));
 }
