@@ -51,6 +51,11 @@ export function dateFromUnixTimeStamp(unixTime: string | number): Date {
   );
 }
 
+/** Convert a Date to a UNIX time stamp */
+export function unixTimeStampFromDate(date: Date): number {
+  return Math.floor(date.getTime() / 1000);
+}
+
 /**
  * Convert a constructor or a construct function into a common construction
  * function.

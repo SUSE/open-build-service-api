@@ -61,6 +61,21 @@ describe("#dateFromUnixTimeStamp", () => {
   });
 });
 
+describe("#unixTimeStampFromDate", () => {
+  it("converts a date to a number", () => {
+    expect(
+      util.unixTimeStampFromDate(new Date("Thu, 07 Nov 2019 22:08:29 +0100"))
+    ).to.equal(1573160909);
+  });
+
+  it("is the inverse of dateFromUnixTimeStamp", () => {
+    const unixTime = 1552575139;
+    expect(
+      util.unixTimeStampFromDate(util.dateFromUnixTimeStamp(unixTime))
+    ).to.equal(unixTime);
+  });
+});
+
 describe("#extractElementIfPresent", () => {
   it("should return undefined if the property is not present", () => {
     expect(util.extractElementIfPresent<string>(obj, "bar")).to.be.undefined;
