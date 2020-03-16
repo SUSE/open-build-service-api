@@ -20,61 +20,85 @@
  */
 
 import * as assert from "assert";
-import { getDirectory } from "./api/directory";
+import { Directory, fetchDirectory } from "./api/directory";
+import { getPackageMeta, PackageMeta } from "./api/package-meta";
 import { Connection, RequestMethod } from "./connection";
 import { StatusReply, statusReplyFromApi } from "./error";
 import {
   fetchFileContents,
-  fillPackageFileFromDirectoryEntry,
-  PackageFile
+  PackageFile,
+  packageFileFromDirectoryEntry
 } from "./file";
-import { fetchRevisions, Revision } from "./revision";
+import { Project } from "./project";
 import { zip } from "./util";
 
 export interface Package {
+  /** Name of this package */
   readonly name: string;
-  readonly project: string;
-  files?: PackageFile[];
-  history?: ReadonlyArray<[Revision, ReadonlyArray<PackageFile> | undefined]>;
-}
 
-export enum HistoryFetchType {
-  /** Don't fetch the history of the package */
-  NoHistory,
+  /** The name of the project to which this package belongs */
+  readonly projectName: string;
 
-  /** Fetch the revision list (= commit history) only */
-  RevisionsOnly,
+  /** md5 hash of the package contents */
+  md5Hash?: string;
 
-  /** Fetch the revision list and the file list at each revision */
-  RevisionsAndFiles,
+  /** The package's configuration (meta) */
+  meta?: PackageMeta;
 
   /**
-   * Fetch the revision list, the file list at each revision and the file
-   * contents at each revision
+   * The files present in this package.
+   *
+   * If this field is undefined, then the file list has not been requested
+   * yet. If it is an empty array, then no files are present.
    */
-  RevisionsAndFileContents
+  files?: PackageFile[];
 }
 
-async function fetchFileList(
+export async function fetchFileList(
   con: Connection,
   pkg: Package,
-  retrieveFileContents: boolean,
-  revision?: Revision
-): Promise<PackageFile[]> {
-  const baseRoute = `/source/${pkg.project}/${pkg.name}`;
-  const route =
-    revision === undefined
-      ? baseRoute
-      : `${baseRoute}?rev=${revision.revision}`;
-
-  const fileDir = await getDirectory(con, route);
-  assert(
-    revision?.revision !== undefined && fileDir.revision !== undefined
-      ? parseInt(fileDir.revision, 10) === revision.revision
-      : true,
-    `Expected to receive version ${revision?.revision} but got ${fileDir.revision} back`
+  {
+    retrieveFileContents,
+    expandLinks,
+    revision
+  }: {
+    retrieveFileContents?: boolean;
+    expandLinks?: boolean;
+    revision?: string;
+  } = {}
+): Promise<[PackageFile[], string]> {
+  const directoryBaseRoute = `/source/${pkg.projectName}/${pkg.name}?expand=`.concat(
+    expandLinks === undefined || expandLinks ? "1" : "0"
   );
+  const route =
+    revision !== undefined
+      ? directoryBaseRoute.concat(`&rev=${revision}`)
+      : directoryBaseRoute;
+  const fileDir = await fetchDirectory(con, route);
 
+  if (fileDir.sourceMd5 === undefined) {
+    throw new Error(
+      `File content listing of the package ${pkg.projectName}/${pkg.name} has no md5 hash defined`
+    );
+  }
+
+  const files = extractFileListFromDirectory(pkg, fileDir);
+
+  if (retrieveFileContents !== undefined && retrieveFileContents) {
+    await Promise.all(
+      files.map(async f => {
+        f.contents = await fetchFileContents(con, f, revision);
+      })
+    );
+  }
+  return [files, fileDir.sourceMd5];
+}
+
+// FIXME: this should maybe not be exported
+export function extractFileListFromDirectory(
+  pkg: Package,
+  fileDir: Directory
+): PackageFile[] {
   if (
     fileDir.directoryEntries === undefined ||
     fileDir.directoryEntries.length === 0
@@ -87,88 +111,96 @@ async function fetchFileList(
     .map(dentry => {
       return {
         name: dentry.name!,
-        projectName: pkg.project,
+        projectName: pkg.projectName,
         packageName: pkg.name
       };
     });
 
-  if (retrieveFileContents) {
-    await Promise.all(
-      files.map(async f => {
-        f.contents = await fetchFileContents(con, f, revision);
-      })
-    );
-  }
-
   return zip(fileDir.directoryEntries, files).map(([dentry, pkgFile]) =>
-    fillPackageFileFromDirectoryEntry(pkgFile, dentry)
+    packageFileFromDirectoryEntry(pkgFile, dentry)
   );
 }
 
+/**
+ * Fetch the information about package from OBS and populate a [[Package]]
+ * object with the retrieved data.
+ *
+ * @param con  Connection to be used for the API calls
+ * @param project  Either the name of the project or a [[Project]] object to
+ *     which the package belongs
+ * @param packageName  Name of the package that should be retrieved
+ *
+ * @param retrieveFileContents  Flag whether the file contents at the latest
+ *     revision should be fetched too. Defaults to `false`.
+ * @param expandLinks  If a package is a link, check out the expanded
+ *     sources. Defaults to `true`.
+ */
 export async function fetchPackage(
   con: Connection,
-  projectName: string,
+  project: Project | string,
   packageName: string,
   {
-    historyFetchType,
-    pkgContents
+    retrieveFileContents,
+    expandLinks
   }: {
-    historyFetchType?: HistoryFetchType;
-    pkgContents?: boolean;
+    retrieveFileContents?: boolean;
+    expandLinks?: boolean;
   } = {}
 ): Promise<Package> {
-  const fetchType: HistoryFetchType =
-    historyFetchType === undefined
-      ? HistoryFetchType.RevisionsOnly
-      : historyFetchType;
+  const projName: string = typeof project === "string" ? project : project.name;
 
-  const pkg: Package = { name: packageName, project: projectName };
+  const pkg: Package = {
+    name: packageName,
+    projectName: projName,
+    files: []
+  };
 
-  pkg.files = await fetchFileList(
-    con,
-    pkg,
-    pkgContents === undefined ? true : pkgContents
-  );
+  const [filesAndHash, pkgMeta] = await Promise.all([
+    fetchFileList(con, pkg, {
+      retrieveFileContents,
+      expandLinks
+    }),
+    getPackageMeta(con, projName, packageName)
+  ]);
 
-  if (fetchType === HistoryFetchType.NoHistory) {
-    return pkg;
-  }
-
-  const hist = await fetchRevisions(con, projectName, packageName);
-
-  const revisionsAndFiles: Array<[
-    Revision,
-    readonly PackageFile[] | undefined
-  ]> = hist.map(rev => [rev, undefined]);
-
-  if (fetchType === HistoryFetchType.RevisionsOnly) {
-    pkg.history = revisionsAndFiles;
-    return pkg;
-  }
-
-  await Promise.all(
-    revisionsAndFiles.map(
-      async (_, i: number): Promise<void> => {
-        const fileList = await fetchFileList(
-          con,
-          pkg,
-          fetchType === HistoryFetchType.RevisionsAndFileContents,
-          revisionsAndFiles[i][0]
-        );
-        revisionsAndFiles[i][1] = Object.freeze(fileList);
-      }
-    )
-  );
-  pkg.history = revisionsAndFiles;
+  [pkg.files, pkg.md5Hash, pkg.meta] = [
+    filesAndHash[0],
+    filesAndHash[1],
+    pkgMeta
+  ];
 
   return pkg;
 }
 
+/**
+ * Deletes the package belonging to the project `projName` and with the name
+ * `packageName`.
+ */
+export async function deletePackage(
+  con: Connection,
+  projName: string,
+  packageName: string
+): Promise<StatusReply>;
+
+/**
+ * Deletes the [[Package]] `pkg`.
+ */
 export async function deletePackage(
   con: Connection,
   pkg: Package
+): Promise<StatusReply>;
+
+export async function deletePackage(
+  con: Connection,
+  projNameOrPkg: string | Package,
+  packageName?: string
 ): Promise<StatusReply> {
-  const response = await con.makeApiCall(`/source/${pkg.project}/${pkg.name}`, {
+  assert(typeof projNameOrPkg === "string" && packageName !== undefined);
+  const route =
+    typeof projNameOrPkg === "string"
+      ? `/source/${projNameOrPkg}/${packageName}`
+      : `/source/${projNameOrPkg.projectName}/${projNameOrPkg.name}`;
+  const response = await con.makeApiCall(route, {
     method: RequestMethod.DELETE
   });
   return statusReplyFromApi(response);

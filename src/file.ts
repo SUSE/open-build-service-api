@@ -22,7 +22,7 @@
 import * as assert from "assert";
 import { DirectoryEntry } from "./api/directory";
 import { Connection } from "./connection";
-import { fetchRevisions, Revision } from "./revision";
+import { Commit } from "./history";
 import { dateFromUnixTimeStamp, deleteUndefinedMembers } from "./util";
 
 export interface PackageFile {
@@ -35,7 +35,7 @@ export interface PackageFile {
   modifiedTime?: Date;
 }
 
-export function fillPackageFileFromDirectoryEntry(
+export function packageFileFromDirectoryEntry(
   file: PackageFile,
   dentry: DirectoryEntry
 ): PackageFile {
@@ -62,27 +62,33 @@ export function fillPackageFileFromDirectoryEntry(
   });
 }
 
-export async function fetchFileHistory(
-  con: Connection,
-  file: PackageFile,
-  revisions?: Revision[]
-): Promise<string[]> {
-  const hist =
-    revisions ??
-    (await fetchRevisions(con, file.projectName, file.packageName));
-
-  return Promise.all(hist.map(rev => fetchFileContents(con, file, rev)));
-}
-
+/**
+ * Retrieve the contents of the specified `pkgFile`.
+ *
+ * @param revision  If provided, then the package contents will be fetched at
+ *     the specified revision. Otherwise they will be fetched from the HEAD
+ *     commit.
+ *     Possible values for this parameter are:
+ *     - the revision number
+ *     - the md5 hash of the revision
+ *     - a [[Commit]] object
+ */
 export function fetchFileContents(
   con: Connection,
   pkgFile: PackageFile,
-  revision?: Revision
+  revision?: Commit | string | number
 ): Promise<string> {
-  const baseRoute = `/source/${pkgFile.projectName}/${pkgFile.packageName}/${pkgFile.name}`;
-  const route =
-    revision === undefined
-      ? baseRoute
-      : `${baseRoute}?rev=${revision.revision}`;
+  let route = `/source/${pkgFile.projectName}/${pkgFile.packageName}/${pkgFile.name}`;
+
+  if (revision !== undefined) {
+    const rev =
+      typeof revision === "string"
+        ? revision
+        : typeof revision === "number"
+        ? revision.toString()
+        : revision.revisionHash;
+    route = route.concat(`?rev=${rev}`);
+  }
+
   return con.makeApiCall(route, { decodeReply: false });
 }

@@ -37,7 +37,7 @@
 import * as assert from "assert";
 import { existsSync, promises as fsPromises } from "fs";
 import { join } from "path";
-import { getDirectory } from "./api/directory";
+import { fetchDirectory } from "./api/directory";
 import {
   getProjectMeta,
   modifyProjectMeta,

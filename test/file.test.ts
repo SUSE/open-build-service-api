@@ -21,10 +21,10 @@
 
 import { expect } from "chai";
 import { describe, it } from "mocha";
-import { fillPackageFileFromDirectoryEntry, PackageFile } from "../src/file";
+import { PackageFile, packageFileFromDirectoryEntry } from "../src/file";
 
 describe("File", () => {
-  describe("#fillPackageFileFromDirectoryEntry", () => {
+  describe("#packageFileFromDirectoryEntry", () => {
     const testFile: PackageFile = {
       name: "foo",
       packageName: "fooPkg",
@@ -36,13 +36,13 @@ describe("File", () => {
     };
 
     it("throws an error when the directory's name is not set", () => {
-      expect(() => fillPackageFileFromDirectoryEntry(testFile, {})).to.throw(
+      expect(() => packageFileFromDirectoryEntry(testFile, {})).to.throw(
         "Cannot create a PackageFile from the DirectoryEntry: the directory name is undefined"
       );
     });
 
     it("does not remove the file contents", () => {
-      const modified = fillPackageFileFromDirectoryEntry(testFile, {
+      const modified = packageFileFromDirectoryEntry(testFile, {
         name: "foo"
       });
 
@@ -50,7 +50,7 @@ describe("File", () => {
     });
 
     it("removes the hash, size and modifiedTime, if the Directory does not contain them", () => {
-      const modified = fillPackageFileFromDirectoryEntry(testFile, {
+      const modified = packageFileFromDirectoryEntry(testFile, {
         name: "foo"
       });
 

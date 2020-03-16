@@ -20,36 +20,31 @@
  */
 
 import { afterEach, beforeEach, describe, it } from "mocha";
-import { fetchPackage, HistoryFetchType } from "../../src/package";
+import { fetchPackage, Package } from "../../src/package";
+import { LocalRole } from "../../src/user";
 import {
   afterEachRecord,
   ApiType,
   beforeEachRecord,
   getTestConnection
 } from "./../test-setup";
-import {
-  vagrantSshfsDotChanges,
-  vagrantSshfsDotChangesContents,
-  vagrantSshfsHistory
-} from "./data";
+import { vagrantSshfsDotChanges, vagrantSshfsDotChangesContents } from "./data";
+import { expect } from "chai";
 
 const vagrantSshfsDotChangesWithExtraFields = {
   ...vagrantSshfsDotChanges,
-  md5Hash: "66d7770ac94e23f9064e28d30ca4857b",
-  size: 953,
-  modifiedTime: new Date("Thu, 07 Nov 2019 22:08:28 +0100")
+  md5Hash: "37ba2436aa6e16238d4bd2cc9ad75a67",
+  size: 2406,
+  modifiedTime: new Date("Mon, 16 Mar 2020 13:03:27 +0100")
 };
 
-describe("Package", () => {
+describe("Package", function() {
+  this.timeout(5000);
+
   beforeEach(beforeEachRecord);
   afterEach(afterEachRecord);
 
   const con = getTestConnection(ApiType.Production);
-
-  const vagrantSshfsHistoryWithoutContents = vagrantSshfsHistory.map(rev => [
-    rev,
-    undefined
-  ]);
 
   const baseFile = {
     projectName: "Virtualization:vagrant",
@@ -59,24 +54,10 @@ describe("Package", () => {
   const vagrantSshfsFileList = [
     {
       ...baseFile,
-      name: "0001-Bump-testing-Vagrant-box-version.patch",
-      md5Hash: "31ace9af07a8881d71f2acedf61d5a67",
-      size: 781,
-      modifiedTime: new Date("Tue, 17 Sep 2019 23:35:27 +0200")
-    },
-    {
-      ...baseFile,
-      name: "0001-remove-win32-dep.patch",
-      md5Hash: "9542619a3fd52a88b7ed41afe2c50e57",
-      size: 1279,
-      modifiedTime: new Date("Thu, 14 Mar 2019 17:47:55 +0100")
-    },
-    {
-      ...baseFile,
       name: "_link",
-      md5Hash: "4a76f9f25487e87f320de3880ada3ca4",
+      md5Hash: "f49e52e83811420a95466683a18afc97",
       size: 124,
-      modifiedTime: new Date("Fri, 08 Nov 2019 15:26:53 +0100")
+      modifiedTime: new Date("Fri, 14 Feb 2020 16:35:58 +0100")
     },
     {
       ...baseFile,
@@ -87,134 +68,176 @@ describe("Package", () => {
     },
     {
       ...baseFile,
-      name: "vagrant-sshfs-1.3.1.gem",
-      md5Hash: "ef1cae288d48a0b669d93f50f3b9b4ff",
-      size: 33280,
-      modifiedTime: new Date("Thu, 14 Mar 2019 15:52:19 +0100")
+      name: "vagrant-sshfs-1.3.4.tar.gz",
+      md5Hash: "9de559bf9dcf0b9af4f2d0dd96663a34",
+      size: 27579,
+      modifiedTime: new Date("Mon, 16 Mar 2020 13:03:27 +0100")
+    },
+    {
+      ...baseFile,
+      name: "vagrant-sshfs-1.3.4.tar.gz.asc",
+      md5Hash: "55600e43b3c7ab4286e3d94d8b4e4b90",
+      size: 833,
+      modifiedTime: new Date("Mon, 16 Mar 2020 13:03:27 +0100")
     },
     vagrantSshfsDotChangesWithExtraFields,
     {
       ...baseFile,
-      name: "vagrant-sshfs.spec",
-      md5Hash: "e4dffe2231fa49effbb713c11ecbb8dd",
-      size: 4151,
-      modifiedTime: new Date("Thu, 07 Nov 2019 22:08:29 +0100")
-    }
-  ];
-
-  const vagrantSshfsFileListAtRev1 = [
-    {
-      ...baseFile,
-      name: "0001-Bump-testing-Vagrant-box-version.patch",
-      md5Hash: "31ace9af07a8881d71f2acedf61d5a67",
-      size: 781,
-      modifiedTime: new Date("Tue, 17 Sep 2019 23:35:27 +0200")
-    },
-    {
-      ...baseFile,
-      name: "0001-remove-win32-dep.patch",
-      md5Hash: "9542619a3fd52a88b7ed41afe2c50e57",
-      size: 1279,
-      modifiedTime: new Date("Thu, 14 Mar 2019 17:47:55 +0100")
-    },
-    {
-      ...baseFile,
-      name: "testsuite.sh",
-      md5Hash: "871eaad3ac9bc31a35eebfad6878a329",
-      size: 1502,
-      modifiedTime: new Date("Tue, 17 Sep 2019 23:35:27 +0200")
-    },
-    {
-      ...baseFile,
-      name: "vagrant-sshfs-1.3.1.gem",
-      md5Hash: "ef1cae288d48a0b669d93f50f3b9b4ff",
-      size: 33280,
-      modifiedTime: new Date("Thu, 14 Mar 2019 15:52:19 +0100")
-    },
-    {
-      ...baseFile,
-      name: "vagrant-sshfs.changes",
-      md5Hash: "25675cbfd132797b73b7c87dc46f4a9b",
-      size: 326,
-      modifiedTime: new Date("Tue, 17 Sep 2019 23:35:28 +0200")
+      name: "vagrant-sshfs.keyring",
+      md5Hash: "f868df2487146cd0b2a716014e62f4a0",
+      size: 32547,
+      modifiedTime: new Date("Wed, 29 Jan 2020 11:07:33 +0100")
     },
     {
       ...baseFile,
       name: "vagrant-sshfs.spec",
-      md5Hash: "696ef7cef623a11a15345d2f5f1d1fe1",
-      size: 4149,
-      modifiedTime: new Date("Tue, 17 Sep 2019 23:35:28 +0200")
+      md5Hash: "9d7de1b6c79f736c4f59f1eeaa59dbba",
+      size: 3832,
+      modifiedTime: new Date("Mon, 16 Mar 2020 13:03:28 +0100")
     }
   ];
 
-  describe("#getPackage", () => {
+  describe("#fetchPackage", () => {
     it("fetches the file list and sets the file properties of vagrant-sshfs", async function() {
-      this.timeout(5000);
-
       await fetchPackage(con, "Virtualization:vagrant", "vagrant-sshfs", {
-        pkgContents: false
+        retrieveFileContents: false,
+        expandLinks: false
       }).should.be.fulfilled.and.eventually.deep.equal({
         name: "vagrant-sshfs",
-        project: "Virtualization:vagrant",
-        history: vagrantSshfsHistoryWithoutContents,
-        files: vagrantSshfsFileList
+        projectName: "Virtualization:vagrant",
+        files: vagrantSshfsFileList,
+        md5Hash: "f09465fd156e74d3e6673dbb60b9409c",
+        meta: {
+          description: "",
+          name: "vagrant-sshfs",
+          person: [
+            {
+              role: LocalRole.Bugowner,
+              userId: "dancermak"
+            },
+            {
+              role: LocalRole.Maintainer,
+              userId: "dancermak"
+            }
+          ],
+          project: "Virtualization:vagrant",
+          title: ""
+        }
       });
     });
 
-    it("doesn't fetch the history of vagrant-sshfs if disabled", async function() {
-      this.timeout(5000);
-      await fetchPackage(con, "Virtualization:vagrant", "vagrant-sshfs", {
-        historyFetchType: HistoryFetchType.NoHistory,
-        pkgContents: false
-      }).should.be.fulfilled.and.eventually.not.have.property("history");
+    it("expands the file sources by default", async () => {
+      const pkg: Package = await fetchPackage(
+        con,
+        "Virtualization:vagrant",
+        "ruby2.6",
+        {
+          retrieveFileContents: false
+        }
+      ).should.be.fulfilled;
+
+      expect(pkg.files).to.deep.equal(
+        [
+          {
+            name: "CVE-2020-8130.patch",
+            md5Hash: "fece8cafc259ced5ffd56ab85d936113",
+            size: 498,
+            modifiedTime: new Date("Fri, 06 Mar 2020 16:49:03 +0100")
+          },
+          {
+            name: "rake-12.3.2.gem",
+            md5Hash: "b97fd18f57ab31788face9b4d26b41de",
+            size: 87040,
+            modifiedTime: new Date("Fri, 06 Mar 2020 16:49:04 +0100")
+          },
+          {
+            name: "ruby-2.6.5.tar.xz",
+            md5Hash: "b8a4e2bdbb76485c3d6690e57be67750",
+            size: 11553580,
+            modifiedTime: new Date("Tue, 08 Oct 2019 11:57:55 +0200")
+          },
+          {
+            name: "ruby2.6-default.macros",
+            md5Hash: "0cb12b4f7f5bb2c6c09462717bc9d6d8",
+            size: 186,
+            modifiedTime: new Date("Fri, 29 Jun 2018 14:59:10 +0200")
+          },
+          {
+            name: "ruby2.6-rpmlintrc",
+            md5Hash: "41ac278955542049457b30562282ef43",
+            size: 93,
+            modifiedTime: new Date("Fri, 29 Jun 2018 14:59:10 +0200")
+          },
+          {
+            name: "ruby2.6.changes",
+            md5Hash: "38aa6af34c205fca7c283b1e9f69226a",
+            size: 6412,
+            modifiedTime: new Date("Fri, 06 Mar 2020 16:49:04 +0100")
+          },
+          {
+            name: "ruby2.6.macros",
+            md5Hash: "d9ea685eb891c4105b28038ac237b2c0",
+            size: 585,
+            modifiedTime: new Date("Fri, 29 Jun 2018 14:59:11 +0200")
+          },
+          {
+            name: "ruby2.6.spec",
+            md5Hash: "a2e7118a84f7ec7f03336eda93abb841",
+            size: 13745,
+            modifiedTime: new Date("Fri, 06 Mar 2020 16:49:05 +0100")
+          },
+          {
+            name: "series",
+            md5Hash: "d0b1b5813b722adf168ad5e694dcf246",
+            size: 14,
+            modifiedTime: new Date("Wed, 27 Mar 2019 18:18:01 +0100")
+          },
+          {
+            name: "use-pie.patch",
+            md5Hash: "991c0d4f9626b2c12a20647a15b3aff1",
+            size: 610,
+            modifiedTime: new Date("Wed, 27 Mar 2019 18:18:01 +0100")
+          }
+        ].map(f => ({
+          packageName: "ruby2.6",
+          projectName: "Virtualization:vagrant",
+          ...f
+        }))
+      );
+
+      pkg.should.have.property("md5Hash", "13b55f9f232992fb7aea136112eeb5c6");
+      pkg.projectName.should.equal("Virtualization:vagrant");
+      pkg.name.should.equal("ruby2.6");
     });
 
-    it("fetches the file contents if pkgContents is set to true or not specified", async function() {
-      this.timeout(5000);
-
-      const pkg = await fetchPackage(
+    it("fetches the file contents if pkgContents is set to true or not specified", async () => {
+      const pkg: Package = await fetchPackage(
         con,
         "Virtualization:vagrant",
         "vagrant-sshfs"
       ).should.be.fulfilled;
 
-      pkg.should.have.property("files").that.includes.a.thing.that.deep.equals({
-        ...vagrantSshfsDotChangesWithExtraFields,
-        contents: vagrantSshfsDotChangesContents
-      });
+      pkg.should.have
+        .property("files")
+        .that.includes.a.thing.that.deep.equals(
+          vagrantSshfsDotChangesWithExtraFields
+        );
 
-      await fetchPackage(con, "Virtualization:vagrant", "vagrant-sshfs", {
-        pkgContents: true
-      }).should.be.fulfilled.and.eventually.deep.equal(pkg);
-    });
-
-    it("fetches the files of the package at each revision", async function() {
-      this.timeout(5000);
-
-      const pkg = await fetchPackage(
+      const pkgWithFiles: Package = await fetchPackage(
         con,
         "Virtualization:vagrant",
         "vagrant-sshfs",
         {
-          pkgContents: false,
-          historyFetchType: HistoryFetchType.RevisionsAndFiles
+          retrieveFileContents: true
         }
       ).should.be.fulfilled;
 
-      pkg.should.have
-        .property("history")
-        .that.is.an("array")
-        .and.has.length(vagrantSshfsHistory.length);
-
-      pkg.history[vagrantSshfsHistory.length - 1].should.deep.equal([
-        vagrantSshfsHistory[vagrantSshfsHistory.length - 1],
-        vagrantSshfsFileList
-      ]);
-
-      pkg.history[0].should.deep.equal([
-        vagrantSshfsHistory[0],
-        vagrantSshfsFileListAtRev1
-      ]);
+      pkgWithFiles.should.have
+        .property("files")
+        .that.includes.a.thing.that.deep.equals({
+          ...vagrantSshfsDotChangesWithExtraFields,
+          contents: vagrantSshfsDotChangesContents
+        });
     });
   });
 });
