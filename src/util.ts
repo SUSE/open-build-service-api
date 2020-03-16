@@ -33,7 +33,10 @@ import * as assert from "assert";
  *     `arr1` and the second the i-h element of `arr2`. If the arrays differ in
  *     length, then result is as long as the shortest of both.
  */
-export function zip<T, U>(arr1: T[], arr2: U[]): Array<[T, U]> {
+export function zip<T, U>(
+  arr1: T[] | ReadonlyArray<T>,
+  arr2: U[] | ReadonlyArray<U>
+): Array<[T, U]> {
   const res: Array<[T, U]> = [];
   for (let i = 0; i < Math.min(arr1.length, arr2.length); i++) {
     res.push([arr1[i], arr2[i]]);
