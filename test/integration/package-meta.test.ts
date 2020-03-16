@@ -125,7 +125,7 @@ It should be gone soon-ish.`,
     pkgReply.should.deep.equal(newPkg);
 
     res = await checkApiCallSucceeds(this.scopes?.[2], async () =>
-      deletePackage(con, { name, project })
+      deletePackage(con, project, name)
     );
     res.should.deep.equal(statusOk);
   });
@@ -160,7 +160,7 @@ It will be deleted when everything works out.
     pkgReply.should.deep.equal(newPkg);
 
     res = await checkApiCallSucceeds(this.scopes?.[2], async () =>
-      deletePackage(con, { name, project })
+      deletePackage(con, project, name)
     );
     res.should.deep.equal(statusOk);
   });
