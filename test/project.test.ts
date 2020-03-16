@@ -26,7 +26,7 @@ import { existsSync, promises as fsPromises } from "fs";
 import { afterEach, beforeEach, describe, it } from "mocha";
 import { Arch } from "../src/api/base-types";
 import {
-  checkOut,
+  checkOutProject,
   Project,
   readInCheckedOutProject,
   updateCheckedOutProject
@@ -36,14 +36,26 @@ import { LocalRole } from "../src/user";
 const VirtApplImgOpenSUSETW =
   "Virtualization:Appliances:Images:openSUSE-Tumbleweed";
 
-const VirtApplImgOpenSUSETWProj = {
+const VirtApplImgOpenSUSETWProj: Project = {
   apiUrl: "https://api.opensuse.org/",
   name: VirtApplImgOpenSUSETW,
   packages: [
-    { name: "live-kiwi-hook", project: VirtApplImgOpenSUSETW },
-    { name: "livecd-openSUSE", project: VirtApplImgOpenSUSETW },
-    { name: "kiwi-images-vagrant", project: VirtApplImgOpenSUSETW },
-    { name: "kiwi-templates-JeOS", project: VirtApplImgOpenSUSETW }
+    {
+      name: "live-kiwi-hook",
+      projectName: VirtApplImgOpenSUSETW
+    },
+    {
+      name: "livecd-openSUSE",
+      projectName: VirtApplImgOpenSUSETW
+    },
+    {
+      name: "kiwi-images-vagrant",
+      projectName: VirtApplImgOpenSUSETW
+    },
+    {
+      name: "kiwi-templates-JeOS",
+      projectName: VirtApplImgOpenSUSETW
+    }
   ]
 };
 
@@ -138,14 +150,15 @@ const setupFsMocks = () => {
 
 describe("Project", () => {
   describe("#checkOut", () => {
-    const projName = "testProjectWithPackages";
+    const projectName = "testProjectWithPackages";
+    const apiUrl = "https://api.opensuse.org/";
     const proj: Project = {
-      apiUrl: "https://api.opensuse.org/",
-      name: projName,
+      apiUrl,
+      name: projectName,
       packages: [
-        { name: "foo", project: projName },
-        { name: "bar", project: projName },
-        { name: "baz", project: projName }
+        { name: "foo", projectName },
+        { name: "bar", projectName },
+        { name: "baz", projectName }
       ]
     };
 
@@ -170,7 +183,7 @@ describe("Project", () => {
         name: "testProject"
       };
       const dir = "./testDir";
-      await checkOut(testProj, dir).should.be.fulfilled;
+      await checkOutProject(testProj, dir).should.be.fulfilled;
 
       (await fsPromises.readFile(`${dir}/.osc/_apiurl`))
         .toString()
@@ -187,7 +200,7 @@ describe("Project", () => {
 
     it("populates the .osc/_packages file", async () => {
       const dir = "./someDir";
-      await checkOut(proj, dir).should.be.fulfilled;
+      await checkOutProject(proj, dir).should.be.fulfilled;
 
       (await fsPromises.readFile(`${dir}/.osc/_packages`)).toString().should
         .equal(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -200,7 +213,7 @@ describe("Project", () => {
 
     it("it does not pollute .osc/ with files that osc doesn't expect", async () => {
       const dir = "testDirForOscCompat";
-      await checkOut(proj, dir).should.be.fulfilled;
+      await checkOutProject(proj, dir).should.be.fulfilled;
 
       await fsPromises
         .readdir(`${dir}/.osc/`)
@@ -214,7 +227,7 @@ describe("Project", () => {
     it("creates a .osc_obs_ts/_project_meta.json when proj.meta is defined", async () => {
       const dir = "./anotherDir";
 
-      await checkOut(projWithMeta, dir).should.be.fulfilled;
+      await checkOutProject(projWithMeta, dir).should.be.fulfilled;
 
       JSON.parse(
         (
@@ -248,9 +261,9 @@ describe("Project", () => {
     });
 
     it("correctly reads in an Virtualization:Appliances:Images:openSUSE-Tumbleweed with a _project_meta.json", async () => {
-      const VirtAppImgTw = await readInCheckedOutProject(
-        `${targetDir}_with_meta`
-      ).should.be.fulfilled;
+      const projDir = `${targetDir}_with_meta`;
+      const VirtAppImgTw = await readInCheckedOutProject(projDir).should.be
+        .fulfilled;
 
       expect(VirtAppImgTw).to.deep.equal({
         meta: VirtApplImgOpenSUSETWProjMeta,
@@ -338,7 +351,7 @@ describe("Project", () => {
 
       const newProj: Project = {
         ...rest,
-        packages: packages.slice(1, 3),
+        packages: packages!.slice(1, 3),
         meta: {
           ...metaRest,
           person: [{ userId: "fooUser", role: LocalRole.Downloader }].concat(

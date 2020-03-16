@@ -21,7 +21,7 @@
 
 import { expect } from "chai";
 import { afterEach, beforeEach, describe, it } from "mocha";
-import { getProject } from "../../src/project";
+import { fetchProject } from "../../src/project";
 import { LocalRole } from "../../src/user";
 import {
   afterEachRecord,
@@ -30,7 +30,7 @@ import {
   getTestConnection
 } from "./../test-setup";
 
-describe("#getProject", () => {
+describe("#fetchProject", () => {
   beforeEach(beforeEachRecord);
   afterEach(afterEachRecord);
 
@@ -38,7 +38,7 @@ describe("#getProject", () => {
 
   it("fetches the Project of Virtualization:vagrant", async () => {
     const projectName = "Virtualization:vagrant";
-    const virtualizationVagrant = await getProject(con, projectName, false)
+    const virtualizationVagrant = await fetchProject(con, projectName, false)
       .should.be.fulfilled;
 
     expect(virtualizationVagrant).to.have.property("apiUrl", con.url);
@@ -53,27 +53,27 @@ describe("#getProject", () => {
   });
 
   it("fetches the package list of Virtualization:Appliances:Images:openSUSE-Tumbleweed", async () => {
-    const project = "Virtualization:Appliances:Images:openSUSE-Tumbleweed";
-    const TW = await getProject(con, project);
+    const projectName = "Virtualization:Appliances:Images:openSUSE-Tumbleweed";
+    const TW = await fetchProject(con, projectName);
 
     expect(TW).to.have.property("apiUrl", con.url);
-    expect(TW).to.have.property("name", project);
+    expect(TW).to.have.property("name", projectName);
     expect(TW).to.have.property("meta");
     expect(TW)
       .to.have.property("packages")
       .that.deep.equals([
-        { name: "kiwi-images-vagrant", project },
-        { name: "kiwi-templates-JeOS", project },
-        { name: "live-kiwi-hook", project },
-        { name: "livecd-openSUSE", project },
-        { name: "livecd-tumbleweed-gnome", project },
-        { name: "livecd-tumbleweed-kde", project },
-        { name: "livecd-tumbleweed-x11", project },
-        { name: "livecd-tumbleweed-xfce", project }
+        { name: "kiwi-images-vagrant", projectName },
+        { name: "kiwi-templates-JeOS", projectName },
+        { name: "live-kiwi-hook", projectName },
+        { name: "livecd-openSUSE", projectName },
+        { name: "livecd-tumbleweed-gnome", projectName },
+        { name: "livecd-tumbleweed-kde", projectName },
+        { name: "livecd-tumbleweed-x11", projectName },
+        { name: "livecd-tumbleweed-xfce", projectName }
       ]);
 
     expect(TW.meta).to.deep.include({
-      name: project,
+      name: projectName,
       title: "openSUSE Tumbleweed Images",
       description:
         "Contains the Live CD, JeOS, Vagrant boxes and possibly more.",

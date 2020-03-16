@@ -46,7 +46,7 @@ import {
 import { Connection, normalizeUrl, RequestMethod } from "./connection";
 import { StatusReply, statusReplyFromApi } from "./error";
 import { Package } from "./package";
-import { deleteUndefinedAndEmptyMembers } from "./util";
+import { deleteUndefinedAndEmptyMembers, deleteUndefinedMembers } from "./util";
 import { newXmlBuilder, newXmlParser } from "./xml";
 
 /**
@@ -74,7 +74,17 @@ export interface Project {
   /** Full name of this project */
   name: string;
 
-  /** Array of packages that belong to this project */
+  /**
+   * Array of packages that belong to this project.
+   *
+   * Note: this list need not be exhaustive! E.g. when a project has been only
+   * partially checked out (= only a subset of all packages is cloned), then the
+   * `packages` array **must** only contain these.
+   *
+   * When the `packages` entry is `undefined`, then no packages have been
+   * fetched yet. It does **not** mean that there are no packages! That is
+   * indicated by an empty array.
+   */
   packages?: Package[];
 
   /** This project's meta configuration */
@@ -84,28 +94,30 @@ export interface Project {
 /**
  * Retrieves the list of packages of the given project
  *
- * @return Array of [[Package]], when the project contains packages or undefined
- *     when it contains none
+ * @return Array of [[Package]], when the project contains packages or an empty
+ *     array when it contains none
  */
 async function fetchPackageList(
   con: Connection,
-  projectName: string
-): Promise<Package[] | undefined> {
-  let packages: Package[] | undefined;
-
-  const dir = await getDirectory(con, `/source/${projectName}`);
+  project: Project
+): Promise<Package[]> {
+  const dir = await fetchDirectory(con, `/source/${project.name}`);
 
   if (dir.directoryEntries === undefined || dir.directoryEntries.length === 0) {
-    packages = undefined;
+    return [];
   } else {
-    packages = [];
+    const packages: Package[] = [];
     dir.directoryEntries.forEach(dentry => {
       if (dentry.name !== undefined) {
-        packages!.push({ name: dentry.name, project: projectName });
+        packages.push({
+          name: dentry.name,
+          projectName: project.name
+        });
       }
     });
+
+    return packages;
   }
-  return packages;
 }
 
 /**
@@ -118,17 +130,25 @@ async function fetchPackageList(
  *     of network traffic for **huge** projects (think of `openSUSE:Factory` on
  *     build.opensuse.org).
  */
-export async function getProject(
+export async function fetchProject(
   con: Connection,
   projectName: string,
   getPackageList: boolean = true
 ): Promise<Project> {
   const meta = await getProjectMeta(con, projectName);
-  const packages = getPackageList
-    ? await fetchPackageList(con, projectName)
-    : undefined;
+  const proj = {
+    apiUrl: con.url,
+    name: projectName,
+    meta
+  };
+  if (!getPackageList) {
+    return proj;
+  }
 
-  return deleteUndefinedAndEmptyMembers({ apiUrl: con.url, name: projectName, meta, packages });
+  return deleteUndefinedMembers({
+    ...proj,
+    packages: await fetchPackageList(con, proj)
+  });
 }
 
 /** A package entry in `.osc/_packages` */
@@ -237,7 +257,10 @@ async function writeProjectUnderscoreFiles(
  *
  * @return nothing
  */
-export async function checkOut(proj: Project, path: string): Promise<void> {
+export async function checkOutProject(
+  proj: Project,
+  path: string
+): Promise<void> {
   await fsPromises.mkdir(path, { recursive: false });
   await fsPromises.mkdir(join(path, ".osc"), { recursive: false });
   await writeProjectUnderscoreFiles(proj, path);
@@ -255,8 +278,6 @@ export async function checkOut(proj: Project, path: string): Promise<void> {
  *     files in the `.osc` subdirectory.
  */
 export async function readInCheckedOutProject(path: string): Promise<Project> {
-  let packages: undefined | Package[];
-
   const [
     apiUrl,
     name,
@@ -282,6 +303,14 @@ export async function readInCheckedOutProject(path: string): Promise<Project> {
       )
   );
 
+  const meta =
+    projMetaContents !== "" ? JSON.parse(projMetaContents) : undefined;
+  const project: Project = {
+    apiUrl: normalizeUrl(apiUrl),
+    name,
+    meta
+  };
+
   // let's just assume that the contents of the file are well formed,
   // otherwise something will blow up later anyway.
   const underscorePackages = (await newXmlParser().parseStringPromise(
@@ -291,20 +320,12 @@ export async function readInCheckedOutProject(path: string): Promise<Project> {
     underscorePackages.project.package !== undefined &&
     underscorePackages.project.package.length > 0
   ) {
-    packages = underscorePackages.project.package.map(pkg => {
-      return { name: pkg.$.name, project: name };
+    project.packages = underscorePackages.project.package.map(pkg => {
+      return { name: pkg.$.name, projectName: project.name };
     });
   }
 
-  const meta =
-    projMetaContents !== "" ? JSON.parse(projMetaContents) : undefined;
-
-  return deleteUndefinedAndEmptyMembers({
-    apiUrl: normalizeUrl(apiUrl),
-    name,
-    packages,
-    meta
-  });
+  return deleteUndefinedAndEmptyMembers(project);
 }
 
 /**
@@ -332,6 +353,7 @@ export async function updateCheckedOutProject(
       `Cannot update the project ${storedProj.name} from ${storedProj.apiUrl} with settings of the project ${proj.name} from ${proj.apiUrl}`
     );
   }
+
   await writeProjectUnderscoreFiles(proj, checkedOutPath);
 }
 
@@ -340,19 +362,26 @@ export async function updateCheckedOutProject(
  */
 export async function createProject(
   con: Connection,
-  proj: ProjectMeta
+  projMeta: ProjectMeta
 ): Promise<StatusReply> {
-  return modifyProjectMeta(con, proj);
+  return modifyProjectMeta(con, projMeta);
 }
 
 /**
- * Removes the project with the given name.
+ * Removes the given project or the project with the given name.
+ *
+ * @param project  Either the name of the project that should be deleted or a
+ *     [[Project]] instance.
  */
 export async function deleteProject(
   con: Connection,
-  projectName: string
+  project: string | Project
 ): Promise<StatusReply> {
-  const resp = await con.makeApiCall(`/source/${projectName}`, {
+  const route =
+    typeof project === "string"
+      ? `/source/${project}`
+      : `/source/${project.name}`;
+  const resp = await con.makeApiCall(route, {
     method: RequestMethod.DELETE
   });
   return statusReplyFromApi(resp);
