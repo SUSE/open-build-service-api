@@ -67,9 +67,10 @@ export async function fetchFileList(
     revision?: string;
   } = {}
 ): Promise<[PackageFile[], string]> {
-  const directoryBaseRoute = `/source/${pkg.projectName}/${pkg.name}?expand=`.concat(
-    expandLinks === undefined || expandLinks ? "1" : "0"
-  );
+  const expand = expandLinks === undefined || expandLinks;
+  const directoryBaseRoute = `/source/${pkg.projectName}/${pkg.name}?expand=${
+    expand ? "1&linkrev=base" : 0
+  }`;
   const route =
     revision !== undefined
       ? directoryBaseRoute.concat(`&rev=${revision}`)

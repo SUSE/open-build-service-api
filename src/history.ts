@@ -216,7 +216,7 @@ async function fetchExpandedRevisions(
           // FIXME: should use a function from the package module instead
           const expandedDir = await fetchDirectory(
             con,
-            `/source/${pkg.projectName}/${pkg.name}?expand=1&rev=${rev.revisionHash}`
+            `/source/${pkg.projectName}/${pkg.name}?expand=1&linkrev=base&rev=${rev.revisionHash}`
           );
           return [expandedDir, true];
         } catch (err) {
@@ -479,9 +479,18 @@ async function cachedFetchHistoryAcrossLinks(
         if (linkedHistory === undefined) {
           useBaseRev = true;
         } else {
+          // at this point the linkedHistory must be one of the two:
+          // 1. we have a validLink.revision and obtained the commit from the
+          //    commitCache => the revisions must now match, otherwise our hash
+          //    table is broken
+          // 2. we have no validLink.revision (and in this branch also no
+          //    baserev) so we are just "attaching" HEAD of the linked
+          //    package. The link must then have a srcmd5 and that matches the
+          //    revisionHash of linkedHistory
           assert(
-            linkedHistory.revisionHash === validLink.srcmd5,
-            `Got an invalid history back, expected HEAD of linked package (${linkedPkg.projectName}/${linkedPkg.name}) to be at ${validLink.srcmd5} but got ${linkedHistory.revisionHash}`
+            linkedHistory.revisionHash === validLink.revision ||
+              linkedHistory.revisionHash === validLink.srcmd5,
+            `Got an invalid history back, expected HEAD of linked package (${linkedPkg.projectName}/${linkedPkg.name}) to be at ${validLink.revision} or ${validLink.srcmd5} but got ${linkedHistory.revisionHash}`
           );
           cur.parentCommits === undefined
             ? (cur.parentCommits = [linkedHistory])

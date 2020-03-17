@@ -28,8 +28,7 @@ import {
   drawHistoryToSvg,
   fetchFileContentsAtCommit,
   fetchHistory,
-  fetchHistoryAcrossLinks,
-  historyToGraphviz
+  fetchHistoryAcrossLinks
 } from "../../src/history";
 import {
   afterEachRecord,
@@ -50,56 +49,6 @@ const vagrantSshfsRevision1 = {
   packageName: "vagrant-sshfs",
   parentCommits: undefined
 };
-
-// const baseFile = {
-//   projectName: "Virtualization:vagrant",
-//   packageName: "vagrant-sshfs"
-// };
-
-// const vagrantSshfsFileListAtRev1: PackageFile[] = [
-//   {
-//     ...baseFile,
-//     name: "0001-Bump-testing-Vagrant-box-version.patch",
-//     md5Hash: "31ace9af07a8881d71f2acedf61d5a67",
-//     size: 781,
-//     modifiedTime: new Date("Tue, 17 Sep 2019 23:35:27 +0200")
-//   },
-//   {
-//     ...baseFile,
-//     name: "0001-remove-win32-dep.patch",
-//     md5Hash: "9542619a3fd52a88b7ed41afe2c50e57",
-//     size: 1279,
-//     modifiedTime: new Date("Thu, 14 Mar 2019 17:47:55 +0100")
-//   },
-//   {
-//     ...baseFile,
-//     name: "testsuite.sh",
-//     md5Hash: "871eaad3ac9bc31a35eebfad6878a329",
-//     size: 1502,
-//     modifiedTime: new Date("Tue, 17 Sep 2019 23:35:27 +0200")
-//   },
-//   {
-//     ...baseFile,
-//     name: "vagrant-sshfs-1.3.1.gem",
-//     md5Hash: "ef1cae288d48a0b669d93f50f3b9b4ff",
-//     size: 33280,
-//     modifiedTime: new Date("Thu, 14 Mar 2019 15:52:19 +0100")
-//   },
-//   {
-//     ...baseFile,
-//     name: "vagrant-sshfs.changes",
-//     md5Hash: "25675cbfd132797b73b7c87dc46f4a9b",
-//     size: 326,
-//     modifiedTime: new Date("Tue, 17 Sep 2019 23:35:28 +0200")
-//   },
-//   {
-//     ...baseFile,
-//     name: "vagrant-sshfs.spec",
-//     md5Hash: "696ef7cef623a11a15345d2f5f1d1fe1",
-//     size: 4149,
-//     modifiedTime: new Date("Tue, 17 Sep 2019 23:35:28 +0200")
-//   }
-// ];
 
 describe("Commit", function() {
   this.timeout(50000);
@@ -291,7 +240,7 @@ describe("Commit", function() {
       headMinus2 = headMinus2!;
 
       expect(headMinus2[0]).to.deep.include({
-        revisionHash: "0c0e38ce645d8e225da28d87a6267355",
+        revisionHash: "f7a73aad4c605b0b987b1df69497da67",
         revision: 9,
         commitTime: new Date("Fri, 31 Jan 2020 12:52:18 +0100"),
         userId: "dancermak",
@@ -319,7 +268,7 @@ describe("Commit", function() {
         .and.have.length(1);
       const secondBaseRevUpdate = headMinus2[0].parentCommits!;
       expect(secondBaseRevUpdate[0]).to.deep.include({
-        revisionHash: "dbd693413c8094365828d08aa1b4af34",
+        revisionHash: "108d7335326450355547f8bb9c2bbfa0",
         revision: 8,
         commitTime: new Date("Fri, 08 Nov 2019 15:26:53 +0100"),
         ...obsAutocommitCommon,
@@ -338,7 +287,7 @@ describe("Commit", function() {
       };
 
       const revision7 = {
-        revisionHash: "72e98a790ed85a09fad7cc2f4d535542",
+        revisionHash: "cc139ba2b1718cc62d93722229e16a5a",
         revision: 7,
         commitTime: new Date("Thu, 07 Nov 2019 22:12:32 +0100"),
         userId: "dancermak",
@@ -385,7 +334,7 @@ describe("Commit", function() {
         .parentCommits![0];
 
       expect(thirdBaseRevUpdate).to.deep.include({
-        revisionHash: "e7a44453cc27757d1483a12079c45062",
+        revisionHash: "4fd9f144db09bfaa246fd0ad57c0d1bb",
         revision: 6,
         commitTime: new Date("Fri, 11 Oct 2019 15:22:37 +0200"),
         ...obsAutocommitCommon,
@@ -394,7 +343,7 @@ describe("Commit", function() {
 
       expect(thirdBaseRevUpdate.parentCommits).to.have.length(2);
       expect(thirdBaseRevUpdate.parentCommits![0]).to.deep.include({
-        revisionHash: "ee4941508551cbe133570078d443f26d",
+        revisionHash: "794c97b70ea21bd289f7775e4843e667",
         revision: 5,
         commitTime: new Date("Fri, 11 Oct 2019 12:22:03 +0200"),
         userId: "dancermak",
@@ -414,7 +363,7 @@ describe("Commit", function() {
         .parentCommits![0];
 
       expect(fourthBaseRevUpdate).to.deep.include({
-        revisionHash: "21bcc3fd47c4b304cb6b9a10c1404842",
+        revisionHash: "eb7f3ba5b53e222d736fe9f872fc0728",
         revision: 4,
         commitTime: new Date("Wed, 02 Oct 2019 12:00:08 +0200"),
         requestId: 734337,
@@ -466,7 +415,7 @@ describe("Commit", function() {
       // and now check the remaining commits in Virtualization:vagrant
       const revision3 = fourthBaseRevUpdate.parentCommits![0];
       expect(revision3).to.deep.include({
-        revisionHash: "49e027533df2ff4849938bf30e7514a9",
+        revisionHash: "6ea8bfc4ffe5950c72b2a6853b78a7da",
         revision: 3,
         commitTime: new Date("Tue, 01 Oct 2019 15:23:11 +0200"),
         userId: "dancermak",
@@ -481,7 +430,7 @@ describe("Commit", function() {
 
       const revision2 = revision3.parentCommits![0];
       expect(revision2).to.deep.include({
-        revisionHash: "ab6f5fda6ecc85ebe304dd477b103314",
+        revisionHash: "1686a71fb2a3d98c8aaa17696d874a60",
         revision: 2,
         commitTime: new Date("Wed, 25 Sep 2019 08:22:59 +0200"),
         userId: "dimstar_suse",
@@ -509,15 +458,12 @@ describe("Commit", function() {
     });
 
     xit("fetches the history of a package with an insane number of links", async function() {
-      try {
-        const head = await fetchHistoryAcrossLinks(this.con, {
-          projectName: "OBS:Server:Unstable",
-          name: "rubygem-rack"
-        });
-        console.log(head !== undefined ? historyToGraphviz(head) : "nothing");
-      } catch (err) {
-        console.log(err);
-      }
+      const head = await fetchHistoryAcrossLinks(this.con, {
+        projectName: "OBS:Server:Unstable",
+        name: "rubygem-rack"
+      }).should.be.fulfilled;
+      const img = await drawHistoryToSvg(head);
+      writeFileSync("./rubygem-rack.svg", img);
     });
   });
 
