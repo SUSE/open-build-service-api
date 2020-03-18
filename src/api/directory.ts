@@ -88,7 +88,13 @@ function serviceInfoFromApi(serviceInfo: ServiceInfoApiReply): ServiceInfo {
 interface DirectoryApiReply {
   /**  Directory listing */
   directory: {
-    $: { rev?: string; vrev?: string; srcmd5?: string; count?: number };
+    $: {
+      name?: string;
+      rev?: string;
+      vrev?: string;
+      srcmd5?: string;
+      count?: number;
+    };
     entry?: DirectoryEntryApiReply[];
     linkinfo?: LinkInfoApiReply[];
     serviceinfo?: ServiceInfoApiReply[];
@@ -96,6 +102,7 @@ interface DirectoryApiReply {
 }
 
 export interface Directory {
+  readonly name?: string;
   readonly revision?: string;
   readonly versionRevision?: string;
   readonly sourceMd5?: string;
@@ -110,6 +117,7 @@ export function directoryFromApi(
   directoryApiReply: DirectoryApiReply
 ): Directory {
   const dir: Directory = {
+    name: directoryApiReply.directory.$.name,
     revision: directoryApiReply.directory.$.rev,
     versionRevision: directoryApiReply.directory.$.vrev,
     sourceMd5: directoryApiReply.directory.$.srcmd5,
@@ -140,6 +148,7 @@ export function directoryToApi(directory: Directory): DirectoryApiReply {
   return {
     directory: {
       $: {
+        name: directory.name,
         rev: directory.revision,
         vrev: directory.versionRevision,
         srcmd5: directory.sourceMd5,
