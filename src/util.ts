@@ -278,28 +278,6 @@ export function extractElementAsArray<T>(
   return res === undefined ? [] : res;
 }
 
-// function getElementAsArrayOrDefaultMarkerIfPresent<IT, MT>(
-//   type: { new (data: any): IT },
-//   data: any,
-//   key: string,
-//   is_default: (...args: any[]) => boolean,
-//   default_marker: MT
-// ): Array<IT> | MT | undefined {
-//   if (!(key in data)) {
-//     return undefined;
-//   }
 
-//   if (is_default(data[key])) {
-//     return default_marker;
-//   }
 
-//   if (!Array.isArray(data[key])) {
-//     return [new type(data[key])];
-//   }
 
-//   const res: Array<IT> = [];
-//   data[key].forEach((element: any) => {
-//     res.push(new type(element));
-//   });
-//   return res;
-// }
