@@ -19,6 +19,10 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import { Arch } from "../../src/api/base-types";
+import { DefaultValue } from "../../src/api/flag";
+import { Project } from "../../src/project";
+import { LocalRole } from "../../src/user";
 import { PackageFile } from "./../../src/file";
 import { Revision } from "./../../src/history";
 
@@ -235,3 +239,189 @@ export const vagrantSshfsDotChangesFileHistory: string[] = Object.freeze([
   dotChangesRev9,
   dotChangesRev11
 ]) as string[];
+
+export const virtualizationVagrant: Project = {
+  apiUrl: "https://api.opensuse.org/",
+  name: "Virtualization:vagrant",
+  meta: {
+    name: "Virtualization:vagrant",
+    title: "Devel project for Vagrant",
+    description: "This is the factory development project for Vagrant",
+    person: [
+      { userId: "dancermak", role: LocalRole.Bugowner },
+      { userId: "ojkastl_buildservice", role: LocalRole.Bugowner },
+      { userId: "dancermak", role: LocalRole.Maintainer },
+      { userId: "dirkmueller", role: LocalRole.Maintainer },
+      { userId: "ojkastl_buildservice", role: LocalRole.Maintainer }
+    ],
+    build: {
+      defaultValue: DefaultValue.Enable,
+      enable: [
+        { repository: "SLE_12_SP1" },
+        { repository: "SLE_12_SP2" },
+        { repository: "SLE_12_SP3" },
+        { repository: "SLE_12_SP4" }
+      ],
+      disable: [{ repository: "openSUSE_Tumbleweed_default_ruby" }]
+    },
+    publish: {
+      defaultValue: DefaultValue.Enable,
+      enable: [],
+      disable: [
+        { repository: "openSUSE_Tumbleweed_and_d_l_r_e" },
+        { repository: "openSUSE_Tumbleweed_default_ruby" }
+      ]
+    },
+    debugInfo: {
+      defaultValue: DefaultValue.Unspecified,
+      enable: [],
+      disable: []
+    },
+    useForBuild: {
+      defaultValue: DefaultValue.Unspecified,
+      enable: [],
+      disable: [
+        { repository: "openSUSE_Tumbleweed_default_ruby" },
+        { repository: "openSUSE_Tumbleweed_and_d_l_r_e" }
+      ]
+    },
+    repository: [
+      {
+        arch: [Arch.X86_64],
+        name: "openSUSE_Tumbleweed_default_ruby",
+        path: [{ project: "openSUSE:Factory", repository: "snapshot" }]
+      },
+      {
+        arch: [Arch.X86_64],
+        name: "openSUSE_Tumbleweed_and_d_l_r_e",
+        path: [
+          {
+            project: "devel:languages:ruby:extensions",
+            repository: "openSUSE_Tumbleweed"
+          },
+          { project: "openSUSE:Factory", repository: "snapshot" }
+        ]
+      },
+      {
+        arch: [Arch.I586, Arch.X86_64],
+        name: "openSUSE_Tumbleweed",
+        path: [{ project: "openSUSE:Factory", repository: "snapshot" }]
+      },
+      {
+        name: "openSUSE_Leap_15.2",
+        arch: [Arch.X86_64],
+        path: [{ project: "openSUSE:Leap:15.2", repository: "standard" }]
+      },
+      {
+        name: "openSUSE_Leap_15.1_ARM",
+        arch: [Arch.Aarch64, Arch.Armv7l],
+        path: [{ project: "openSUSE:Leap:15.1:ARM", repository: "ports" }]
+      },
+      {
+        name: "openSUSE_Leap_15.1",
+        arch: [Arch.X86_64],
+        path: [{ project: "openSUSE:Leap:15.1", repository: "standard" }]
+      },
+      {
+        name: "openSUSE_Leap_15.0",
+        arch: [Arch.X86_64],
+        path: [{ project: "openSUSE:Leap:15.0", repository: "standard" }]
+      },
+      {
+        name: "openSUSE_Factory_ARM",
+        arch: [Arch.Armv7l, Arch.Aarch64],
+        path: [{ project: "openSUSE:Factory:ARM", repository: "standard" }]
+      },
+      {
+        name: "SLE_15-SP1",
+        arch: [Arch.X86_64, Arch.Aarch64],
+        path: [{ project: "SUSE:SLE-15-SP1:GA", repository: "standard" }]
+      },
+      {
+        name: "SLE_15",
+        arch: [Arch.X86_64, Arch.Aarch64],
+        path: [{ project: "SUSE:SLE-15:GA", repository: "standard" }]
+      }
+    ]
+  }
+};
+
+const baseFile = {
+  projectName: "Virtualization:vagrant",
+  packageName: "vagrant-sshfs"
+};
+
+export const vagrantSshfsDotChangesWithExtraFields: PackageFile = {
+  ...vagrantSshfsDotChanges,
+  md5Hash: "37ba2436aa6e16238d4bd2cc9ad75a67",
+  size: 2406,
+  modifiedTime: new Date("Mon, 16 Mar 2020 13:03:27 +0100")
+};
+
+const vagrantSshfsFileList: PackageFile[] = [
+  {
+    ...baseFile,
+    name: "testsuite.sh",
+    md5Hash: "d84584f65b02b4eb8990fce467bfe240",
+    size: 1508,
+    modifiedTime: new Date("Wed, 09 Oct 2019 12:12:57 +0200")
+  },
+  {
+    ...baseFile,
+    name: "vagrant-sshfs-1.3.4.tar.gz",
+    md5Hash: "9de559bf9dcf0b9af4f2d0dd96663a34",
+    size: 27579,
+    modifiedTime: new Date("Mon, 16 Mar 2020 13:03:27 +0100")
+  },
+  {
+    ...baseFile,
+    name: "vagrant-sshfs-1.3.4.tar.gz.asc",
+    md5Hash: "55600e43b3c7ab4286e3d94d8b4e4b90",
+    size: 833,
+    modifiedTime: new Date("Mon, 16 Mar 2020 13:03:27 +0100")
+  },
+  vagrantSshfsDotChangesWithExtraFields,
+  {
+    ...baseFile,
+    name: "vagrant-sshfs.keyring",
+    md5Hash: "f868df2487146cd0b2a716014e62f4a0",
+    size: 32547,
+    modifiedTime: new Date("Wed, 29 Jan 2020 11:07:33 +0100")
+  },
+  {
+    ...baseFile,
+    name: "vagrant-sshfs.spec",
+    md5Hash: "9d7de1b6c79f736c4f59f1eeaa59dbba",
+    size: 3832,
+    modifiedTime: new Date("Mon, 16 Mar 2020 13:03:28 +0100")
+  }
+];
+
+export const vagrantSshfs = {
+  name: "vagrant-sshfs",
+  projectName: "Virtualization:vagrant",
+  md5Hash: "6105ecf1d6bf9c9c852baebfef9e23d8",
+  meta: {
+    name: "vagrant-sshfs",
+    project: "Virtualization:vagrant",
+    title: "SSHFS synced folder implementation for Vagrant",
+    description: `This Vagrant plugin adds synced folder support for mounting folders from the
+Vagrant host into the Vagrant guest via SSHFS. In the default mode it does this
+by executing the SSHFS client software within the guest, which creates an SSH
+connection from the Vagrant guest back to the Vagrant host.
+
+`,
+    person: [
+      {
+        userId: "dancermak",
+        role: LocalRole.Bugowner
+      },
+      {
+        userId: "dancermak",
+        role: LocalRole.Maintainer
+      }
+    ],
+    url: "https://github.com/dustymabe/%{name}"
+  },
+  files: vagrantSshfsFileList
+};
