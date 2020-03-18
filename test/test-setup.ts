@@ -125,21 +125,6 @@ export function getTestConnection(apiType: ApiType): Connection {
   );
 }
 
-export async function beforeEachRecorded(this: Context) {
-  const jsonPath =
-    this.currentTest!.titlePath()
-      .map(elem => elem.replace(/\s+/g, "_"))
-      .join("_") + ".json";
-
-  nock.back.setMode("record");
-  const { nockDone } = await nock.back(jsonPath);
-  this.nockDone = nockDone;
-}
-
-export function afterEachRecorded(this: Context) {
-  this.nockDone();
-  nock.back.setMode("wild");
-}
 
 interface IScope {
   scope: nock.Scope;

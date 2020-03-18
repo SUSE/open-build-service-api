@@ -41,10 +41,8 @@ import { deleteProject } from "../../src/project";
 import { LocalRole } from "../../src/user";
 import {
   afterEachRecord,
-  afterEachRecorded,
   ApiType,
   beforeEachRecord,
-  beforeEachRecorded,
   checkApiCallFails,
   checkApiCallSucceeds,
   getTestConnection
@@ -56,9 +54,9 @@ const findRepoByNameBuilder = (proj: ProjectMeta) => (repoName: string) =>
 describe("#getProjectMeta", () => {
   const prodCon = getTestConnection(ApiType.Production);
 
-  beforeEach(beforeEachRecorded);
+  beforeEach(beforeEachRecord);
 
-  afterEach(afterEachRecorded);
+  afterEach(afterEachRecord);
 
   it("should correctly parse openSUSE:Factory", async () => {
     const proj = await getProjectMeta(prodCon, "openSUSE:Factory").should.be
