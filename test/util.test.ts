@@ -19,9 +19,13 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import mockFs = require("mock-fs");
+
 import { expect } from "chai";
 import { describe, it } from "mocha";
 import * as util from "../src/util";
+import { existsSync } from "fs";
+import { rmRf } from "../src/util";
 
 class TestClass {
   constructor(readonly value: string) {}
@@ -152,5 +156,30 @@ describe("#deleteUndefinedAndEmptyMembers", () => {
         Baz: "baz"
       })
     ).to.deep.equal({ bar: ["foo"], Baz: "baz" });
+  });
+});
+
+describe("#rmRf", () => {
+  beforeEach(() => {
+    mockFs({
+      "fooDir/dturinae/asdf": "something",
+      "fooDir/foo/bar/baz": "nested",
+      "fooDir/testFile": "It's something",
+      thisShouldStay: "I'm still there"
+    });
+  });
+
+  afterEach(() => {
+    mockFs.restore();
+  });
+
+  it("removes the directory fooDir and all its contents", async () => {
+    expect(existsSync("fooDir")).to.equal(true);
+
+    await rmRf("fooDir").should.be.fulfilled;
+
+    expect(existsSync("fooDir/foo")).to.equal(false);
+    expect(existsSync("fooDir")).to.equal(false);
+    expect(existsSync("thisShouldStay")).to.equal(true);
   });
 });

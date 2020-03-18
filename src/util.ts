@@ -25,6 +25,8 @@
  */
 
 import * as assert from "assert";
+import { promises as fsPromises } from "fs";
+import { join } from "path";
 
 /**
  * Convert two arrays into an array of Tuples.
@@ -281,3 +283,19 @@ export function extractElementAsArray<T>(
 
 
 
+
+/** Remove the directory `dir` and all its contents recursively */
+export async function rmRf(dir: string): Promise<void> {
+  const dentries = await fsPromises.readdir(dir, { withFileTypes: true });
+
+  await Promise.all(
+    dentries.map(async dentry => {
+      if (dentry.isFile()) {
+        await fsPromises.unlink(join(dir, dentry.name));
+      } else if (dentry.isDirectory()) {
+        await rmRf(join(dir, dentry.name));
+      }
+    })
+  );
+  await fsPromises.rmdir(dir);
+}
