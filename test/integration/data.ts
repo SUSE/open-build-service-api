@@ -138,7 +138,7 @@ export const vagrantSshfsHistory: ReadonlyArray<Revision> = Object.freeze(
   ].map(entry => ({ ...entry, ...commonEntries }))
 );
 
-const dotChangesRev1 = `-------------------------------------------------------------------
+export const dotChangesRev1 = `-------------------------------------------------------------------
 Tue Sep 17 21:34:25 UTC 2019 - Dan Čermák <dcermak@suse.com>
 
 - Add working testsuite subpackage

@@ -36,7 +36,7 @@ import {
   beforeEachRecord,
   getTestConnection
 } from "../test-setup";
-import { vagrantSshfsHistory } from "./data";
+import { dotChangesRev1, vagrantSshfsHistory } from "./data";
 
 const vagrantSshfsRevision1 = {
   revisionHash: "c4458905a38f029e0572e848e8083eb5",
@@ -497,16 +497,7 @@ describe("Commit", function() {
         projectName: "Virtualization:vagrant",
         packageName: "vagrant-sshfs",
         size: 326,
-        contents: `-------------------------------------------------------------------
-Tue Sep 17 21:34:25 UTC 2019 - Dan Čermák <dcermak@suse.com>
-
-- Add working testsuite subpackage
-
--------------------------------------------------------------------
-Thu Mar 14 14:51:58 UTC 2019 - Dan Čermák <dcermak@suse.com>
-
-- Initial package version
-`
+        contents: Buffer.from(dotChangesRev1)
       });
     });
   });
