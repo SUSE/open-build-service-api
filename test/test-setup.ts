@@ -22,10 +22,16 @@
 import { expect, should, use } from "chai";
 import * as chaiAsPromised from "chai-as-promised";
 import * as chaiThings from "chai-things";
-import { existsSync, readFileSync, writeFileSync } from "fs";
+import {
+  existsSync,
+  promises as fsPromises,
+  readFileSync,
+  writeFileSync
+} from "fs";
 import { Context } from "mocha";
 import * as nock from "nock";
-import { join } from "path";
+import { tmpdir } from "os";
+import { join, sep } from "path";
 import { Connection } from "../src/connection";
 
 /** Payload that has been extracted from the nock and received from the API call */
@@ -125,6 +131,8 @@ export function getTestConnection(apiType: ApiType): Connection {
   );
 }
 
+export const createTemporaryDirectory = (): Promise<string> =>
+  fsPromises.mkdtemp(`${tmpdir()}${sep}obs-api-wrapper`);
 
 interface IScope {
   scope: nock.Scope;
