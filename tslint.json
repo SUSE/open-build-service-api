@@ -2,6 +2,7 @@
   "extends": ["tslint:latest", "tslint-config-prettier"],
   "rules": {
     "interface-name": false,
+    "no-floating-promises": true,
     "no-null-keyword": true,
     "object-literal-sort-keys": false
   }

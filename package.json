@@ -19,7 +19,7 @@
   "types": "lib/main.d.ts",
   "scripts": {
     "format": "prettier --write \"{src,test}/**/*.ts\"",
-    "lint": "tslint --force --format verbose \"src/**/*.ts\"",
+    "lint": "tslint --project ./tsconfig.json --force --format verbose \"src/**/*.ts\"",
     "prepare": "yarn run build",
     "prepublishOnly": "yarn run build",
     "build": "tsc --pretty",
