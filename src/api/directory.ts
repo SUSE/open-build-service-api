@@ -146,7 +146,7 @@ export function directoryFromApi(
 
 export function directoryToApi(directory: Directory): DirectoryApiReply {
   return {
-    directory: {
+    directory: deleteUndefinedAndEmptyMembers({
       $: {
         name: directory.name,
         rev: directory.revision,
@@ -157,7 +157,7 @@ export function directoryToApi(directory: Directory): DirectoryApiReply {
       entry: directory.directoryEntries?.map(dentry => ({ $: dentry })),
       linkinfo: directory.linkInfos?.map(link => ({ $: link })),
       serviceinfo: directory.serviceInfos?.map(service => ({ $: service }))
-    }
+    })
   };
 }
 
