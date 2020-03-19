@@ -172,9 +172,7 @@ describe("Project", () => {
       }
     };
 
-    beforeEach(() => {
-      mock({ dirExists: mock.directory({ items: {} }) });
-    });
+    beforeEach(() => mock({ dirExists: mock.directory({ items: {} }) }));
     afterEach(() => mock.restore());
 
     it("creates the project directory", async () => {

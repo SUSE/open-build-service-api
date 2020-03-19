@@ -72,9 +72,7 @@ pass = you
     mock(options);
   });
 
-  afterEach(() => {
-    mock.restore();
-  });
+  afterEach(() => mock.restore());
 
   describe("read accounts", () => {
     it("parses a valid .oscrc correctly", async () => {
