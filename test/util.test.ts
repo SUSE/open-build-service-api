@@ -183,3 +183,47 @@ describe("#rmRf", () => {
     expect(existsSync("thisShouldStay")).to.equal(true);
   });
 });
+
+describe("#runProcess", () => {
+  const myIt = process.platform === "win32" ? xit : it;
+
+  myIt("runs a simple process", async () => {
+    await util.runProcess("true").should.be.fulfilled;
+  });
+
+  myIt(
+    "throws an error when the program exits with a non-zero status",
+    async () => {
+      await util
+        .runProcess("false")
+        .should.be.rejectedWith(Error, /false exited with 1/);
+    }
+  );
+
+  myIt(
+    "reads the stderr of the program and reports it in the thrown error",
+    async () => {
+      const nonExistantDir = "/foo/bar/baz/I/really/hope/this/does/not/exist";
+      await util
+        .runProcess("ls", { args: [nonExistantDir] })
+        .should.be.rejectedWith(Error, nonExistantDir);
+    }
+  );
+
+  myIt("resolves with the stdout of the command", async () => {
+    await util.runProcess("echo", { args: ["foo"] }).should.be.fulfilled.and
+      .eventually.deep.equal(`foo
+`);
+  });
+
+  myIt("passes stdin to the command", async () => {
+    await util.runProcess("grep", {
+      stdin: `fooo
+bar
+baz
+`,
+      args: ["foo"]
+    }).should.be.fulfilled.and.eventually.deep.equal(`fooo
+`);
+  });
+});

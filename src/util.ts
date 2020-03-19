@@ -25,6 +25,7 @@
  */
 
 import * as assert from "assert";
+import { spawn } from "child_process";
 import { promises as fsPromises } from "fs";
 import { join } from "path";
 
@@ -280,9 +281,51 @@ export function extractElementAsArray<T>(
   return res === undefined ? [] : res;
 }
 
+/**
+ * Run the supplied command on system and resolve to its stdout.
+ *
+ * This function spawns a new process executing the given `command`. The
+ * optional parameters can be used to set the process working directory, to feed
+ * data into the processes via stdin and to set its `argv`.
+ *
+ * A promise is returned that resolves to the processes stdout if it exists with
+ * 0. Otherwise the promise is rejected with an Error containing its return code
+ * and stderr.
+ */
+export function runProcess(
+  command: string,
+  {
+    args,
+    stdin,
+    cwd
+  }: { args?: readonly string[]; stdin?: string; cwd?: string } = {}
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, { cwd });
 
+    const output: any[] = [];
+    const stderr: any[] = [];
 
+    child.stdout.on("data", data => output.push(data));
+    child.stderr.on("data", data => stderr.push(data));
+    child.on("close", code => {
+      if (code === 0) {
+        resolve(output.join(""));
+      } else {
+        reject(
+          new Error(
+            `${command} exited with ${code}, got stderr: ${stderr.join("")}`
+          )
+        );
+      }
+    });
 
+    if (stdin !== undefined) {
+      child.stdin.write(stdin);
+      child.stdin.end();
+    }
+  });
+}
 
 /** Remove the directory `dir` and all its contents recursively */
 export async function rmRf(dir: string): Promise<void> {
