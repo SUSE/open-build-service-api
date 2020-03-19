@@ -48,16 +48,17 @@ export interface Configuration {
   readonly changePassword?: boolean;
 
   /**
-   * Disallow to create groups via the api. Usefull when groups do come via LDAP.
+   * Disallow group creation via the API. Useful when groups are provided via
+   * LDAP.
    */
   readonly disallowGroupCreation?: boolean;
 
   /**
-   * Users are allowed to create projects in their home: namespace themselves.
+   * Users are allowed to create projects in their 'home:' namespace themselves.
    */
   readonly allowUsersCreateHomeProject?: boolean;
 
-  /** Newly created projects have access disabled by default */
+  /** Newly created projects have access disabled by default. */
   readonly defaultAccessDisabled?: boolean;
 
   /** Can users create accounts themselves? */
@@ -117,10 +118,10 @@ export interface Configuration {
   readonly cleanupEmptyProjects?: boolean;
 
   /**
-   * When a user creates a new project as a side-effect of branching a package,
-   * disable publishing that project.
+   * When a user creates a new project by branching a package, disable
+   * publishing for that project.
    *
-   * The default is "on" to save disk space and bandwidth.
+   * The default is `true` to save disk space and bandwidth.
    */
   readonly disableBranchPublishing: boolean;
 
@@ -130,7 +131,7 @@ export interface Configuration {
   /** Default bugzilla instance for reporting bugs to bugowners */
   readonly bugzillaUrl?: URL;
 
-  /** default email adress to contact this OBS admin */
+  /** Email address to contact the admin of this OBS instance. */
   readonly adminEmail?: string;
 
   /** The webui theme */
