@@ -26,7 +26,6 @@ export * from "./configuration";
 export { Connection, normalizeUrl } from "./connection";
 export { Distribution, fetchHostedDistributions } from "./distributions";
 export * from "./file";
-export * from "./package";
 export {
   Commit,
   drawHistoryToSvg,
@@ -35,5 +34,11 @@ export {
   fetchHistoryAcrossLinks,
   Revision
 } from "./history";
+export {
+  checkOutPackage,
+  deletePackage,
+  fetchPackage,
+  Package
+} from "./package";
 export * from "./project";
 export { Group, User } from "./user";

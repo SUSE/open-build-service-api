@@ -224,7 +224,7 @@ export const vagrantSshfsDotChanges: PackageFile = Object.freeze({
   packageName: "vagrant-sshfs"
 });
 
-export const vagrantSshfsDotChangesContents = Object.freeze(dotChangesRev11);
+export const vagrantSshfsDotChangesContents = Buffer.from(dotChangesRev11);
 
 export const vagrantSshfsDotChangesFileHistory: string[] = Object.freeze([
   dotChangesRev1,

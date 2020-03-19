@@ -20,8 +20,14 @@
  */
 
 import * as assert from "assert";
-import { Directory, fetchDirectory } from "./api/directory";
-import { getPackageMeta, PackageMeta } from "./api/package-meta";
+import { promises as fsPromises } from "fs";
+import { join } from "path";
+import { Directory, directoryToApi, fetchDirectory } from "./api/directory";
+import {
+  getPackageMeta,
+  PackageMeta,
+  packageMetaToApi
+} from "./api/package-meta";
 import { Connection, RequestMethod } from "./connection";
 import { StatusReply, statusReplyFromApi } from "./error";
 import {
@@ -30,7 +36,8 @@ import {
   packageFileFromDirectoryEntry
 } from "./file";
 import { Project } from "./project";
-import { zip } from "./util";
+import { unixTimeStampFromDate, zip } from "./util";
+import { newXmlBuilder } from "./xml";
 
 export interface Package {
   /** Name of this package */
@@ -122,6 +129,27 @@ export function extractFileListFromDirectory(
   );
 }
 
+function fileListToDirectory(pkg: Package): Directory {
+  return {
+    name: pkg.name,
+    sourceMd5: pkg.md5Hash,
+    directoryEntries:
+      pkg.files === undefined
+        ? []
+        : pkg.files.map(pkgFile => {
+            return {
+              name: pkgFile.name,
+              size: pkgFile.size?.toString(),
+              md5: pkgFile.md5Hash,
+              mtime:
+                pkgFile.modifiedTime !== undefined
+                  ? unixTimeStampFromDate(pkgFile.modifiedTime).toString()
+                  : undefined
+            };
+          })
+  };
+}
+
 /**
  * Fetch the information about package from OBS and populate a [[Package]]
  * object with the retrieved data.
@@ -205,4 +233,103 @@ export async function deletePackage(
     method: RequestMethod.DELETE
   });
   return statusReplyFromApi(response);
+}
+
+async function writePackageFiles(pkg: Package, path: string): Promise<void> {
+  if (pkg.files === undefined) {
+    return;
+  }
+  await Promise.all(
+    pkg.files.map(f =>
+      fsPromises.writeFile(join(path, f.name), f.contents ?? "")
+    )
+  );
+}
+
+async function writePackageUnderscoreFiles(
+  pkg: Package,
+  proj: Project,
+  path: string
+): Promise<void> {
+  assert(
+    pkg.projectName === proj.name,
+    `package ${pkg.name} belongs to the wrong project (expected ${pkg.projectName}, got ${proj.name})`
+  );
+  if (pkg.files === undefined) {
+    throw new Error(
+      `Cannot save package ${pkg.name}: the file list has not been retrieved yet.`
+    );
+  }
+
+  const basePath = join(path, ".osc");
+
+  const dir = fileListToDirectory(pkg);
+
+  await Promise.all(
+    [
+      { fname: "_osclib_version", contents: "1.0" },
+      { fname: "_apiurl", contents: proj.apiUrl },
+      {
+        fname: "_meta",
+        contents:
+          pkg.meta !== undefined
+            ? newXmlBuilder().buildObject(packageMetaToApi(pkg.meta))
+            : undefined
+      },
+      {
+        fname: "_package",
+        contents: pkg.name
+      },
+      {
+        fname: "_project",
+        contents: pkg.projectName
+      },
+      {
+        fname: "_files",
+        contents: newXmlBuilder().buildObject(directoryToApi(dir))
+      }
+    ]
+      .map(({ fname, contents }) => {
+        return contents === undefined
+          ? Promise.resolve()
+          : fsPromises.writeFile(join(basePath, fname), contents);
+      })
+      .concat(writePackageFiles(pkg, basePath))
+  );
+}
+
+/**
+ * Checks a package out to the file system.
+ *
+ * This function saves a package to the file system in a similar fashion as
+ * `osc` would:
+ * - the files are saved in the directory `${path}`
+ * - metadata are saved in `${path}/.osc`:
+ *   `_apiurl`: url to the api
+ *   `_package`: the name of the package
+ *   `_osclib_version`: contains the string 1.0
+ *   `_project`: the name of the project
+ *   `_files`: contains the file list at the checked out revision as received
+ *             from OBS' API (a so-called directory listing)
+ * - the packages files at the checked out revision are saved in `${path}/.osc`
+ *
+ * @param pkg  The package that should be written to the file system.
+ *     The package's files **must** have been retrieved beforehand, otherwise an
+ *     exception is thrown.
+ * @param proj  The [[Project]] to which `pkg` belongs.
+ * @param path  Directory into which the package shall be checked out. The
+ *     directory **must not** exist already.
+ */
+export async function checkOutPackage(
+  pkg: Package,
+  proj: Project,
+  path: string
+): Promise<void> {
+  await fsPromises.mkdir(path, { recursive: false });
+  await fsPromises.mkdir(join(path, ".osc"), { recursive: false });
+
+  await Promise.all([
+    writePackageUnderscoreFiles(pkg, proj, path),
+    writePackageFiles(pkg, path)
+  ]);
 }

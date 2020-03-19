@@ -29,7 +29,8 @@ export interface PackageFile {
   name: string;
   packageName: string;
   projectName: string;
-  contents?: string;
+  /** The contents of this file. */
+  contents?: Buffer;
   md5Hash?: string;
   size?: number;
   modifiedTime?: Date;
@@ -77,7 +78,7 @@ export function fetchFileContents(
   con: Connection,
   pkgFile: PackageFile,
   revision?: Commit | string | number
-): Promise<string> {
+): Promise<Buffer> {
   let route = `/source/${pkgFile.projectName}/${pkgFile.packageName}/${pkgFile.name}`;
 
   if (revision !== undefined) {
@@ -90,5 +91,5 @@ export function fetchFileContents(
     route = route.concat(`?rev=${rev}`);
   }
 
-  return con.makeApiCall(route, { decodeReply: false });
+  return con.makeApiCall(route, { decodeResponse: DecodeResponse.AS_BUFFER });
 }

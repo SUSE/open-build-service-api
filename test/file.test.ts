@@ -29,7 +29,7 @@ describe("File", () => {
       name: "foo",
       packageName: "fooPkg",
       projectName: "fooProj",
-      contents: "foo",
+      contents: Buffer.from("foo"),
       md5Hash: "d3b07384d113edec49eaa6238ad5ff00",
       size: 3,
       modifiedTime: new Date("1970-01-01")

@@ -97,7 +97,9 @@ function packageMetaFromApi(
   return deleteUndefinedAndEmptyMembers(res);
 }
 
-function packageMetaToApi(packageMeta: PackageMeta): PackageMetaApiReply {
+export function packageMetaToApi(
+  packageMeta: PackageMeta
+): PackageMetaApiReply {
   const res: PackageMetaApiReply = {
     package: deleteUndefinedAndEmptyMembers({
       $: deleteUndefinedMembers({
