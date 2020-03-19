@@ -21,8 +21,8 @@
 
 import * as assert from "assert";
 import { DirectoryEntry } from "./api/directory";
-import { Connection } from "./connection";
 import { Commit } from "./history";
+import { Connection, DecodeResponse } from "./connection";
 import { dateFromUnixTimeStamp, deleteUndefinedMembers } from "./util";
 
 export interface PackageFile {

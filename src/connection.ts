@@ -48,6 +48,38 @@ export const enum RequestMethod {
   DELETE = "DELETE"
 }
 
+/** Options how a response from OBS can be decoded */
+export const enum DecodeResponse {
+  /** The response is not converted at all and just returned as a `Buffer` */
+  AS_BUFFER
+}
+
+export interface ApiCallCommonOptions {
+  /**
+   * The method used to perform the request. Defaults to
+   * [[GET|RequestMethod.GET]].
+   */
+  method?: RequestMethod;
+
+  /**
+   * An arbitrary object to be sent along with the request.
+   *
+   * This object is encoded to XML via the builder obtained from
+   * [[newXmlBuilder]].
+   */
+  payload?: any;
+}
+
+export type ApiCallOptions = ApiCallCommonOptions & {
+  /**
+   * Alternative behavior how the reply should be decoded.
+   *
+   * By default the response is assumed to be XML and decoded using the parser
+   * obtained from [[newXmlParser]].
+   */
+  decodeResponse: DecodeResponse;
+};
+
 /**
  * Class for storing the credentials to connect to an Open Build Service
  * instance.
@@ -140,55 +172,72 @@ export class Connection {
   }
 
   /**
+   * Perform a request to the API and convert replies' body from XML into a JS
+   * object.
+   *
+   * @return The body of the reply, decoded from XML via xml2js'
+   *     [parseString](https://github.com/Leonidas-from-XIV/node-xml2js#usage).
+   *     The reply is only decoded when the request succeeds (`200 <= statusCode
+   *     <= 299`)
+   */
+  public async makeApiCall(
+    route: string,
+    options?: ApiCallCommonOptions
+  ): Promise<any>;
+
+  /**
+   * Perform a request to the API and return the retrieved data itself as a
+   * Buffer.
+   *
+   * @return The raw reply as a Buffer if the response status is between 200 and
+   *     299.
+   */
+  public async makeApiCall(
+    route: string,
+    options?: ApiCallOptions
+  ): Promise<Buffer>;
+
+  /**
    * Perform a request to the API and return the replies body (by default
    * decoded from XML).
    *
    * @param route  route to which the request will be sent
-   * @param method  The method used to perform the request. Defaults to
-   *     [[GET|RequestMethod.GET]]
-   * @param payload  An arbitrary object to be sent along with the request. This
-   *     object is encoded to XML via xml2js'
-   *     [Builder](https://github.com/Leonidas-from-XIV/node-xml2js#xml-builder-usage).
-   * @param decodeReply  Flag whether the reply should be assumed to be XML and
-   *     be decoded via `xml2js`. Defaults to `true`.
-   *
-   * @return The body of the reply, optionally decoded from XML via xml2js'
-   *     [parseString](https://github.com/Leonidas-from-XIV/node-xml2js#usage). The
-   *     reply is only decoded when the request succeeds (`200 <= statusCode <=
-   *     299`)
+   * @param options Additional options for further control. By default the
+   *     request is a [[GET|RequestMethod.GET]] request with no payload and the
+   *     response is assumed to be XML.
    *
    * @throw An [[ApiError]] if the API replied with a status code less than
    *     `200` or more than `299`.
    */
   public async makeApiCall(
     route: string,
-    {
-      method,
-      payload,
-      decodeReply
-    }: {
-      method?: RequestMethod;
-      payload?: any;
-      decodeReply?: boolean;
-    } = {}
+    options?: ApiCallOptions
   ): Promise<any> {
     const url = new URL(route, this.url);
-    const reqMethod = method === undefined ? RequestMethod.GET : method;
+    const reqMethod =
+      options?.method === undefined ? RequestMethod.GET : options.method;
     assert(
       reqMethod !== undefined,
       "request method in reqMethod must not be undefined"
     );
+
+    if (options?.decodeResponse !== undefined) {
+      assert(
+        options.decodeResponse === DecodeResponse.AS_BUFFER,
+        `decodeResponse must be ${DecodeResponse.AS_BUFFER}, but got ${options.decodeResponse}`
+      );
+    }
 
     return new Promise((resolve, reject) => {
       const req = request(
         url,
         {
           auth: this.headers,
-          method: reqMethod,
           ca: this.serverCaCertificate,
           headers: {
             Cookie: this.cookies
-          }
+          },
+          method: reqMethod
         },
         response => {
           const body: any[] = [];
@@ -207,11 +256,11 @@ export class Connection {
             }
 
             try {
-              const fullBody = body.join("");
               const data =
-                decodeReply !== undefined && !decodeReply
-                  ? fullBody
-                  : await newXmlParser().parseStringPromise(fullBody);
+                options?.decodeResponse !== undefined &&
+                options.decodeResponse === DecodeResponse.AS_BUFFER
+                  ? Buffer.concat(body)
+                  : await newXmlParser().parseStringPromise(body.join(""));
 
               if (response.statusCode! < 200 || response.statusCode! > 299) {
                 reject(
@@ -228,8 +277,8 @@ export class Connection {
       );
       req.on("error", err => reject(err));
 
-      if (payload !== undefined) {
-        req.write(newXmlBuilder().buildObject(payload));
+      if (options?.payload !== undefined) {
+        req.write(newXmlBuilder().buildObject(options.payload));
       }
       req.end();
     });
