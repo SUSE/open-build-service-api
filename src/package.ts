@@ -139,7 +139,7 @@ function fileListToDirectory(pkg: Package): Directory {
         : pkg.files.map(pkgFile => {
             return {
               name: pkgFile.name,
-              size: pkgFile.size?.toString(),
+              size: pkgFile.size,
               md5: pkgFile.md5Hash,
               mtime:
                 pkgFile.modifiedTime !== undefined

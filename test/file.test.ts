@@ -29,7 +29,7 @@ describe("File", () => {
       name: "foo",
       packageName: "fooPkg",
       projectName: "fooProj",
-      contents: Buffer.from("foo"),
+      contents: Buffer.from("fooooooooooooo"),
       md5Hash: "d3b07384d113edec49eaa6238ad5ff00",
       size: 3,
       modifiedTime: new Date("1970-01-01")
@@ -49,14 +49,31 @@ describe("File", () => {
       expect(modified).to.have.property("contents", testFile.contents);
     });
 
-    it("removes the hash, size and modifiedTime, if the Directory does not contain them", () => {
+    it("removes the hash and modifiedTime, if the Directory does not contain them", () => {
       const modified = packageFileFromDirectoryEntry(testFile, {
         name: "foo"
       });
 
-      ["md5Hash", "size", "modifiedTime"].forEach(key =>
+      ["md5Hash", "modifiedTime"].forEach(key =>
         expect(modified).to.not.have.property(key)
       );
+    });
+
+    it("takes the new directory entries size from provided size", () => {
+      packageFileFromDirectoryEntry(testFile, {
+        name: "foo",
+        size: 16
+      })
+        .should.have.property("size")
+        .that.equals(16);
+    });
+
+    it("takes the new directory entries size from file contents", () => {
+      packageFileFromDirectoryEntry(testFile, {
+        name: "foo"
+      })
+        .should.have.property("size")
+        .that.equals(testFile.contents!.length);
     });
   });
 });

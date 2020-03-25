@@ -54,11 +54,8 @@ export function packageFileFromDirectoryEntry(
     packageName: file.packageName,
     projectName: file.projectName,
     md5Hash: dentry.md5,
-    modifiedTime:
-      dentry.mtime === undefined
-        ? undefined
-        : dateFromUnixTimeStamp(dentry.mtime),
-    size: dentry.size === undefined ? undefined : parseInt(dentry.size, 10),
+    modifiedTime: dentry.modifiedTime,
+    size: dentry.size !== undefined ? dentry.size : file.contents?.length,
     contents: file.contents
   });
 }

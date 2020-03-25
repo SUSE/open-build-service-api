@@ -19,10 +19,13 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import { SupportedHashfunction } from "../checksum";
 import { Connection } from "../connection";
 import {
+  dateFromUnixTimeStamp,
   deleteUndefinedAndEmptyMembers,
-  extractElementAsArrayIfPresent
+  extractElementAsArrayIfPresent,
+  unixTimeStampFromDate
 } from "../util";
 
 /**
@@ -30,13 +33,42 @@ import {
  * [directory](https://build.opensuse.org/apidocs/directory.xsd) schema.
  */
 
+/** A checksum of a directory entry (usually that is a file) */
+export interface Checksum {
+  /** The hash function that is used to calculate the checksum */
+  hashFunction: SupportedHashfunction;
+  /** The actual checksum value as a hex digest */
+  hash: string;
+}
+
+function checksumFromString(str?: string): Checksum | undefined {
+  if (str === undefined) {
+    return undefined;
+  }
+  const splitByColon = str.split(":");
+  if (splitByColon.length !== 2) {
+    return undefined;
+  }
+  const [hashFunction, hash] = splitByColon;
+  if (hashFunction !== "md5" && hashFunction !== "sha256") {
+    return undefined;
+  }
+  return { hashFunction, hash };
+}
+
+function checksumToString(c?: Checksum): string | undefined {
+  return c === undefined ? undefined : `${c.hashFunction}:${c.hash}`;
+}
+
 /** One entry in the directory. It's identified by its name. */
 export interface DirectoryEntry {
   name?: string;
-  size?: string;
+  size?: number;
   md5?: string;
-  mtime?: string;
-  originproject?: string;
+  /** A checksum for file verification during uploads */
+  hash?: Checksum;
+  modifiedTime?: Date;
+  originProject?: string;
   available?: boolean;
   recommended?: boolean;
 }
@@ -62,11 +94,57 @@ export interface ServiceInfo {
 }
 
 interface DirectoryEntryApiReply {
-  $: DirectoryEntry;
+  $: {
+    name?: string;
+    size?: string;
+    md5?: string;
+    mtime?: string;
+    originproject?: string;
+    available?: boolean;
+    recommended?: boolean;
+    hash?: string;
+  };
 }
 
 function directoryEntryFromApi(dentry: DirectoryEntryApiReply): DirectoryEntry {
-  return dentry.$;
+  const { hash, size, mtime, originproject, ...rest } = dentry.$;
+  return {
+    ...rest,
+    originProject: originproject,
+    modifiedTime:
+      mtime !== undefined ? dateFromUnixTimeStamp(mtime) : undefined,
+    size: size === undefined ? undefined : parseInt(size, 10),
+    hash: checksumFromString(hash)
+  };
+}
+
+function directoryEntryToApi(dentry: DirectoryEntry): DirectoryEntryApiReply {
+  // explicitly destructure most of the elements here to get the "correct" order
+  // of the attributes ("correct" here = the same order that osc uses by default)
+  const {
+    name,
+    hash,
+    md5,
+    size,
+    modifiedTime,
+    originProject,
+    ...rest
+  } = dentry;
+
+  return {
+    $: {
+      name,
+      size: size?.toString(),
+      md5,
+      mtime:
+        modifiedTime !== undefined
+          ? unixTimeStampFromDate(modifiedTime).toString()
+          : undefined,
+      hash: checksumToString(hash),
+      originproject: originProject,
+      ...rest
+    }
+  };
 }
 
 interface LinkInfoApiReply {
@@ -154,9 +232,11 @@ export function directoryToApi(directory: Directory): DirectoryApiReply {
         srcmd5: directory.sourceMd5,
         count: directory.count
       },
-      entry: directory.directoryEntries?.map(dentry => ({ $: dentry })),
-      linkinfo: directory.linkInfos?.map(link => ({ $: link })),
-      serviceinfo: directory.serviceInfos?.map(service => ({ $: service }))
+      entry: directory.directoryEntries?.map((dentry) =>
+        directoryEntryToApi(dentry)
+      ),
+      linkinfo: directory.linkInfos?.map((link) => ({ $: link })),
+      serviceinfo: directory.serviceInfos?.map((service) => ({ $: service }))
     })
   };
 }
