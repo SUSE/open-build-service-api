@@ -28,7 +28,7 @@ import {
   readFileSync,
   writeFileSync
 } from "fs";
-import { Context } from "mocha";
+import { AsyncFunc, Context, Func } from "mocha";
 import * as nock from "nock";
 import { tmpdir } from "os";
 import { join, sep } from "path";
@@ -246,3 +246,12 @@ export async function checkApiCallFails<T>(
     ) as never;
   }
 }
+
+export const castToFuncT = <FC, FT>(func: (this: FC) => void): FT =>
+  (func as any) as FT;
+
+export const castToAsyncFunc = <FC>(func: (this: FC) => void): AsyncFunc =>
+  castToFuncT<FC, AsyncFunc>(func);
+
+export const castToFunc = <FC>(func: (this: FC) => void): Func =>
+  castToFuncT<FC, Func>(func);
