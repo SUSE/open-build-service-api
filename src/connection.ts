@@ -62,6 +62,13 @@ export interface ApiCallMainOptions {
    * [[newXmlBuilder]].
    */
   payload?: any;
+
+  /**
+   * Whether `payload` should be sent as it is. If false (or omitted), then
+   * `payload` is expected to be an object that is encoded to XML via the
+   * builder obtained via [[newXmlBuilder]]
+   */
+  sendPayloadAsRaw?: boolean;
 }
 
 export interface ApiCallOptions extends ApiCallMainOptions {
@@ -265,7 +272,14 @@ export class Connection {
       req.on("error", err => reject(err));
 
       if (options?.payload !== undefined) {
-        req.write(newXmlBuilder().buildObject(options.payload));
+        if (
+          options.sendPayloadAsRaw === undefined ||
+          !options.sendPayloadAsRaw
+        ) {
+          req.write(newXmlBuilder().buildObject(options.payload));
+        } else {
+          req.write(options.payload);
+        }
       }
       req.end();
     });
