@@ -48,13 +48,7 @@ export const enum RequestMethod {
   DELETE = "DELETE"
 }
 
-/** Options how a response from OBS can be decoded */
-export const enum DecodeResponse {
-  /** The response is not converted at all and just returned as a `Buffer` */
-  AS_BUFFER
-}
-
-export interface ApiCallCommonOptions {
+export interface ApiCallMainOptions {
   /**
    * The method used to perform the request. Defaults to
    * [[GET|RequestMethod.GET]].
@@ -70,15 +64,15 @@ export interface ApiCallCommonOptions {
   payload?: any;
 }
 
-export type ApiCallOptions = ApiCallCommonOptions & {
+export interface ApiCallOptions extends ApiCallMainOptions {
   /**
-   * Alternative behavior how the reply should be decoded.
+   * Whether the response is assumed to be XML and decoded into a JS object
+   * using the parser obtained from [[newXmlParser]].
    *
-   * By default the response is assumed to be XML and decoded using the parser
-   * obtained from [[newXmlParser]].
+   * The response is by default assumed to be XML.
    */
-  decodeResponse: DecodeResponse;
-};
+  decodeResponseFromXml?: boolean;
+}
 
 /**
  * Class for storing the credentials to connect to an Open Build Service
@@ -182,7 +176,7 @@ export class Connection {
    */
   public async makeApiCall(
     route: string,
-    options?: ApiCallCommonOptions
+    options?: ApiCallMainOptions & { decodeResponseFromXml?: true }
   ): Promise<any>;
 
   /**
@@ -194,7 +188,7 @@ export class Connection {
    */
   public async makeApiCall(
     route: string,
-    options?: ApiCallOptions
+    options?: ApiCallMainOptions & { decodeResponseFromXml: false }
   ): Promise<Buffer>;
 
   /**
@@ -220,13 +214,6 @@ export class Connection {
       reqMethod !== undefined,
       "request method in reqMethod must not be undefined"
     );
-
-    if (options?.decodeResponse !== undefined) {
-      assert(
-        options.decodeResponse === DecodeResponse.AS_BUFFER,
-        `decodeResponse must be ${DecodeResponse.AS_BUFFER}, but got ${options.decodeResponse}`
-      );
-    }
 
     return new Promise((resolve, reject) => {
       const req = request(
@@ -257,8 +244,8 @@ export class Connection {
 
             try {
               const data =
-                options?.decodeResponse !== undefined &&
-                options.decodeResponse === DecodeResponse.AS_BUFFER
+                options?.decodeResponseFromXml !== undefined &&
+                !options.decodeResponseFromXml
                   ? Buffer.concat(body)
                   : await newXmlParser().parseStringPromise(body.join(""));
 

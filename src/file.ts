@@ -21,8 +21,8 @@
 
 import * as assert from "assert";
 import { DirectoryEntry } from "./api/directory";
+import { Connection, RequestMethod } from "./connection";
 import { Commit } from "./history";
-import { Connection, DecodeResponse } from "./connection";
 import { dateFromUnixTimeStamp, deleteUndefinedMembers } from "./util";
 
 export interface PackageFile {
@@ -91,5 +91,5 @@ export function fetchFileContents(
     route = route.concat(`?rev=${rev}`);
   }
 
-  return con.makeApiCall(route, { decodeResponse: DecodeResponse.AS_BUFFER });
+  return con.makeApiCall(route, { decodeResponseFromXml: false });
 }

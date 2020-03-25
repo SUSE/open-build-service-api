@@ -21,7 +21,7 @@
 
 import { expect } from "chai";
 import { describe, it } from "mocha";
-import { Connection, DecodeResponse, normalizeUrl } from "../src/connection";
+import { Connection, normalizeUrl } from "../src/connection";
 import { ApiError } from "../src/error";
 import {
   afterEachRecord,
@@ -135,7 +135,7 @@ describe("Connection", () => {
         "https://jsonplaceholder.typicode.com"
       );
       const todo = await con.makeApiCall("todos/1", {
-        decodeResponse: DecodeResponse.AS_BUFFER
+        decodeResponseFromXml: false
       }).should.be.fulfilled;
       expect(JSON.parse(todo)).to.deep.equal({
         userId: 1,
@@ -192,7 +192,7 @@ describe("Connection", () => {
       );
 
       await con.makeApiCall("/index.php", {
-        decodeResponse: DecodeResponse.AS_BUFFER
+        decodeResponseFromXml: false
       }).should.be.fulfilled;
     });
 
@@ -205,7 +205,7 @@ describe("Connection", () => {
 
       await con
         .makeApiCall("/index.php", {
-          decodeResponse: DecodeResponse.AS_BUFFER
+          decodeResponseFromXml: false
         })
         .should.be.rejectedWith("self signed certificate in certificate chain");
     });
