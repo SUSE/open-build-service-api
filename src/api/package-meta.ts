@@ -85,7 +85,7 @@ export interface PackageMeta extends CommonMeta {
   develPackage?: DevelPackage;
 }
 
-function packageMetaFromApi(
+export function packageMetaFromApi(
   packageMetaApiReply: PackageMetaApiReply
 ): PackageMeta {
   const res: PackageMeta = {

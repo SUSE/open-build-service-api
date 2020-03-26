@@ -22,12 +22,19 @@
 import * as assert from "assert";
 import { promises as fsPromises } from "fs";
 import { join } from "path";
-import { Directory, directoryToApi, fetchDirectory } from "./api/directory";
+import {
+  Directory,
+  directoryFromApi,
+  directoryToApi,
+  fetchDirectory
+} from "./api/directory";
 import {
   getPackageMeta,
   PackageMeta,
+  packageMetaFromApi,
   packageMetaToApi
 } from "./api/package-meta";
+import { calculateHash } from "./checksum";
 import { Connection, RequestMethod } from "./connection";
 import { StatusReply, statusReplyFromApi } from "./error";
 import {
@@ -37,7 +44,8 @@ import {
 } from "./file";
 import { Project } from "./project";
 import { unixTimeStampFromDate, zip } from "./util";
-import { newXmlBuilder } from "./xml";
+import { FileState, ModifiedPackage } from "./vcs";
+import { newXmlBuilder, newXmlParser } from "./xml";
 
 export interface Package {
   /** Url to the API from which this package was retrieved */
@@ -250,7 +258,17 @@ async function writePackageFiles(pkg: Package, path: string): Promise<void> {
   );
 }
 
-async function writePackageUnderscoreFiles(
+const mandatoryPkgUnderscoreFiles = [
+  "_osclib_version",
+  "_apiurl",
+  "_package",
+  "_project",
+  "_files"
+];
+
+const optionalPkgUnderscoreFiles = ["_meta"];
+
+export async function writePackageUnderscoreFiles(
   pkg: Package,
   path: string
 ): Promise<void> {
@@ -321,7 +339,12 @@ async function writePackageUnderscoreFiles(
 export async function checkOutPackage(
   pkg: Package,
   path: string
-): Promise<void> {
+): Promise<ModifiedPackage> {
+  if (pkg.files === undefined) {
+    throw new Error(
+      `Cannot checkout package ${pkg.name}: file list has not been retrieved yet`
+    );
+  }
   await fsPromises.mkdir(path, { recursive: false });
   await fsPromises.mkdir(join(path, ".osc"), { recursive: false });
 
@@ -329,4 +352,102 @@ export async function checkOutPackage(
     writePackageUnderscoreFiles(pkg, path),
     writePackageFiles(pkg, path)
   ]);
+
+  const { files, ...restOfPkg } = pkg;
+  return {
+    ...restOfPkg,
+    files: files.map((f) => ({ state: FileState.Unmodified, ...f })),
+    path
+  };
+}
+
+/**
+ * Construct a [[Package]] from a previously checked out package.
+ *
+ * @param path  Path to the directory where the package has been checked out to.
+ * @param con  A [[Connection]] that will be used to refetch the metadata in
+ *     `.osc` if they appear to be in an inconsistent state.
+ *
+ * @return A [[Package]] object with the files
+ */
+export async function readInCheckedOutPackage(
+  path: string,
+  con: Connection
+): Promise<Package> {
+  const [
+    osclibVersion,
+    apiUrl,
+    name,
+    projectName,
+    fileDirectoryXml
+  ] = await Promise.all(
+    mandatoryPkgUnderscoreFiles.map(async (fname) =>
+      (await fsPromises.readFile(join(path, ".osc", fname))).toString()
+    )
+  );
+
+  const [metaXml] = await Promise.all(
+    optionalPkgUnderscoreFiles.map(async (fname) => {
+      try {
+        return (
+          await fsPromises.readFile(join(path, ".osc", fname))
+        ).toString();
+      } catch {
+        return undefined;
+      }
+    })
+  );
+
+  const meta =
+    metaXml !== undefined
+      ? packageMetaFromApi(await newXmlParser().parseStringPromise(metaXml))
+      : await getPackageMeta(con, projectName, name);
+
+  if (parseFloat(osclibVersion) !== 1.0) {
+    throw Error(
+      `Package ${name} in ${path} has an invalid osclib version: ${osclibVersion} (expected 1.0)`
+    );
+  }
+
+  const dir = directoryFromApi(
+    await newXmlParser().parseStringPromise(fileDirectoryXml)
+  );
+
+  const pkg = { apiUrl, name, projectName, meta, md5Hash: dir.sourceMd5 };
+
+  const files = fileListFromDirectory(pkg, dir);
+
+  let needsRefetch: boolean = false;
+
+  await Promise.all(
+    files.map(async (f) => {
+      try {
+        f.contents = await fsPromises.readFile(join(path, ".osc", f.name));
+
+        // ensure that the hash is present
+        const curHash = calculateHash(f.contents, "md5");
+        if (f.md5Hash === undefined) {
+          f.md5Hash = curHash;
+        } else {
+          // !the hash is wrong!
+          if (curHash !== f.md5Hash) {
+            needsRefetch = true;
+          }
+        }
+      } catch (err) {
+        // file I/O error, e.g. file not present => need to get it again
+        needsRefetch = true;
+      }
+    })
+  );
+
+  if (needsRefetch) {
+    const newPkg = await fetchPackage(con, pkg.projectName, pkg.name, {
+      retrieveFileContents: true,
+      expandLinks: true
+    });
+    await writePackageUnderscoreFiles(newPkg, path);
+  }
+
+  return { files, ...pkg };
 }
