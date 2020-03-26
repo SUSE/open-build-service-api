@@ -20,10 +20,15 @@
  */
 
 import * as assert from "assert";
+import { promises as fsPromises } from "fs";
+import { basename } from "path";
 import { DirectoryEntry } from "./api/directory";
+import { calculateHash } from "./checksum";
 import { Connection, RequestMethod } from "./connection";
+import { StatusReply, statusReplyFromApi } from "./error";
 import { Commit } from "./history";
-import { dateFromUnixTimeStamp, deleteUndefinedMembers } from "./util";
+import { Package } from "./package";
+import { deleteUndefinedMembers, pathExists, PathType } from "./util";
 
 export interface PackageFile {
   name: string;
@@ -34,6 +39,54 @@ export interface PackageFile {
   md5Hash?: string;
   size?: number;
   modifiedTime?: Date;
+}
+
+export async function packagFileFromFile(
+  path: string,
+  pkg: Package
+): Promise<PackageFile>;
+
+export async function packagFileFromFile(
+  path: string,
+  packageName: string,
+  projectName: string
+): Promise<PackageFile>;
+
+/** Create a [[PackageFile]] from an existing file on the file system */
+export async function packagFileFromFile(
+  path: string,
+  packageOrPackageName: string | Package,
+  project?: string
+): Promise<PackageFile> {
+  if (!(await pathExists(path, PathType.File))) {
+    throw new Error(`${path} is not a file or does not exist`);
+  }
+
+  if (typeof packageOrPackageName === "string") {
+    assert(
+      project !== undefined,
+      "projectName must not be undefined when using the packageName, projectName overload"
+    );
+  }
+
+  const [packageName, projectName] =
+    typeof packageOrPackageName === "string"
+      ? [packageOrPackageName, project!]
+      : [packageOrPackageName.name, packageOrPackageName.projectName];
+
+  const [stat, contents] = await Promise.all([
+    fsPromises.stat(path),
+    fsPromises.readFile(path)
+  ]);
+  return {
+    name: basename(path),
+    packageName,
+    projectName,
+    size: stat.size,
+    contents,
+    md5Hash: calculateHash(contents, "md5"),
+    modifiedTime: stat.mtime
+  };
 }
 
 export function packageFileFromDirectoryEntry(
@@ -89,4 +142,54 @@ export function fetchFileContents(
   }
 
   return con.makeApiCall(route, { decodeResponseFromXml: false });
+}
+
+/**
+ * Upload the file contents of the provided file to OBS.
+ *
+ * @param con  The [[Connection]] to use for the upload.
+ * @param pkgFile  The file which' contents should be uploaded.
+ *     The [[packageFile.contents]] field must not be undefined, otherwise an
+ *     exception is thrown.
+ *
+ * @return The status as reported by OBS on success.
+ *
+ * @throw An [[ApiError]] when the communication with OBS fails or an `Error` if
+ *     the package's file contents are undefined.
+ */
+export async function uploadFileContents(
+  con: Connection,
+  pkgFile: PackageFile
+): Promise<string> {
+  if (pkgFile.contents === undefined) {
+    throw new Error(
+      `File ${pkgFile.name} from the package ${pkgFile.packageName} and project ${pkgFile.projectName} has no file contents.`
+    );
+  }
+
+  const route = `/source/${pkgFile.projectName}/${pkgFile.packageName}/${pkgFile.name}?rev=repository`;
+
+  const response = await con.makeApiCall(route, {
+    method: RequestMethod.PUT,
+    payload: pkgFile.contents,
+    sendPayloadAsRaw: true
+  });
+
+  // FIXME:
+  return response.revision?.srcmd5;
+  // return statusReplyFromApi(response);
+}
+
+/**
+ * Deletes the specified file from its package on OBS and commits the changes.
+ */
+export async function deleteFile(
+  con: Connection,
+  pkgFile: PackageFile
+): Promise<StatusReply> {
+  const route = `/source/${pkgFile.projectName}/${pkgFile.packageName}/${pkgFile.name}`;
+
+  return statusReplyFromApi(
+    await con.makeApiCall(route, { method: RequestMethod.DELETE })
+  );
 }
