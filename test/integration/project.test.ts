@@ -79,12 +79,10 @@ describe("#fetchProject", () => {
       title: "openSUSE Tumbleweed Images",
       description:
         "Contains the Live CD, JeOS, Vagrant boxes and possibly more.",
-      person: [
-        { userId: "dancermak", role: LocalRole.Maintainer },
-        { userId: "dcassany", role: LocalRole.Maintainer },
-        { userId: "favogt", role: LocalRole.Maintainer },
-        { userId: "gmoro", role: LocalRole.Maintainer }
-      ]
+      person: ["dancermak", "dcassany", "favogt", "gmoro"].map((userId) => ({
+        userId,
+        role: LocalRole.Maintainer
+      }))
     });
   });
 });
