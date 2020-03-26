@@ -342,3 +342,39 @@ export async function rmRf(dir: string): Promise<void> {
   );
   await fsPromises.rmdir(dir);
 }
+
+export const enum PathType {
+  File,
+  Directory
+}
+
+/**
+ * Check if `path` exists and optionally if it is of the supplied `checkIsType`.
+ *
+ * @param path  The path which existence should be checked.
+ * @param checkIsType  If provided, then `path` is checked whether it is of that
+ *     type.
+ *
+ * @return `true` if path exists and if it is of the correct type.
+ */
+export async function pathExists(
+  path: string,
+  checkIsType?: PathType
+): Promise<boolean> {
+  try {
+    const stat = await fsPromises.stat(path);
+    if (checkIsType === undefined) {
+      return true;
+    }
+    switch (checkIsType) {
+      case PathType.File:
+        return stat.isFile();
+      case PathType.Directory:
+        return stat.isDirectory();
+      default:
+        return false;
+    }
+  } catch {
+    return false;
+  }
+}

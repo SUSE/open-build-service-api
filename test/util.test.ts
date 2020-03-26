@@ -22,10 +22,9 @@
 import mockFs = require("mock-fs");
 
 import { expect } from "chai";
+import { existsSync } from "fs";
 import { describe, it } from "mocha";
 import * as util from "../src/util";
-import { existsSync } from "fs";
-import { rmRf } from "../src/util";
 
 class TestClass {
   constructor(readonly value: string) {}
@@ -169,14 +168,12 @@ describe("#rmRf", () => {
     });
   });
 
-  afterEach(() => {
-    mockFs.restore();
-  });
+  afterEach(() => mockFs.restore());
 
   it("removes the directory fooDir and all its contents", async () => {
     expect(existsSync("fooDir")).to.equal(true);
 
-    await rmRf("fooDir").should.be.fulfilled;
+    await util.rmRf("fooDir").should.be.fulfilled;
 
     expect(existsSync("fooDir/foo")).to.equal(false);
     expect(existsSync("fooDir")).to.equal(false);
@@ -225,5 +222,54 @@ baz
       args: ["foo"]
     }).should.be.fulfilled.and.eventually.deep.equal(`fooo
 `);
+  });
+});
+
+describe("#pathExists", () => {
+  beforeEach(() => {
+    mockFs({
+      fooDir: mockFs.directory(),
+      fooFile: "content",
+      linkToFile: mockFs.symlink({ path: "fooFile" }),
+      linkToDir: mockFs.symlink({ path: "fooDir" })
+    });
+  });
+
+  afterEach(() => mockFs.restore());
+
+  it("returns true for files and directories if no type is requested", async () => {
+    await util
+      .pathExists("fooDir")
+      .should.be.fulfilled.and.eventually.equal(true);
+    await util
+      .pathExists("fooFile")
+      .should.be.fulfilled.and.eventually.equal(true);
+  });
+
+  it("returns true for files and false for directories if we are checking for files", async () => {
+    await util
+      .pathExists("fooDir", util.PathType.File)
+      .should.be.fulfilled.and.eventually.equal(false);
+    await util
+      .pathExists("fooFile", util.PathType.File)
+      .should.be.fulfilled.and.eventually.equal(true);
+  });
+
+  it("returns false for files and true for directories if we are checking for directories", async () => {
+    await util
+      .pathExists("fooDir", util.PathType.Directory)
+      .should.be.fulfilled.and.eventually.equal(true);
+    await util
+      .pathExists("fooFile", util.PathType.Directory)
+      .should.be.fulfilled.and.eventually.equal(false);
+  });
+
+  it("recognizes links as existing", async () => {
+    await util
+      .pathExists("linkToDir")
+      .should.be.fulfilled.and.eventually.equal(true);
+    await util
+      .pathExists("linkToFile")
+      .should.be.fulfilled.and.eventually.equal(true);
   });
 });
