@@ -84,8 +84,8 @@ function baseRepositoryToApi(
       rebuild: repo.rebuild
     }),
     arch: repo.arch,
-    path: repo.path?.map(pth => base_types.pathToApi(pth)),
-    releasetarget: repo.releasetarget?.map(relTgt =>
+    path: repo.path?.map((pth) => base_types.pathToApi(pth)),
+    releasetarget: repo.releasetarget?.map((relTgt) =>
       base_types.releaseTargetToApi(relTgt)
     )
   });
@@ -172,9 +172,9 @@ export function projectMetaToApi(proj: ProjectMeta): ProjectMetaApiReply {
       $: deleteUndefinedAndEmptyMembers({ name: proj.name, kind: proj.kind }),
       ...base_types.commonMetaToApi(proj),
       access: flag.booleanToSimpleFlag(proj.access),
-      link: proj.link?.map(lnk => base_types.linkToApi(lnk)),
+      link: proj.link?.map((lnk) => base_types.linkToApi(lnk)),
       mountproject: proj.mountProject,
-      repository: proj.repository?.map(repo => baseRepositoryToApi(repo))
+      repository: proj.repository?.map((repo) => baseRepositoryToApi(repo))
     })
   };
 

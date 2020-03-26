@@ -140,7 +140,7 @@ export async function fetchHostedDistributions(
   );
 
   return Object.freeze(
-    distros.distributions.distribution.map(distro => {
+    distros.distributions.distribution.map((distro) => {
       return deleteUndefinedAndEmptyMembers({
         vendor: distro.$.vendor,
         version: distro.$.version,

@@ -130,7 +130,7 @@ export function setPropertyOnCondition<T, K extends keyof T>(
 export function deleteUndefinedMembers<T>(obj: T): T {
   const res: any = {};
 
-  Object.keys(obj).forEach(key => {
+  Object.keys(obj).forEach((key) => {
     if (obj[key as keyof T] !== undefined) {
       res[key] = obj[key as keyof T];
     }
@@ -145,7 +145,7 @@ export function deleteUndefinedMembers<T>(obj: T): T {
 export function deleteUndefinedAndEmptyMembers<T>(obj: T): T {
   const res: any = {};
 
-  Object.keys(obj).forEach(key => {
+  Object.keys(obj).forEach((key) => {
     const elem = obj[key as keyof T];
     if (elem !== undefined) {
       if (!Array.isArray(elem) || ((elem as unknown) as any[]).length > 0) {
@@ -306,9 +306,9 @@ export function runProcess(
     const output: any[] = [];
     const stderr: any[] = [];
 
-    child.stdout.on("data", data => output.push(data));
-    child.stderr.on("data", data => stderr.push(data));
-    child.on("close", code => {
+    child.stdout.on("data", (data) => output.push(data));
+    child.stderr.on("data", (data) => stderr.push(data));
+    child.on("close", (code) => {
       if (code === 0) {
         resolve(output.join(""));
       } else {
@@ -332,7 +332,7 @@ export async function rmRf(dir: string): Promise<void> {
   const dentries = await fsPromises.readdir(dir, { withFileTypes: true });
 
   await Promise.all(
-    dentries.map(async dentry => {
+    dentries.map(async (dentry) => {
       if (dentry.isFile()) {
         await fsPromises.unlink(join(dir, dentry.name));
       } else if (dentry.isDirectory()) {

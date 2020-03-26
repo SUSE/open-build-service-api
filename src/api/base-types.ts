@@ -441,8 +441,8 @@ export function commonMetaToApi(commonMeta: CommonMeta): CommonMetaApiReply {
     publish: flagToApi(publish),
     sourceaccess: booleanToSimpleFlag(sourceAccess),
     useforbuild: flagToApi(useForBuild),
-    person: person?.map(pers => userToApi(pers)),
-    group: group?.map(grp => groupToApi(grp))
+    person: person?.map((pers) => userToApi(pers)),
+    group: group?.map((grp) => groupToApi(grp))
   };
   return deleteUndefinedAndEmptyMembers(res);
 }

@@ -46,9 +46,7 @@ describe("Distribution", () => {
       obsDistros = await fetchHostedDistributions(con).should.be.fulfilled;
 
       // we will not check all entries, that would be nuts
-      expect(obsDistros)
-        .to.be.an("array")
-        .and.have.length(61);
+      expect(obsDistros).to.be.an("array").and.have.length(61);
 
       obsDistros = obsDistros!;
 
@@ -176,7 +174,7 @@ describe("Distribution", () => {
         true
       ).should.be.fulfilled;
 
-      obsTestDistros.forEach(distro =>
+      obsTestDistros.forEach((distro) =>
         obsTestIncludingRemotes.should.include.a.thing.that.deep.equals(distro)
       );
 
@@ -189,8 +187,8 @@ describe("Distribution", () => {
       // prefixed with 'openSUSE.org:' and that the id is missing
       expect(obsTestIncludingRemotes).to.include.deep.members(
         obsDistros
-          .filter(distro => distro.name !== "Arch Community")
-          .map(obsDistro => {
+          .filter((distro) => distro.name !== "Arch Community")
+          .map((obsDistro) => {
             // construct how the linked distro looks like: drop the id and
             // prefix the project name
             const { id, project, ...rest } = obsDistro;

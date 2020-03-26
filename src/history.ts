@@ -366,7 +366,7 @@ function insertIntoCommitCache(
   commitCache.set(getCommitKey(commit), commit);
 
   if (commit.parentCommits !== undefined) {
-    commit.parentCommits.forEach(parent =>
+    commit.parentCommits.forEach((parent) =>
       insertIntoCommitCache(parent, commitCache)
     );
   }
@@ -675,7 +675,7 @@ export function historyToGraphviz(commit: Commit): string {
     return myNode.concat(
       cmt.parentCommits !== undefined
         ? cmt.parentCommits
-            .map(parent =>
+            .map((parent) =>
               addNodes(parent).concat(`  "${getCommitKey(
                 cmt
               )}":f0 -> "${getCommitKey(parent)}":f0;
@@ -706,8 +706,8 @@ export async function drawHistoryToSvg(HEAD: Commit): Promise<string> {
 
     const svgImage: any[] = [];
 
-    child.stdout.on("data", data => svgImage.push(data));
-    child.on("close", code => {
+    child.stdout.on("data", (data) => svgImage.push(data));
+    child.on("close", (code) => {
       if (code === 0) {
         resolve(svgImage.join(""));
       } else {

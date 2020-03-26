@@ -202,9 +202,7 @@ describe("#repositorySettingFromFlag", () => {
         { repository: "foo", arch: Arch.Aarch64 }
       ]
     });
-    expect(res)
-      .to.be.a("Map")
-      .and.to.have.property("size", 3);
+    expect(res).to.be.a("Map").and.to.have.property("size", 3);
 
     res = res as Map<Arch, boolean | undefined>;
 
@@ -227,9 +225,7 @@ describe("#repositorySettingFromFlag", () => {
         enable: [{ repository: "foo", arch: Arch.X86_64 }]
       }
     );
-    expect(res)
-      .to.be.a("Map")
-      .and.to.have.property("size", 4);
+    expect(res).to.be.a("Map").and.to.have.property("size", 4);
 
     res = res as Map<Arch, boolean | undefined>;
 
@@ -269,9 +265,7 @@ describe("#repositorySettingFromFlag", () => {
       enable: []
     });
 
-    expect(res)
-      .to.be.a("Map")
-      .and.to.not.have.any.keys(Arch.Riscv64);
+    expect(res).to.be.a("Map").and.to.not.have.any.keys(Arch.Riscv64);
   });
 });
 

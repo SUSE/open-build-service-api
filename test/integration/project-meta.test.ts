@@ -49,7 +49,7 @@ import {
 } from "./../test-setup";
 
 const findRepoByNameBuilder = (proj: ProjectMeta) => (repoName: string) =>
-  proj.repository?.find(elem => elem.name === repoName);
+  proj.repository?.find((elem) => elem.name === repoName);
 
 describe("#getProjectMeta", () => {
   const prodCon = getTestConnection(ApiType.Production);
@@ -96,9 +96,7 @@ describe("#getProjectMeta", () => {
 
     const findRepoByName = findRepoByNameBuilder(proj);
 
-    expect(proj.repository)
-      .to.be.a("array")
-      .and.have.length(4);
+    expect(proj.repository).to.be.a("array").and.have.length(4);
 
     // check all repositories manually...
     expect(findRepoByName("standard")).to.deep.equal({
@@ -136,7 +134,7 @@ describe("#getProjectMeta", () => {
     expect(proj.name).to.equal("Virtualization:vagrant");
 
     // users
-    ["dancermak", "ojkastl_buildservice"].forEach(user => {
+    ["dancermak", "ojkastl_buildservice"].forEach((user) => {
       expect(proj.person).to.deep.include({
         role: "maintainer",
         userId: user
@@ -162,9 +160,7 @@ describe("#getProjectMeta", () => {
     );
 
     // repositories...
-    expect(proj.repository)
-      .to.be.a("array")
-      .and.have.length(9);
+    expect(proj.repository).to.be.a("array").and.have.length(9);
 
     const findRepoByName = findRepoByNameBuilder(proj);
     expect(findRepoByName("openSUSE_Tumbleweed")).to.deep.equal({
@@ -253,13 +249,11 @@ describe("#getProjectMeta", () => {
         enable: []
       });
 
-    expect(proj)
-      .to.have.property("debugInfo")
-      .that.deep.equals({
-        defaultValue: DefaultValue.Enable,
-        disable: [],
-        enable: []
-      });
+    expect(proj).to.have.property("debugInfo").that.deep.equals({
+      defaultValue: DefaultValue.Enable,
+      disable: [],
+      enable: []
+    });
 
     expect(proj)
       .to.have.property("publish")
@@ -299,7 +293,7 @@ describe("#modifyOrCreateProject", () => {
 
   afterEach(afterEachRecord);
 
-  it("creates a new project", async function() {
+  it("creates a new project", async function () {
     this.timeout(5000);
     const name = "home:dancermak:obs_ts_test";
     const newProj: ProjectMeta = {
@@ -342,7 +336,7 @@ It should be gone soon.`,
     });
   });
 
-  it("creates a new complicated project", async function() {
+  it("creates a new complicated project", async function () {
     this.timeout(10000);
     const name = "home:dancermak:set_as_many_properties_as_we_can";
     const newProj: ProjectMeta = {

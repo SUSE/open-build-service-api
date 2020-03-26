@@ -52,10 +52,10 @@ const vagrantSshfsRevision1 = {
 
 const apiUrl = "https://api.opensuse.org/";
 
-describe("Commit", function() {
+describe("Commit", function () {
   this.timeout(50000);
 
-  beforeEach(function() {
+  beforeEach(function () {
     this.beforeEachRecord = beforeEachRecord;
     this.beforeEachRecord();
     this.con = getTestConnection(ApiType.Production);
@@ -64,7 +64,7 @@ describe("Commit", function() {
   afterEach(afterEachRecord);
 
   describe("#fetchHistoryAcrossLinks", () => {
-    it("fetches the history of a package without a link", async function() {
+    it("fetches the history of a package without a link", async function () {
       const head: Commit = await fetchHistoryAcrossLinks(this.con, {
         apiUrl,
         name: "vagrant-scp",
@@ -125,7 +125,7 @@ describe("Commit", function() {
 
       expect(head.files).to.have.length(filesAtHead.length);
 
-      filesAtHead.forEach(file =>
+      filesAtHead.forEach((file) =>
         head.files.should.include.a.thing.that.deep.equals(file)
       );
 
@@ -164,7 +164,7 @@ describe("Commit", function() {
       ];
       expect(headMinus1.files).to.have.length(filesAtHeadMinus1.length);
 
-      filesAtHeadMinus1.forEach(file =>
+      filesAtHeadMinus1.forEach((file) =>
         headMinus1.files.should.include.a.thing.that.deep.equals(file)
       );
 
@@ -190,14 +190,14 @@ describe("Commit", function() {
       ];
       expect(headMinus2.files).to.have.length(filesAtHeadMinus2.length);
 
-      filesAtHeadMinus2.forEach(file =>
+      filesAtHeadMinus2.forEach((file) =>
         headMinus2.files.should.include.a.thing.that.deep.equals(file)
       );
 
       expect(headMinus2.parentCommits).to.equal(undefined);
     });
 
-    it("fetches the history of a package with a link to Factory", async function() {
+    it("fetches the history of a package with a link to Factory", async function () {
       const head: Commit = await fetchHistoryAcrossLinks(this.con, {
         apiUrl,
         name: "vagrant-sshfs",
@@ -225,9 +225,7 @@ describe("Commit", function() {
       });
 
       const headMinus1 = head.parentCommits;
-      expect(headMinus1)
-        .to.be.a("array")
-        .and.to.have.length(1);
+      expect(headMinus1).to.be.a("array").and.to.have.length(1);
 
       expect(headMinus1![0]).to.deep.include({
         revisionHash: "7c97eca85d86ac79c379b77810ac401b",
@@ -238,9 +236,7 @@ describe("Commit", function() {
       });
 
       let headMinus2 = headMinus1![0].parentCommits;
-      expect(headMinus2)
-        .to.be.an("array")
-        .and.to.have.length(2);
+      expect(headMinus2).to.be.an("array").and.to.have.length(2);
       headMinus2 = headMinus2!;
 
       expect(headMinus2[0]).to.deep.include({
@@ -267,9 +263,7 @@ describe("Commit", function() {
 
       // check the Virtualization:vagrant branch first:
       // - baserev update by copy to link target
-      expect(headMinus2[0].parentCommits)
-        .to.be.an("array")
-        .and.have.length(1);
+      expect(headMinus2[0].parentCommits).to.be.an("array").and.have.length(1);
       const secondBaseRevUpdate = headMinus2[0].parentCommits!;
       expect(secondBaseRevUpdate[0]).to.deep.include({
         revisionHash: "108d7335326450355547f8bb9c2bbfa0",
@@ -451,7 +445,7 @@ describe("Commit", function() {
       expect(revision1).to.deep.include(vagrantSshfsRevision1);
     });
 
-    xit("fetches the history of a package with a double link", async function() {
+    xit("fetches the history of a package with a double link", async function () {
       const head: Commit = await fetchHistoryAcrossLinks(this.con, {
         apiUrl,
         name: "ruby2.6",
@@ -462,7 +456,7 @@ describe("Commit", function() {
       writeFileSync("./ruby2.6.svg", img);
     });
 
-    xit("fetches the history of a package with an insane number of links", async function() {
+    xit("fetches the history of a package with an insane number of links", async function () {
       const head = await fetchHistoryAcrossLinks(this.con, {
         apiUrl,
         projectName: "OBS:Server:Unstable",
@@ -474,7 +468,7 @@ describe("Commit", function() {
   });
 
   describe("#fetchFileContentsAtCommit", () => {
-    it("retrieves the contents at revision 1", async function() {
+    it("retrieves the contents at revision 1", async function () {
       const commit: Commit = await fetchFileContentsAtCommit(
         this.con,
         {
@@ -491,7 +485,7 @@ describe("Commit", function() {
             "vagrant-sshfs-1.3.1.gem",
             "vagrant-sshfs.changes",
             "vagrant-sshfs.spec"
-          ].map(fname => ({
+          ].map((fname) => ({
             name: fname,
             projectName: "Virtualization:vagrant",
             packageName: "vagrant-sshfs"

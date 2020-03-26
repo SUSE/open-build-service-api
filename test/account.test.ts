@@ -79,9 +79,7 @@ pass = you
       const accounts = await readAccountsFromOscrc(".oscrc").should.be
         .fulfilled;
 
-      expect(accounts)
-        .to.be.a("array")
-        .and.have.length(3);
+      expect(accounts).to.be.a("array").and.have.length(3);
 
       expect(accounts).to.include.something.that.deep.equals({
         aliases: ["obs"],
@@ -128,9 +126,7 @@ pass = you
 
     it("uses $HOME/.config/osc/oscrc by default", async () => {
       const accounts = await readAccountsFromOscrc().should.be.fulfilled;
-      expect(accounts)
-        .to.be.a("array")
-        .and.to.have.length(1);
+      expect(accounts).to.be.a("array").and.to.have.length(1);
       expect(accounts[0]).to.deep.equals({
         aliases: [],
         apiUrl: "http://api.obs.fake/",

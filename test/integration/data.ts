@@ -135,7 +135,7 @@ export const vagrantSshfsHistory: ReadonlyArray<Revision> = Object.freeze(
       commitMessage: "New upstream release 1.3.4",
       requestId: 785606
     }
-  ].map(entry => ({ ...entry, ...commonEntries }))
+  ].map((entry) => ({ ...entry, ...commonEntries }))
 );
 
 export const dotChangesRev1 = `-------------------------------------------------------------------

@@ -113,7 +113,7 @@ export function flagFromApi(data: FlagApiReply | undefined): Flag | undefined {
       return false;
     }
     if (Array.isArray(flags)) {
-      return flags.find(elem => elem === "") !== undefined;
+      return flags.find((elem) => elem === "") !== undefined;
     }
     return flags === "";
   };
@@ -139,7 +139,7 @@ export function flagFromApi(data: FlagApiReply | undefined): Flag | undefined {
     return data[key] !== undefined && data[key] !== ""
       ? (extractElementAsArray<FlagSwitch | undefined>(data, key, {
           construct: flagSwitchFromApi
-        }).filter(elem => elem !== undefined) as FlagSwitch[])
+        }).filter((elem) => elem !== undefined) as FlagSwitch[])
       : [];
   };
 
@@ -174,10 +174,10 @@ export function flagToApi(flag: Flag | undefined): FlagApiReply | undefined {
   }
 
   // now add the actual flags
-  flag.disable.forEach(flagSwitch => {
+  flag.disable.forEach((flagSwitch) => {
     disable.push(flagSwitchToApi(flagSwitch));
   });
-  flag.enable.forEach(flagSwitch => {
+  flag.enable.forEach((flagSwitch) => {
     enable.push(flagSwitchToApi(flagSwitch));
   });
 
@@ -226,10 +226,10 @@ export function repositorySettingFromFlag(
   // this also includes enable/disable entries without a repository set (this
   // means that the architecture is globally disabled/enabled)
   const matchingDisable = flag.disable.filter(
-    flg => flg.repository === repositoryName || flg.repository === undefined
+    (flg) => flg.repository === repositoryName || flg.repository === undefined
   );
   const matchingEnable = flag.enable.filter(
-    flg => flg.repository === repositoryName || flg.repository === undefined
+    (flg) => flg.repository === repositoryName || flg.repository === undefined
   );
 
   // if enable and disable are empty => the default it is again
@@ -255,7 +255,9 @@ export function repositorySettingFromFlag(
     for (const flg of match) {
       if (flg.arch === undefined) {
         return value;
-      } else if (architectures.find(arch => arch === flg.arch) !== undefined) {
+      } else if (
+        architectures.find((arch) => arch === flg.arch) !== undefined
+      ) {
         res.set(flg.arch, value);
       }
     }
@@ -263,7 +265,7 @@ export function repositorySettingFromFlag(
 
   // do we have per arch settings?
   // => fill in the remaining arches with the global default
-  architectures.forEach(arch => {
+  architectures.forEach((arch) => {
     if (!res.has(arch)) {
       res.set(arch, globalDefault);
     }

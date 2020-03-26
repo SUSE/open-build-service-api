@@ -107,7 +107,7 @@ async function fetchPackageList(
     return [];
   } else {
     const packages: Package[] = [];
-    dir.directoryEntries.forEach(dentry => {
+    dir.directoryEntries.forEach((dentry) => {
       if (dentry.name !== undefined) {
         packages.push({
           apiUrl: project.apiUrl,
@@ -204,7 +204,7 @@ async function writeProjectUnderscoreFiles(
     project: { $: { name: proj.name } }
   };
   if (proj.packages !== undefined && proj.packages.length > 0) {
-    underscorePackages.project.package = proj.packages.map(pkg => {
+    underscorePackages.project.package = proj.packages.map((pkg) => {
       return { $: { name: pkg.name, state: " " } };
     });
   }
@@ -286,11 +286,11 @@ export async function readInCheckedOutProject(path: string): Promise<Project> {
     projMetaContents
   ] = await Promise.all(
     projectUnderscoreFiles
-      .map(async fname =>
+      .map(async (fname) =>
         (await fsPromises.readFile(join(path, ".osc", fname))).toString().trim()
       )
       .concat(
-        obsTsProjectUnderscoreFiles.map(async fname => {
+        obsTsProjectUnderscoreFiles.map(async (fname) => {
           try {
             return (
               await fsPromises.readFile(join(path, dotOscPluginSubdir, fname))
@@ -321,7 +321,7 @@ export async function readInCheckedOutProject(path: string): Promise<Project> {
     underscorePackages.project.package !== undefined &&
     underscorePackages.project.package.length > 0
   ) {
-    project.packages = underscorePackages.project.package.map(pkg => {
+    project.packages = underscorePackages.project.package.map((pkg) => {
       return {
         apiUrl: project.apiUrl,
         name: pkg.$.name,

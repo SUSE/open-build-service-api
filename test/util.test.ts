@@ -90,12 +90,10 @@ describe("#extractElementIfPresent", () => {
 
   it("should create a new TestClass when passed the construct option", () => {
     const res = util.extractElementIfPresent<TestClass>(obj, "foo", {
-      construct: data => new TestClass(data)
+      construct: (data) => new TestClass(data)
     });
     expect(res).to.not.be.undefined;
-    expect(res)
-      .to.haveOwnProperty("value")
-      .and.to.equal("Foo");
+    expect(res).to.haveOwnProperty("value").and.to.equal("Foo");
   });
 
   it("should create a new TestClass when passed TestClass as the type option", () => {
@@ -103,9 +101,7 @@ describe("#extractElementIfPresent", () => {
       type: TestClass
     });
     expect(res).to.not.be.undefined;
-    expect(res)
-      .to.haveOwnProperty("value")
-      .and.to.equal("Foo");
+    expect(res).to.haveOwnProperty("value").and.to.equal("Foo");
   });
 });
 

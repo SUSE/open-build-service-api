@@ -34,10 +34,10 @@ import {
   vagrantSshfsDotChangesWithExtraFields
 } from "./data";
 
-describe("Package", function() {
+describe("Package", function () {
   this.timeout(5000);
 
-  beforeEach(function() {
+  beforeEach(function () {
     this.beforeEachRecord = beforeEachRecord;
     this.beforeEachRecord();
     this.con = getTestConnection(ApiType.Production);
@@ -45,13 +45,13 @@ describe("Package", function() {
   afterEach(afterEachRecord);
 
   describe("#fetchPackage", () => {
-    it("fetches the file list and sets the file properties of vagrant-sshfs", async function() {
+    it("fetches the file list and sets the file properties of vagrant-sshfs", async function () {
       await fetchPackage(this.con, "Virtualization:vagrant", "vagrant-sshfs", {
         retrieveFileContents: false
       }).should.be.fulfilled.and.eventually.deep.equal(vagrantSshfs);
     });
 
-    it("doesn't expand links when told so", async function() {
+    it("doesn't expand links when told so", async function () {
       const pkg: Package = await fetchPackage(
         this.con,
         "Virtualization:vagrant",
@@ -74,7 +74,7 @@ describe("Package", function() {
       ]);
     });
 
-    it("expands the file sources by default", async function() {
+    it("expands the file sources by default", async function () {
       const pkg: Package = await fetchPackage(
         this.con,
         "Virtualization:vagrant",
@@ -146,7 +146,7 @@ describe("Package", function() {
             size: 610,
             modifiedTime: new Date("Wed, 27 Mar 2019 18:18:01 +0100")
           }
-        ].map(f => ({
+        ].map((f) => ({
           packageName: "ruby2.6",
           projectName: "Virtualization:vagrant",
           ...f
@@ -158,7 +158,7 @@ describe("Package", function() {
       pkg.name.should.equal("ruby2.6");
     });
 
-    it("fetches the file contents if pkgContents is set to true (but not otherwise)", async function() {
+    it("fetches the file contents if pkgContents is set to true (but not otherwise)", async function () {
       const pkg: Package = await fetchPackage(
         this.con,
         "Virtualization:vagrant",

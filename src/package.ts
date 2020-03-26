@@ -97,7 +97,7 @@ export async function fetchFileList(
 
   if (retrieveFileContents !== undefined && retrieveFileContents) {
     await Promise.all(
-      files.map(async f => {
+      files.map(async (f) => {
         f.contents = await fetchFileContents(con, f, revision);
       })
     );
@@ -118,8 +118,8 @@ export function extractFileListFromDirectory(
   }
 
   const files: PackageFile[] = fileDir.directoryEntries
-    .filter(dentry => dentry.name !== undefined)
-    .map(dentry => {
+    .filter((dentry) => dentry.name !== undefined)
+    .map((dentry) => {
       return {
         name: dentry.name!,
         projectName: pkg.projectName,
@@ -139,7 +139,7 @@ function fileListToDirectory(pkg: Package): Directory {
     directoryEntries:
       pkg.files === undefined
         ? []
-        : pkg.files.map(pkgFile => {
+        : pkg.files.map((pkgFile) => {
             return {
               name: pkgFile.name,
               size: pkgFile.size,
@@ -244,7 +244,7 @@ async function writePackageFiles(pkg: Package, path: string): Promise<void> {
     return;
   }
   await Promise.all(
-    pkg.files.map(f =>
+    pkg.files.map((f) =>
       fsPromises.writeFile(join(path, f.name), f.contents ?? "")
     )
   );

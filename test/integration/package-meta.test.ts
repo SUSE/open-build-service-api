@@ -101,7 +101,7 @@ describe("#setPackageMeta", () => {
     summary: "Ok"
   };
 
-  it("creates a new package", async function() {
+  it("creates a new package", async function () {
     this.timeout(5000);
     const project = "home:dancermak";
     const name = "testPkg";
@@ -130,7 +130,7 @@ It should be gone soon-ish.`,
     res.should.deep.equal(statusOk);
   });
 
-  it("creates a complicated package", async function() {
+  it("creates a complicated package", async function () {
     this.timeout(5000);
     const project = "home:dancermak";
     const name = "complexPkg";

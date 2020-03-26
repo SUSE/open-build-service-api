@@ -54,7 +54,7 @@ describe("File", () => {
         name: "foo"
       });
 
-      ["md5Hash", "modifiedTime"].forEach(key =>
+      ["md5Hash", "modifiedTime"].forEach((key) =>
         expect(modified).to.not.have.property(key)
       );
     });

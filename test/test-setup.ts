@@ -95,7 +95,7 @@ function makeApiCallWithNockIntercept<T>(
       }
     });
 
-    scope.on("error", err => {
+    scope.on("error", (err) => {
       clearTimeout(timeout);
       reject(err);
     });
@@ -145,7 +145,7 @@ export function beforeEachRecord(this: Context) {
     "..",
     "fixtures",
     this.currentTest!.titlePath()
-      .map(elem => elem.replace(/(\s+|\/)/g, "_"))
+      .map((elem) => elem.replace(/(\s+|\/)/g, "_"))
       .join("_") + ".json"
   );
 

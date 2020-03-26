@@ -233,10 +233,10 @@ export class Connection {
           },
           method: reqMethod
         },
-        response => {
+        (response) => {
           const body: any[] = [];
 
-          response.on("data", chunk => {
+          response.on("data", (chunk) => {
             body.push(chunk);
           });
 
@@ -269,7 +269,7 @@ export class Connection {
           });
         }
       );
-      req.on("error", err => reject(err));
+      req.on("error", (err) => reject(err));
 
       if (options?.payload !== undefined) {
         if (

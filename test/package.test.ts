@@ -78,13 +78,9 @@ connection from the Vagrant guest back to the Vagrant host.
   <person userid="dancermak" role="maintainer"/>
 </package>`);
 
-      vagrantSshfs.files.forEach(f => {
-        readFileSync(join(dotOscPath, f.name))
-          .toString()
-          .should.equal("");
-        readFileSync(join(path, f.name))
-          .toString()
-          .should.equal("");
+      vagrantSshfs.files.forEach((f) => {
+        readFileSync(join(dotOscPath, f.name)).toString().should.equal("");
+        readFileSync(join(path, f.name)).toString().should.equal("");
       });
     });
 
