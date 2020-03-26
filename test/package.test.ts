@@ -24,6 +24,7 @@ import mock = require("mock-fs");
 import { existsSync, readFileSync } from "fs";
 import { join } from "path";
 import { checkOutPackage } from "../src/package";
+import { FileState, ModifiedPackage } from "../src/vcs";
 import { vagrantSshfs, virtualizationVagrant } from "./integration/data";
 
 describe("Package", () => {
@@ -36,8 +37,15 @@ describe("Package", () => {
 
   describe("#checkOutPackage", () => {
     it("checks out vagrant-sshfs", async () => {
-      await checkOutPackage(vagrantSshfs, virtualizationVagrant, path).should.be
-        .fulfilled;
+      const modPkg: ModifiedPackage = await checkOutPackage(vagrantSshfs, path)
+        .should.be.fulfilled;
+
+      const { files, ...restOfVagrantSshfs } = vagrantSshfs;
+      modPkg.should.deep.equal({
+        ...restOfVagrantSshfs,
+        path,
+        files: files.map((f) => ({ ...f, state: FileState.Unmodified }))
+      });
 
       existsSync(join(dotOscPath)).should.equal(true);
 
