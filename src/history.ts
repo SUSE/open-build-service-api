@@ -25,11 +25,7 @@ import { Directory, fetchDirectory } from "./api/directory";
 import { Connection } from "./connection";
 import { isApiError } from "./error";
 import { PackageFile } from "./file";
-import {
-  extractFileListFromDirectory,
-  fetchFileList,
-  Package
-} from "./package";
+import { fetchFileList, fileListFromDirectory, Package } from "./package";
 import {
   dateFromUnixTimeStamp,
   deleteUndefinedMembers,
@@ -268,7 +264,7 @@ async function fetchExpandedRevisions(
 
     const next = {
       revisionHash: dentry.revision ?? dentry.sourceMd5 ?? rev.revisionHash,
-      files: extractFileListFromDirectory(pkg, dentry),
+      files: fileListFromDirectory(pkg, dentry),
       commitMessage,
       requestId,
       userId,

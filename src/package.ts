@@ -93,7 +93,7 @@ export async function fetchFileList(
     );
   }
 
-  const files = extractFileListFromDirectory(pkg, fileDir);
+  const files = fileListFromDirectory(pkg, fileDir);
 
   if (retrieveFileContents !== undefined && retrieveFileContents) {
     await Promise.all(
@@ -106,7 +106,7 @@ export async function fetchFileList(
 }
 
 // FIXME: this should maybe not be exported
-export function extractFileListFromDirectory(
+export function fileListFromDirectory(
   pkg: Package,
   fileDir: Directory
 ): PackageFile[] {
