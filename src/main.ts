@@ -42,3 +42,4 @@ export {
 } from "./package";
 export * from "./project";
 export { Group, User } from "./user";
+export { commit, ModifiedPackage, VcsFile } from "./vcs";
