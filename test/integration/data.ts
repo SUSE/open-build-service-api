@@ -398,6 +398,7 @@ const vagrantSshfsFileList: PackageFile[] = [
 ];
 
 export const vagrantSshfs = {
+  apiUrl: "https://api.opensuse.org/",
   name: "vagrant-sshfs",
   projectName: "Virtualization:vagrant",
   md5Hash: "6105ecf1d6bf9c9c852baebfef9e23d8",

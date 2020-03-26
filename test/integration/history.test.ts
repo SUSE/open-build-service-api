@@ -50,6 +50,8 @@ const vagrantSshfsRevision1 = {
   parentCommits: undefined
 };
 
+const apiUrl = "https://api.opensuse.org/";
+
 describe("Commit", function() {
   this.timeout(50000);
 
@@ -64,6 +66,7 @@ describe("Commit", function() {
   describe("#fetchHistoryAcrossLinks", () => {
     it("fetches the history of a package without a link", async function() {
       const head: Commit = await fetchHistoryAcrossLinks(this.con, {
+        apiUrl,
         name: "vagrant-scp",
         projectName: "Virtualization:vagrant"
       }).should.be.fulfilled;
@@ -196,6 +199,7 @@ describe("Commit", function() {
 
     it("fetches the history of a package with a link to Factory", async function() {
       const head: Commit = await fetchHistoryAcrossLinks(this.con, {
+        apiUrl,
         name: "vagrant-sshfs",
         projectName: "Virtualization:vagrant"
       }).should.be.fulfilled;
@@ -449,6 +453,7 @@ describe("Commit", function() {
 
     xit("fetches the history of a package with a double link", async function() {
       const head: Commit = await fetchHistoryAcrossLinks(this.con, {
+        apiUrl,
         name: "ruby2.6",
         projectName: "Virtualization:vagrant"
       }).should.be.fulfilled;
@@ -459,6 +464,7 @@ describe("Commit", function() {
 
     xit("fetches the history of a package with an insane number of links", async function() {
       const head = await fetchHistoryAcrossLinks(this.con, {
+        apiUrl,
         projectName: "OBS:Server:Unstable",
         name: "rubygem-rack"
       }).should.be.fulfilled;
@@ -471,7 +477,11 @@ describe("Commit", function() {
     it("retrieves the contents at revision 1", async function() {
       const commit: Commit = await fetchFileContentsAtCommit(
         this.con,
-        { projectName: "Virtualization:vagrant", name: "vagrant-sshfs" },
+        {
+          apiUrl,
+          projectName: "Virtualization:vagrant",
+          name: "vagrant-sshfs"
+        },
         {
           ...vagrantSshfsRevision1,
           files: [
@@ -512,6 +522,7 @@ describe("Revision", () => {
   describe("#fetchHistory", () => {
     it("fetches the revisions of Virtualization:vagrant/vagrant-sshfs correctly", async () => {
       await fetchHistory(con, {
+        apiUrl,
         projectName: "Virtualization:vagrant",
         name: "vagrant-sshfs"
       }).should.be.fulfilled.and.eventually.deep.equal(vagrantSshfsHistory);
@@ -519,6 +530,7 @@ describe("Revision", () => {
 
     it("fetches the revisions of Virtualization:vagrant/vagrant-sshfs when invoked via Project and Package objects", async () => {
       await fetchHistory(con, {
+        apiUrl,
         projectName: "Virtualization:vagrant",
         name: "vagrant-sshfs"
       }).should.be.fulfilled.and.eventually.deep.equal(vagrantSshfsHistory);
@@ -526,6 +538,7 @@ describe("Revision", () => {
 
     it("omits requestId when a commit was made directly", async () => {
       const hist = await fetchHistory(con, {
+        apiUrl,
         projectName: "devel:tools",
         name: "ccls"
       }).should.be.fulfilled;
@@ -546,6 +559,7 @@ describe("Revision", () => {
 
     it("omits the userId when the user is not known", async () => {
       const hist = await fetchHistory(con, {
+        apiUrl,
         projectName: "openSUSE:Factory",
         name: "make"
       }).should.be.fulfilled;

@@ -56,7 +56,7 @@ const VirtApplImgOpenSUSETWProj: Project = {
       name: "kiwi-templates-JeOS",
       projectName: VirtApplImgOpenSUSETW
     }
-  ]
+  ].map(pkg => ({ ...pkg, apiUrl: "https://api.opensuse.org/" }))
 };
 
 const VirtApplImgOpenSUSETWProjMeta = {
@@ -159,7 +159,7 @@ describe("Project", () => {
         { name: "foo", projectName },
         { name: "bar", projectName },
         { name: "baz", projectName }
-      ]
+      ].map(pkg => ({ ...pkg, apiUrl }))
     };
 
     const projWithMeta: Project = {

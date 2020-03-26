@@ -89,21 +89,17 @@ connection from the Vagrant guest back to the Vagrant host.
     });
 
     it("throws an error if the package list has not been fetched yet", async () => {
-      const { name, projectName } = vagrantSshfs;
+      const { apiUrl, name, projectName } = vagrantSshfs;
       await checkOutPackage(
-        { name, projectName },
-        virtualizationVagrant,
+        { apiUrl, name, projectName },
         join("empty", "vagrant-sshfs")
       ).should.be.rejectedWith(Error, /file list has not been retrieved/i);
     });
 
     it("does not write a _meta file if the project's meta has not been fetched yet", async () => {
-      const { name, projectName, files } = vagrantSshfs;
-      await checkOutPackage(
-        { name, projectName, files },
-        virtualizationVagrant,
-        path
-      ).should.be.fulfilled;
+      const { apiUrl, name, projectName, files } = vagrantSshfs;
+      await checkOutPackage({ apiUrl, name, projectName, files }, path).should
+        .be.fulfilled;
 
       existsSync(join(dotOscPath, "_meta")).should.be.false;
     });

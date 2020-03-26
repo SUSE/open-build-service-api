@@ -110,6 +110,7 @@ async function fetchPackageList(
     dir.directoryEntries.forEach(dentry => {
       if (dentry.name !== undefined) {
         packages.push({
+          apiUrl: project.apiUrl,
           name: dentry.name,
           projectName: project.name
         });
@@ -321,7 +322,11 @@ export async function readInCheckedOutProject(path: string): Promise<Project> {
     underscorePackages.project.package.length > 0
   ) {
     project.packages = underscorePackages.project.package.map(pkg => {
-      return { name: pkg.$.name, projectName: project.name };
+      return {
+        apiUrl: project.apiUrl,
+        name: pkg.$.name,
+        projectName: project.name
+      };
     });
   }
 

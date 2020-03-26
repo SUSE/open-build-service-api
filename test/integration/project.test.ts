@@ -61,16 +61,18 @@ describe("#fetchProject", () => {
     expect(TW).to.have.property("meta");
     expect(TW)
       .to.have.property("packages")
-      .that.deep.equals([
-        { name: "kiwi-images-vagrant", projectName },
-        { name: "kiwi-templates-JeOS", projectName },
-        { name: "live-kiwi-hook", projectName },
-        { name: "livecd-openSUSE", projectName },
-        { name: "livecd-tumbleweed-gnome", projectName },
-        { name: "livecd-tumbleweed-kde", projectName },
-        { name: "livecd-tumbleweed-x11", projectName },
-        { name: "livecd-tumbleweed-xfce", projectName }
-      ]);
+      .that.deep.equals(
+        [
+          "kiwi-images-vagrant",
+          "kiwi-templates-JeOS",
+          "live-kiwi-hook",
+          "livecd-openSUSE",
+          "livecd-tumbleweed-gnome",
+          "livecd-tumbleweed-kde",
+          "livecd-tumbleweed-x11",
+          "livecd-tumbleweed-xfce"
+        ].map((name) => ({ name, apiUrl: con.url, projectName }))
+      );
 
     expect(TW.meta).to.deep.include({
       name: projectName,

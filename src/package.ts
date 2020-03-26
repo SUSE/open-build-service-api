@@ -40,6 +40,9 @@ import { unixTimeStampFromDate, zip } from "./util";
 import { newXmlBuilder } from "./xml";
 
 export interface Package {
+  /** Url to the API from which this package was retrieved */
+  readonly apiUrl: string;
+
   /** Name of this package */
   readonly name: string;
 
@@ -179,6 +182,7 @@ export async function fetchPackage(
   const projName: string = typeof project === "string" ? project : project.name;
 
   const pkg: Package = {
+    apiUrl: con.url,
     name: packageName,
     projectName: projName,
     files: []
@@ -248,13 +252,8 @@ async function writePackageFiles(pkg: Package, path: string): Promise<void> {
 
 async function writePackageUnderscoreFiles(
   pkg: Package,
-  proj: Project,
   path: string
 ): Promise<void> {
-  assert(
-    pkg.projectName === proj.name,
-    `package ${pkg.name} belongs to the wrong project (expected ${pkg.projectName}, got ${proj.name})`
-  );
   if (pkg.files === undefined) {
     throw new Error(
       `Cannot save package ${pkg.name}: the file list has not been retrieved yet.`
@@ -268,7 +267,7 @@ async function writePackageUnderscoreFiles(
   await Promise.all(
     [
       { fname: "_osclib_version", contents: "1.0" },
-      { fname: "_apiurl", contents: proj.apiUrl },
+      { fname: "_apiurl", contents: pkg.apiUrl },
       {
         fname: "_meta",
         contents:
@@ -316,20 +315,18 @@ async function writePackageUnderscoreFiles(
  * @param pkg  The package that should be written to the file system.
  *     The package's files **must** have been retrieved beforehand, otherwise an
  *     exception is thrown.
- * @param proj  The [[Project]] to which `pkg` belongs.
  * @param path  Directory into which the package shall be checked out. The
  *     directory **must not** exist already.
  */
 export async function checkOutPackage(
   pkg: Package,
-  proj: Project,
   path: string
 ): Promise<void> {
   await fsPromises.mkdir(path, { recursive: false });
   await fsPromises.mkdir(join(path, ".osc"), { recursive: false });
 
   await Promise.all([
-    writePackageUnderscoreFiles(pkg, proj, path),
+    writePackageUnderscoreFiles(pkg, path),
     writePackageFiles(pkg, path)
   ]);
 }
