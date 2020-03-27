@@ -219,6 +219,24 @@ baz
     }).should.be.fulfilled.and.eventually.deep.equal(`fooo
 `);
   });
+
+  myIt("passes the environment to the spawned process", async () => {
+    const nearlyEmptyEnv = await util.runProcess("env", {
+      env: { MY_VAR: "42" }
+    });
+    nearlyEmptyEnv
+      .split("\n")
+      .should.include.a.thing.that.deep.equals("MY_VAR=42");
+  });
+
+  myIt("passes process.env by default to the spawned process", async () => {
+    const defaultEnv = await util.runProcess("env");
+    defaultEnv.should.not.include("MY_SUPERSPECIAL_SNOWFLAKE_VAR=42");
+
+    process.env.MY_SUPERSPECIAL_SNOWFLAKE_VAR = "42";
+    const env = await util.runProcess("env");
+    env.should.include("MY_SUPERSPECIAL_SNOWFLAKE_VAR=42");
+  });
 });
 
 describe("#pathExists", () => {

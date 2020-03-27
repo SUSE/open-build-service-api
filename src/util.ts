@@ -297,11 +297,17 @@ export function runProcess(
   {
     args,
     stdin,
-    cwd
-  }: { args?: readonly string[]; stdin?: string; cwd?: string } = {}
+    cwd,
+    env
+  }: {
+    args?: readonly string[];
+    stdin?: string;
+    cwd?: string;
+    env?: NodeJS.ProcessEnv;
+  } = {}
 ): Promise<string> {
   return new Promise((resolve, reject) => {
-    const child = spawn(command, args, { cwd });
+    const child = spawn(command, args, { cwd, env: env ?? process.env });
 
     const output: any[] = [];
     const stderr: any[] = [];
