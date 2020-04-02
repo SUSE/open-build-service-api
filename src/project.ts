@@ -39,7 +39,7 @@ import { existsSync, promises as fsPromises } from "fs";
 import { join } from "path";
 import { fetchDirectory } from "./api/directory";
 import {
-  getProjectMeta,
+  fetchProjectMeta,
   modifyProjectMeta,
   ProjectMeta
 } from "./api/project-meta";
@@ -136,7 +136,7 @@ export async function fetchProject(
   projectName: string,
   getPackageList: boolean = true
 ): Promise<Project> {
-  const meta = await getProjectMeta(con, projectName);
+  const meta = await fetchProjectMeta(con, projectName);
   const proj = {
     apiUrl: con.url,
     name: projectName,

@@ -184,7 +184,7 @@ export function projectMetaToApi(proj: ProjectMeta): ProjectMetaApiReply {
 /**
  *
  */
-export async function getProjectMeta(
+export async function fetchProjectMeta(
   con: Connection,
   projName: string
 ): Promise<ProjectMeta> {

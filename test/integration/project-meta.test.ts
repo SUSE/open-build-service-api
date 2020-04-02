@@ -31,7 +31,7 @@ import {
 } from "../../src/api/base-types";
 import { DefaultValue } from "../../src/api/flag";
 import {
-  getProjectMeta,
+  fetchProjectMeta,
   Kind,
   modifyProjectMeta,
   ProjectMeta
@@ -51,7 +51,7 @@ import {
 const findRepoByNameBuilder = (proj: ProjectMeta) => (repoName: string) =>
   proj.repository?.find((elem) => elem.name === repoName);
 
-describe("#getProjectMeta", () => {
+describe("#fetchProjectMeta", () => {
   const prodCon = getTestConnection(ApiType.Production);
 
   beforeEach(beforeEachRecord);
@@ -59,8 +59,8 @@ describe("#getProjectMeta", () => {
   afterEach(afterEachRecord);
 
   it("should correctly parse openSUSE:Factory", async () => {
-    const proj = await getProjectMeta(prodCon, "openSUSE:Factory").should.be
-      .fulfilled;
+    const proj = await fetchProjectMeta(prodCon.clone(), "openSUSE:Factory")
+      .should.be.fulfilled;
 
     expect(proj.name).to.equal("openSUSE:Factory");
 
@@ -128,8 +128,10 @@ describe("#getProjectMeta", () => {
   });
 
   it("should correctly parse Virtualization:vagrant", async () => {
-    const proj = await getProjectMeta(prodCon, "Virtualization:vagrant").should
-      .be.fulfilled;
+    const proj = await fetchProjectMeta(
+      prodCon.clone(),
+      "Virtualization:vagrant"
+    ).should.be.fulfilled;
 
     expect(proj.name).to.equal("Virtualization:vagrant");
 
@@ -217,8 +219,8 @@ describe("#getProjectMeta", () => {
   });
 
   it("should correctly parse the Virtualization repositories", async () => {
-    const proj = await getProjectMeta(prodCon, "Virtualization").should.be
-      .fulfilled;
+    const proj = await fetchProjectMeta(prodCon.clone(), "Virtualization")
+      .should.be.fulfilled;
     const findRepoByName = findRepoByNameBuilder(proj);
 
     expect(proj.name).to.equal("Virtualization");
@@ -426,17 +428,17 @@ Here we just try to set as many different options as possible, to check that the
     });
 
     res = await checkApiCallSucceeds(this.scopes?.[1], async () =>
-      getProjectMeta(stagingCon, name)
+      fetchProjectMeta(stagingCon.clone(), name)
     ).should.be.fulfilled;
     res.should.deep.equal(newProj);
 
     res = await checkApiCallSucceeds(this.scopes?.[2], async () =>
-      deleteProject(stagingCon, name)
+      deleteProject(stagingCon.clone(), name)
     ).should.be.fulfilled;
     res.should.deep.equal(statusOk);
 
     const err = await checkApiCallFails(this.scopes?.[3], async () =>
-      getProjectMeta(stagingCon, name)
+      fetchProjectMeta(stagingCon.clone(), name)
     ).should.be.fulfilled;
 
     expect(err.status).to.deep.equal({
