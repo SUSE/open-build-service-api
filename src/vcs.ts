@@ -324,7 +324,7 @@ export async function readInModifiedPackageFromDir(
 
   return {
     ...restOfPkg,
-    files: files!,
+    files,
     path: dir
   };
 }
