@@ -53,8 +53,7 @@ describe("Package", () => {
         .toString()
         .should.deep.equal(virtualizationVagrant.apiUrl);
       readFileSync(join(dotOscPath, "_files")).toString().should.deep
-        .equal(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<directory name="vagrant-sshfs" srcmd5="6105ecf1d6bf9c9c852baebfef9e23d8">
+        .equal(`<directory name="vagrant-sshfs" srcmd5="6105ecf1d6bf9c9c852baebfef9e23d8">
   <entry name="testsuite.sh" size="1508" md5="d84584f65b02b4eb8990fce467bfe240" mtime="1570615977"/>
   <entry name="vagrant-sshfs-1.3.4.tar.gz" size="27579" md5="9de559bf9dcf0b9af4f2d0dd96663a34" mtime="1584360207"/>
   <entry name="vagrant-sshfs-1.3.4.tar.gz.asc" size="833" md5="55600e43b3c7ab4286e3d94d8b4e4b90" mtime="1584360207"/>
@@ -72,8 +71,7 @@ describe("Package", () => {
         .toString()
         .should.equal("1.0");
       readFileSync(join(dotOscPath, "_meta")).toString().should
-        .equal(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<package name="vagrant-sshfs" project="Virtualization:vagrant">
+        .equal(`<package name="vagrant-sshfs" project="Virtualization:vagrant">
   <title>SSHFS synced folder implementation for Vagrant</title>
   <description>This Vagrant plugin adds synced folder support for mounting folders from the
 Vagrant host into the Vagrant guest via SSHFS. In the default mode it does this

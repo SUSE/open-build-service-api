@@ -26,11 +26,17 @@ import xml2js = require("xml2js");
  * [`xml2js.Parser`](https://github.com/Leonidas-from-XIV/node-xml2js#promise-usage)
  * with some custom settings applied.
  */
-export const newXmlParser = () =>
+export const newXmlParser = (): xml2js.Parser =>
   new xml2js.Parser({ explicitArray: false, async: true });
 
 /**
  * @return A new
  * [`xml2js.Builder`](https://github.com/Leonidas-from-XIV/node-xml2js#xml-builder-usage).
  */
-export const newXmlBuilder = () => new xml2js.Builder();
+export const newXmlBuilder = (): xml2js.Builder =>
+  new xml2js.Builder({
+    // this omits the
+    // <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    // header which is not really required and could only cause issues
+    headless: true
+  });

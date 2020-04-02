@@ -255,9 +255,7 @@ export class Connection {
         {
           auth: this.headers,
           ca: this.serverCaCertificate,
-          headers: {
-            Cookie: this.cookies
-          },
+          headers: { cookie: this.cookies },
           method: reqMethod
         },
         (response) => {
@@ -299,14 +297,19 @@ export class Connection {
       req.on("error", (err) => reject(err));
 
       if (options?.payload !== undefined) {
-        if (
-          options.sendPayloadAsRaw === undefined ||
-          !options.sendPayloadAsRaw
-        ) {
-          req.write(newXmlBuilder().buildObject(options.payload));
-        } else {
-          req.write(options.payload);
-        }
+        const payload =
+          options.sendPayloadAsRaw === undefined || !options.sendPayloadAsRaw
+            ? Buffer.from(newXmlBuilder().buildObject(options.payload))
+            : options.payload;
+        // obs expects that if it receives data, that the content type is
+        // 'application/octet-stream'
+        req.setHeader("Content-Type", "application/octet-stream");
+        // It is absolutely crucial to set the content-length header field!
+        // Otherwise node will use chunked transfers and OBS chokes on these (at
+        // least when using http connections).
+        // See also: https://github.com/openSUSE/open-build-service/issues/9329
+        req.setHeader("Content-Length", payload.length);
+        req.write(payload);
       }
       req.end();
     });

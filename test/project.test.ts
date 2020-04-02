@@ -201,8 +201,7 @@ describe("Project", () => {
       await checkOutProject(proj, dir).should.be.fulfilled;
 
       (await fsPromises.readFile(`${dir}/.osc/_packages`)).toString().should
-        .equal(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<project name="${proj.name}">
+        .equal(`<project name="${proj.name}">
   <package name="foo" state=" "/>
   <package name="bar" state=" "/>
   <package name="baz" state=" "/>
