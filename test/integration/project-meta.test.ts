@@ -316,7 +316,7 @@ It should be gone soon.`,
 
     let res: StatusReply | ProjectMeta = await checkApiCallSucceeds(
       this.scopes?.[0],
-      async () => modifyProjectMeta(stagingCon, newProj)
+      async () => modifyProjectMeta(stagingCon.clone(), newProj)
     );
     res.should.deep.equal(statusOk);
 
@@ -324,17 +324,17 @@ It should be gone soon.`,
     newProj.person = [{ userId: "dancermak", role: LocalRole.Maintainer }];
 
     res = await checkApiCallSucceeds(this.scopes?.[1], async () =>
-      getProjectMeta(stagingCon, name)
+      fetchProjectMeta(stagingCon.clone(), name)
     );
     res.should.deep.equal(newProj);
 
     res = await checkApiCallSucceeds(this.scopes?.[2], async () =>
-      deleteProject(stagingCon, name)
+      deleteProject(stagingCon.clone(), name)
     );
     res.should.deep.equal(statusOk);
 
     const err = await checkApiCallFails(this.scopes?.[3], async () =>
-      getProjectMeta(stagingCon, name)
+      fetchProjectMeta(stagingCon.clone(), name)
     ).should.be.fulfilled;
 
     expect(err.status).to.deep.equal({
@@ -421,7 +421,7 @@ Here we just try to set as many different options as possible, to check that the
 
     let res: StatusReply | ProjectMeta = await checkApiCallSucceeds(
       this.scopes?.[0],
-      async () => modifyProjectMeta(stagingCon, newProj)
+      async () => modifyProjectMeta(stagingCon.clone(), newProj)
     ).should.be.fulfilled;
     res.should.deep.equal(statusOk);
 

@@ -115,17 +115,17 @@ It should be gone soon-ish.`,
 
     let res: StatusReply = await checkApiCallSucceeds(
       this.scopes?.[0],
-      async () => setPackageMeta(con, project, name, newPkg)
+      async () => setPackageMeta(con.clone(), project, name, newPkg)
     );
     res.should.deep.equal(statusOk);
 
     const pkgReply = await checkApiCallSucceeds(this.scopes?.[1], async () =>
-      getPackageMeta(con, project, name)
+      getPackageMeta(con.clone(), project, name)
     );
     pkgReply.should.deep.equal(newPkg);
 
     res = await checkApiCallSucceeds(this.scopes?.[2], async () =>
-      deletePackage(con, project, name)
+      deletePackage(con.clone(), project, name)
     );
     res.should.deep.equal(statusOk);
   });
@@ -150,23 +150,23 @@ It will be deleted when everything works out.
 
     let res: StatusReply = await checkApiCallSucceeds(
       this.scopes?.[0],
-      async () => setPackageMeta(con, project, name, newPkg)
+      async () => setPackageMeta(con.clone(), project, name, newPkg)
     );
     res.should.deep.equal(statusOk);
 
     const pkgReply = await checkApiCallSucceeds(this.scopes?.[1], async () =>
-      getPackageMeta(con, project, name)
+      getPackageMeta(con.clone(), project, name)
     );
     pkgReply.should.deep.equal(newPkg);
 
     res = await checkApiCallSucceeds(this.scopes?.[2], async () =>
-      deletePackage(con, project, name)
+      deletePackage(con.clone(), project, name)
     );
     res.should.deep.equal(statusOk);
   });
 
   it("throws an error when the project & package names don't match", async () => {
-    await setPackageMeta(con, "fooProj", "barPkg", {
+    await setPackageMeta(con.clone(), "fooProj", "barPkg", {
       project: "barProj",
       name: "fooPkg",
       description: "",

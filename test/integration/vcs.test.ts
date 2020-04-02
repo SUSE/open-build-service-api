@@ -29,7 +29,7 @@ import { Connection } from "../../src/connection";
 import { fetchHistory } from "../../src/history";
 import { checkOutPackage, Package } from "../../src/package";
 import { createProject, deleteProject } from "../../src/project";
-import { rmRf, pathExists } from "../../src/util";
+import { pathExists, rmRf } from "../../src/util";
 import {
   addAndDeleteFilesFromPackage,
   commit,
@@ -46,7 +46,7 @@ import {
 } from "../test-setup";
 
 type TestFixture = Context & {
-  con: Connection;
+  getCon: () => Connection;
   testPkg: Package;
   tmpPath: string;
 };
@@ -61,7 +61,7 @@ describe("ModifiedPackage", function () {
     beforeEach(async function () {
       this.tmpPath = await createTemporaryDirectory();
 
-      this.con = getTestConnection(ApiType.Staging);
+      this.getCon = () => getTestConnection(ApiType.Staging);
 
       this.testPkg = {
         apiUrl: ApiType.Staging,
@@ -78,14 +78,14 @@ describe("ModifiedPackage", function () {
     it(
       "commits a simple package",
       castToAsyncFunc<TestFixture>(async function () {
-        await createProject(this.con, {
+        await createProject(this.getCon(), {
           name: this.testPkg.projectName,
           description: "test project",
           title: "Test project"
         });
 
         await setPackageMeta(
-          this.con,
+          this.getCon(),
           this.testPkg.projectName,
           this.testPkg.name,
           {
@@ -114,7 +114,7 @@ describe("ModifiedPackage", function () {
         );
 
         let modPkg = await readInModifiedPackageFromDir(
-          this.con,
+          this.getCon(),
           join(this.tmpPath, this.testPkg.name)
         );
 
@@ -158,7 +158,7 @@ describe("ModifiedPackage", function () {
 
         const msg = "Add foo.txt";
 
-        modPkg = await commit(this.con, modPkg, msg);
+        modPkg = await commit(this.getCon(), modPkg, msg);
         expect(modPkg.files.find((f) => f.name === "foo.txt")).to.deep.include({
           name: "foo.txt",
           state: FileState.Unmodified
@@ -172,7 +172,7 @@ describe("ModifiedPackage", function () {
           })
         );
 
-        const hist = await fetchHistory(this.con, modPkg);
+        const hist = await fetchHistory(this.getCon(), modPkg);
         hist.should.have.length(1);
         hist[0].should.deep.include({
           commitMessage: msg,
@@ -189,9 +189,9 @@ describe("ModifiedPackage", function () {
         expect(await pathExists(join(modPkg.path, "foo.txt"))).to.equal(false);
 
         const msg2 = "Add bar.txt, remove foo.txt";
-        modPkg = await commit(this.con, modPkg, msg2);
+        modPkg = await commit(this.getCon(), modPkg, msg2);
 
-        const laterHist = await fetchHistory(this.con, modPkg);
+        const laterHist = await fetchHistory(this.getCon(), modPkg);
         laterHist.should.have.length(2);
         laterHist[1].should.deep.include({
           commitMessage: msg2,
@@ -212,17 +212,17 @@ describe("ModifiedPackage", function () {
         modPkg = await addAndDeleteFilesFromPackage(modPkg, [], ["baz.txt"]);
         const msg3 = "Add baz.txt on top of that";
 
-        modPkg = await commit(this.con, modPkg, msg3);
+        modPkg = await commit(this.getCon(), modPkg, msg3);
         modPkg.files.should.all.have.property("state", FileState.Unmodified);
 
-        const lastHist = await fetchHistory(this.con, modPkg);
+        const lastHist = await fetchHistory(this.getCon(), modPkg);
         lastHist.should.have.length(3);
         lastHist[2].should.deep.include({
           commitMessage: msg3,
           revisionHash: modPkg.md5Hash
         });
 
-        await deleteProject(this.con, this.testPkg.projectName);
+        await deleteProject(this.getCon(), this.testPkg.projectName);
       })
     );
   });
