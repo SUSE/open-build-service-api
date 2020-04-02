@@ -289,7 +289,7 @@ export function repositorySettingToFlag(
   const pushFlagSwitchIfNotDefault = (
     flagSwitch: FlagSwitch,
     enableDisable: boolean
-  ) => {
+  ): void => {
     if (enableDisable) {
       if (
         defaultSetting === undefined ||

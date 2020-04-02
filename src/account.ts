@@ -98,7 +98,7 @@ export async function readAccountsFromOscrc(
       return sect !== "general";
     })
     .map((sect) => {
-      const sectionElementGetter = (optionName: string) => {
+      const sectionElementGetter = (optionName: string): string | undefined => {
         const res: string | 1 = oscrcContents.get(sect, optionName, 1);
         return res === 1 ? undefined : res;
       };
