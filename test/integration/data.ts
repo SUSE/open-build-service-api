@@ -218,13 +218,46 @@ Mon Mar 16 12:01:33 UTC 2020 - Dan Čermák <dcermak@suse.com>
 
 `.concat(dotChangesRev9);
 
+const dotChangesRev13 = `-------------------------------------------------------------------
+Tue Mar 31 06:49:51 UTC 2020 - Guillaume GARDET <guillaume.gardet@opensuse.org>
+
+- Fix vagrant-ssh-testsuite for aarch64 by using`.concat(
+  // there is a trailing whitespace that prettier will apparently always remove -.-
+  " ",
+  `
+  opensuse/Tumbleweed.$(uname -m) instead of fedora box which is
+  for x86_64 only
+
+`,
+  dotChangesRev11
+);
+
+const dotChangesRev15 = `-------------------------------------------------------------------
+Wed Apr  1 20:38:10 UTC 2020 - Dan Čermák <dcermak@suse.com>
+
+- Fix test suite failures (boo#1168371)
+
+  The testsuite was implicitly assuming that /sbin/ is a symlink to /usr/sbin
+  (which is the case on Fedora, but not on opensuse). By switching to the
+  /var/run -> /run symlink, we fix this issue.
+
+  Also, the sed call in the spec file to change the Fedora box to
+  opensuse/Tumbleweed.$(uname -m) got removed and instead was moved into the
+  packaged Vagrantfile.
+
+  Added patches:
+  * 0001-Use-var-run-run-symlink-for-tests.patch
+  * 0002-Use-opensuse-Tumbleweed.-uname-m-box-instead-of-Fedo.patch
+
+`.concat(dotChangesRev13);
+
 export const vagrantSshfsDotChanges: PackageFile = Object.freeze({
   name: "vagrant-sshfs.changes",
   projectName: "Virtualization:vagrant",
   packageName: "vagrant-sshfs"
 });
 
-export const vagrantSshfsDotChangesContents = Buffer.from(dotChangesRev11);
+export const vagrantSshfsDotChangesContents = Buffer.from(dotChangesRev15);
 
 export const vagrantSshfsDotChangesFileHistory: string[] = Object.freeze([
   dotChangesRev1,
@@ -237,7 +270,12 @@ export const vagrantSshfsDotChangesFileHistory: string[] = Object.freeze([
   dotChangesRev7,
   dotChangesRev9,
   dotChangesRev9,
-  dotChangesRev11
+  dotChangesRev11,
+  dotChangesRev11,
+  dotChangesRev13,
+  dotChangesRev13,
+  dotChangesRev15,
+  dotChangesRev15
 ]) as string[];
 
 export const virtualizationVagrant: Project = {
@@ -353,18 +391,32 @@ const baseFile = {
 
 export const vagrantSshfsDotChangesWithExtraFields: PackageFile = {
   ...vagrantSshfsDotChanges,
-  md5Hash: "37ba2436aa6e16238d4bd2cc9ad75a67",
-  size: 2406,
-  modifiedTime: new Date("Mon, 16 Mar 2020 13:03:27 +0100")
+  md5Hash: "5e8a27e8637502765a7aea82c81613ea",
+  size: 3365,
+  modifiedTime: new Date("Wed, 01 Apr 2020 22:49:21 +0200")
 };
 
 const vagrantSshfsFileList: PackageFile[] = [
   {
     ...baseFile,
+    name: "0001-Use-var-run-run-symlink-for-tests.patch",
+    md5Hash: "aa67a02848aa376bcfe4b592e68fcfa7",
+    size: 1774,
+    modifiedTime: new Date("Wed, 01 Apr 2020 22:49:18 +0200")
+  },
+  {
+    ...baseFile,
+    name: "0002-Use-opensuse-Tumbleweed.-uname-m-box-instead-of-Fedo.patch",
+    md5Hash: "cb8759e4f95d2e9976b3cc45439d75ab",
+    size: 836,
+    modifiedTime: new Date("Wed, 01 Apr 2020 22:49:20 +0200")
+  },
+  {
+    ...baseFile,
     name: "testsuite.sh",
-    md5Hash: "d84584f65b02b4eb8990fce467bfe240",
-    size: 1508,
-    modifiedTime: new Date("Wed, 09 Oct 2019 12:12:57 +0200")
+    md5Hash: "49f6bfd714eb157c56a6cf78c22e6ff3",
+    size: 1503,
+    modifiedTime: new Date("Wed, 01 Apr 2020 22:49:20 +0200")
   },
   {
     ...baseFile,
@@ -391,9 +443,9 @@ const vagrantSshfsFileList: PackageFile[] = [
   {
     ...baseFile,
     name: "vagrant-sshfs.spec",
-    md5Hash: "9d7de1b6c79f736c4f59f1eeaa59dbba",
-    size: 3832,
-    modifiedTime: new Date("Mon, 16 Mar 2020 13:03:28 +0100")
+    md5Hash: "2002203fe5e5e22daea44ba86ca98ebb",
+    size: 4097,
+    modifiedTime: new Date("Wed, 01 Apr 2020 22:49:27 +0200")
   }
 ];
 
@@ -401,7 +453,7 @@ export const vagrantSshfs = {
   apiUrl: "https://api.opensuse.org/",
   name: "vagrant-sshfs",
   projectName: "Virtualization:vagrant",
-  md5Hash: "6105ecf1d6bf9c9c852baebfef9e23d8",
+  md5Hash: "0c762c8491d7fc1d1d2f36801379c4c9",
   meta: {
     name: "vagrant-sshfs",
     project: "Virtualization:vagrant",

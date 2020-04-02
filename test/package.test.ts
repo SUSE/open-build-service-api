@@ -53,13 +53,15 @@ describe("Package", () => {
         .toString()
         .should.deep.equal(virtualizationVagrant.apiUrl);
       readFileSync(join(dotOscPath, "_files")).toString().should.deep
-        .equal(`<directory name="vagrant-sshfs" srcmd5="6105ecf1d6bf9c9c852baebfef9e23d8">
-  <entry name="testsuite.sh" size="1508" md5="d84584f65b02b4eb8990fce467bfe240" mtime="1570615977"/>
+        .equal(`<directory name="vagrant-sshfs" srcmd5="0c762c8491d7fc1d1d2f36801379c4c9">
+  <entry name="0001-Use-var-run-run-symlink-for-tests.patch" size="1774" md5="aa67a02848aa376bcfe4b592e68fcfa7" mtime="1585774158"/>
+  <entry name="0002-Use-opensuse-Tumbleweed.-uname-m-box-instead-of-Fedo.patch" size="836" md5="cb8759e4f95d2e9976b3cc45439d75ab" mtime="1585774160"/>
+  <entry name="testsuite.sh" size="1503" md5="49f6bfd714eb157c56a6cf78c22e6ff3" mtime="1585774160"/>
   <entry name="vagrant-sshfs-1.3.4.tar.gz" size="27579" md5="9de559bf9dcf0b9af4f2d0dd96663a34" mtime="1584360207"/>
   <entry name="vagrant-sshfs-1.3.4.tar.gz.asc" size="833" md5="55600e43b3c7ab4286e3d94d8b4e4b90" mtime="1584360207"/>
-  <entry name="vagrant-sshfs.changes" size="2406" md5="37ba2436aa6e16238d4bd2cc9ad75a67" mtime="1584360207"/>
+  <entry name="vagrant-sshfs.changes" size="3365" md5="5e8a27e8637502765a7aea82c81613ea" mtime="1585774161"/>
   <entry name="vagrant-sshfs.keyring" size="32547" md5="f868df2487146cd0b2a716014e62f4a0" mtime="1580292453"/>
-  <entry name="vagrant-sshfs.spec" size="3832" md5="9d7de1b6c79f736c4f59f1eeaa59dbba" mtime="1584360208"/>
+  <entry name="vagrant-sshfs.spec" size="4097" md5="2002203fe5e5e22daea44ba86ca98ebb" mtime="1585774167"/>
 </directory>`);
       readFileSync(join(dotOscPath, "_project"))
         .toString()

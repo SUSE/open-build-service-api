@@ -162,7 +162,7 @@ describe("#fetchProjectMeta", () => {
     );
 
     // repositories...
-    expect(proj.repository).to.be.a("array").and.have.length(9);
+    expect(proj.repository).to.be.a("array").and.have.length(10);
 
     const findRepoByName = findRepoByNameBuilder(proj);
     expect(findRepoByName("openSUSE_Tumbleweed")).to.deep.equal({
@@ -195,6 +195,11 @@ describe("#fetchProjectMeta", () => {
       name: "openSUSE_Leap_15.1",
       arch: ["x86_64"],
       path: [{ project: "openSUSE:Leap:15.1", repository: "standard" }]
+    });
+    expect(findRepoByName("openSUSE_Leap_15.2")).to.deep.equal({
+      name: "openSUSE_Leap_15.2",
+      arch: ["x86_64"],
+      path: [{ project: "openSUSE:Leap:15.2", repository: "standard" }]
     });
     expect(findRepoByName("openSUSE_Leap_15.0")).to.deep.equal({
       name: "openSUSE_Leap_15.0",
