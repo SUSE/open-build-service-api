@@ -127,7 +127,7 @@ export function getTestConnection(apiType: ApiType): Connection {
   return new Connection(
     envOrDefault("OBS_USERNAME", "fakeUsername"),
     envOrDefault("OBS_PASSWORD", "fakePassword"),
-    apiType
+    { url: apiType }
   );
 }
 

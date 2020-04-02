@@ -82,16 +82,49 @@ describe("normalizeUrl", () => {
 
 describe("Connection", () => {
   it("rejects non https API urls", () => {
-    expect(() => new Connection("foo", "bar", "http://api.baz.org")).to.throw(
-      Error,
-      /does not use https/
-    );
+    expect(
+      () => new Connection("foo", "bar", { url: "http://api.baz.org" })
+    ).to.throw(Error, /does not use https/);
+    expect(
+      () =>
+        new Connection("foo", "bar", {
+          url: "http://api.baz.org",
+          forceHttps: true
+        })
+    ).to.throw(Error, /does not use https/);
+  });
+
+  it("permits non https API urls when explicitly allowed", () => {
+    expect(
+      () =>
+        new Connection("foo", "bar", {
+          url: "http://api.baz.org",
+          forceHttps: false
+        })
+    ).to.not.throw();
+  });
+
+  it("rejects non-https and non-http urls when forceHttps is false", () => {
+    expect(
+      () =>
+        new Connection("foo", "bar", {
+          url: "ftp://api.baz.org",
+          forceHttps: false
+        })
+    ).to.throw(Error, /doesn't use http or https/);
   });
 
   describe("#makeApiCall", () => {
     beforeEach(beforeEachRecord);
 
     afterEach(afterEachRecord);
+
+    const todo1 = {
+      userId: 1,
+      id: 1,
+      title: "delectus aut autem",
+      completed: false
+    };
 
     it("throws an exception when the HTTP request fails", async () => {
       // invalid credentials => get a 401
@@ -118,31 +151,33 @@ describe("Connection", () => {
     });
 
     it("throws an exception the payload is not XML", async () => {
-      const conn = new Connection(
-        "don'tCare",
-        "neitherHere",
-        "https://jsonplaceholder.typicode.com"
-      );
+      const conn = new Connection("don'tCare", "neitherHere", {
+        url: "https://jsonplaceholder.typicode.com"
+      });
       await conn
         .makeApiCall("todos/1")
         .should.be.rejectedWith(Error, /char.*{/i);
     });
 
     it("does not parse the reply when decodeReply is false", async () => {
-      const con = new Connection(
-        "don'tCare",
-        "neitherHere",
-        "https://jsonplaceholder.typicode.com"
-      );
+      const con = new Connection("don'tCare", "neitherHere", {
+        url: "https://jsonplaceholder.typicode.com"
+      });
       const todo = await con.makeApiCall("todos/1", {
         decodeResponseFromXml: false
       }).should.be.fulfilled;
-      expect(JSON.parse(todo)).to.deep.equal({
-        userId: 1,
-        id: 1,
-        title: "delectus aut autem",
-        completed: false
+      expect(JSON.parse(todo)).to.deep.equal(todo1);
+    });
+
+    it("can make requests to http urls as well", async () => {
+      const con = new Connection("don'tCare", "neitherHere", {
+        url: "http://jsonplaceholder.typicode.com",
+        forceHttps: false
       });
+      const todo = await con.makeApiCall("todos/1", {
+        decodeResponseFromXml: false
+      }).should.be.fulfilled;
+      expect(JSON.parse(todo)).to.deep.equal(todo1);
     });
 
     it("stores cookies persistently in the Connection", async () => {
@@ -184,12 +219,10 @@ describe("Connection", () => {
 
   describe("#makeApiCall live tests", () => {
     it("connects to a server with a custom certificate, when provided", async () => {
-      const con = new Connection(
-        "don'tCare",
-        "invalid",
-        "https://www.cacert.org/",
-        caCertRootCertificate
-      );
+      const con = new Connection("don'tCare", "invalid", {
+        url: "https://www.cacert.org/",
+        serverCaCertificate: caCertRootCertificate
+      });
 
       await con.makeApiCall("/index.php", {
         decodeResponseFromXml: false
@@ -197,11 +230,9 @@ describe("Connection", () => {
     });
 
     it("rejects connections to a server with a custom cert when no ca is provided", async () => {
-      const con = new Connection(
-        "don'tCare",
-        "invalid",
-        "https://www.cacert.org/"
-      );
+      const con = new Connection("don'tCare", "invalid", {
+        url: "https://www.cacert.org/"
+      });
 
       await con
         .makeApiCall("/index.php", {
@@ -211,7 +242,9 @@ describe("Connection", () => {
     });
 
     it("throws an exception when the request fails", async () => {
-      const con = new Connection("fake", "fake", "https://expired.badssl.com");
+      const con = new Connection("fake", "fake", {
+        url: "https://expired.badssl.com"
+      });
       await con
         .makeApiCall("foo")
         .should.be.rejectedWith(Error, /certificate has expired/);
@@ -219,10 +252,21 @@ describe("Connection", () => {
   });
 
   describe("#clone", () => {
-    const con = new Connection("fake", "fakePw", "https://build.opensuse.org");
+    const con = new Connection("fake", "fakePw", {
+      url: "https://build.opensuse.org"
+    });
 
     it("creates an exact copy if no parameters are provided", () => {
-      expect(con.clone()).to.deep.equal(con);
+      const cloned = con.clone();
+      [
+        "password",
+        "username",
+        "headers",
+        "serverCaCertificate",
+        "url"
+      ].forEach((key) =>
+        expect((con as any)[key]).to.deep.equal((cloned as any)[key])
+      );
     });
 
     it("uses the new parameters if supplied", () => {

@@ -20,7 +20,8 @@
  */
 
 import * as assert from "assert";
-import { request } from "https";
+import * as http from "http";
+import * as https from "https";
 import { URL } from "url";
 import { ApiError } from "./error";
 import { newXmlBuilder, newXmlParser } from "./xml";
@@ -104,39 +105,64 @@ export class Connection {
 
   private cookies: string[] = [];
 
+  private readonly serverCaCertificate?: string;
+
+  private readonly request: typeof http.request | typeof https.request;
+
   /**
    * Construct a connection using the provided username and password
    * @param username  username used for authentication
    * @param password  password of the user
-   * @param url  URL to the API, **must** use `https`.
-   *     CAUTION: this is **not** the URL to the webpage of the buildservice
-   *     instance (usually you have to swap the initial `build.` to `api.`).
-   * @param serverCaCertificate  A custom root certificate in the PEM format that
-   *     should be used to connect to the API.
-   *     If not provided, nodejs will by default use its certificate chain,
-   *     which may or may not include the system certificates. Thus connections
-   *     to servers with certificates signed by custom CAs *can* fail.
+   * @param options  Additional options for the new Connection:
+   *     - `url`: URL to the API, it **must** use `https` unless `forceHttps` is
+   *       set to false.
+   *       `https://api.opensuse.org/` is used if unspecified.
+   *       CAUTION: this is **not** the URL to the webpage of the buildservice
+   *       instance (usually you have to swap the initial `build.` to `api.`).
+   *     - `serverCaCertificate` A custom root certificate in the PEM format
+   *       that should be used to connect to the API.
+   *       If not provided, nodejs will by default use its certificate chain,
+   *       which may or may not include the system certificates. Thus
+   *       connections to servers with certificates signed by custom CAs *can*
+   *       fail.
+   *     - `forceHttps`: If set to `false`, then the constructor will accept
+   *        http urls as well. Other protocols are rejected.
    *
-   * @throw Error when the url is invalid or when it does not use https.
+   * @throw Error when the url is invalid or when it does not use https (and
+   *     `forceHttps` is true or undefined).
    */
   constructor(
     username: string,
     password: string,
-    url: string = "https://api.opensuse.org",
-    private readonly serverCaCertificate?: string
+    options: {
+      url?: string;
+      serverCaCertificate?: string;
+      forceHttps?: boolean;
+    } = {}
   ) {
-    this.password = password!;
-    this.username = username!;
+    this.password = password;
+    this.username = username;
 
     this.headers = `${this.username}:${this.password}`;
-    this.url = normalizeUrl(url);
+    this.serverCaCertificate = options.serverCaCertificate;
+
+    this.url = normalizeUrl(options.url ?? "https://api.opensuse.org");
 
     const protocol = new URL(this.url).protocol;
-    if (protocol !== "https:") {
-      throw new Error(
-        `${this.url} does not use https, got ${protocol} instead`
-      );
+    if (options.forceHttps === undefined || options.forceHttps) {
+      if (protocol !== "https:") {
+        throw new Error(
+          `${this.url} does not use https, got ${protocol} instead`
+        );
+      }
+    } else {
+      if (protocol !== "https:" && protocol !== "http:") {
+        throw new Error(
+          `${this.url} doesn't use http or https, got ${protocol} instead`
+        );
+      }
     }
+    this.request = protocol === "https:" ? https.request : http.request;
   }
 
   /**
@@ -158,18 +184,19 @@ export class Connection {
   public clone({
     username,
     url,
-    serverCaCertificate
+    serverCaCertificate,
+    forceHttps
   }: {
     username?: string;
     url?: string;
     serverCaCertificate?: string;
+    forceHttps?: boolean;
   } = {}): Connection {
-    return new Connection(
-      username ?? this.username,
-      this.password,
-      url ?? this.url,
-      serverCaCertificate ?? this.serverCaCertificate
-    );
+    return new Connection(username ?? this.username, this.password, {
+      url: url ?? this.url,
+      serverCaCertificate: serverCaCertificate ?? this.serverCaCertificate,
+      forceHttps
+    });
   }
 
   /**
@@ -223,7 +250,7 @@ export class Connection {
     );
 
     return new Promise((resolve, reject) => {
-      const req = request(
+      const req = this.request(
         url,
         {
           auth: this.headers,
