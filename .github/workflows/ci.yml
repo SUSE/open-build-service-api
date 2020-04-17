@@ -59,3 +59,14 @@ jobs:
 
     - run: yarn install
     - run: yarn run documentation
+
+  add_license:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - run: |
+        export GOPATH="$(pwd)/golang"
+        mkdir -p ${GOPATH}
+        go get -u github.com/google/addlicense
+        ${GOPATH}/bin/addlicense -c "SUSE LLC" -l mit $(find test/ src/ -name '*\.ts')
+        git diff --exit-code
