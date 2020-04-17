@@ -1,8 +1,8 @@
 name: publish
 
 on:
-  push:
-    branches: [ master ]
+  release:
+    types: [created]
 
 jobs:
   publish:
@@ -15,7 +15,7 @@ jobs:
       with:
         registry-url: 'https://npm.pkg.github.com'
         node-version: 13.x
-        scope: '@dcermak'
+        scope: '@SUSE'
     - run: yarn install
     - run: npm publish
       env:
