@@ -120,15 +120,24 @@ const envOrDefault = (envVar: string, defaultValue: string): string => {
 
 export const enum ApiType {
   Production = "https://api.opensuse.org",
-  Staging = "https://api-test.opensuse.org"
+  Staging = "https://api-test.opensuse.org",
+  MiniObs = "http://localhost:3000"
 }
 
+export const miniObsUsername = "obsTestUser";
+export const miniObsPassword = "nots3cr3t";
+
 export function getTestConnection(apiType: ApiType): Connection {
-  return new Connection(
-    envOrDefault("OBS_USERNAME", "fakeUsername"),
-    envOrDefault("OBS_PASSWORD", "fakePassword"),
-    { url: apiType }
-  );
+  return apiType === ApiType.MiniObs
+    ? new Connection(miniObsUsername, miniObsPassword, {
+        url: apiType,
+        forceHttps: false
+      })
+    : new Connection(
+        envOrDefault("OBS_USERNAME", "fakeUsername"),
+        envOrDefault("OBS_PASSWORD", "fakePassword"),
+        { url: apiType }
+      );
 }
 
 export const createTemporaryDirectory = (): Promise<string> =>
@@ -244,6 +253,12 @@ export async function checkApiCallFails<T>(
     return expect(failed).to.be.true(
       "calling apiCallFunc() should have failed"
     ) as never;
+  }
+}
+
+export function skipIfNoMiniObs(this: Context) {
+  if (process.env.HAVE_MINI_OBS === undefined) {
+    this.skip();
   }
 }
 

@@ -19,7 +19,6 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import { expect } from "chai";
 import { afterEach, beforeEach, describe, it } from "mocha";
 import { DefaultValue } from "../../src/api/flag";
 import {
@@ -27,16 +26,17 @@ import {
   PackageMeta,
   setPackageMeta
 } from "../../src/api/package-meta";
-import { StatusReply } from "../../src/error";
 import { deletePackage } from "../../src/package";
 import { LocalRole } from "../../src/user";
 import {
   afterEachRecord,
   ApiType,
   beforeEachRecord,
-  checkApiCallSucceeds,
-  getTestConnection
+  getTestConnection,
+  miniObsUsername,
+  skipIfNoMiniObs
 } from "./../test-setup";
+import { ApiError } from "../../src/error";
 
 describe("#getPackageMeta", () => {
   beforeEach(beforeEachRecord);
@@ -46,9 +46,7 @@ describe("#getPackageMeta", () => {
 
   it("gets a package _meta", async () => {
     const [project, name] = ["devel:tools", "gcovr"];
-    const gcovr = await getPackageMeta(con, project, name).should.be.fulfilled;
-
-    expect(gcovr).to.deep.equal({
+    await getPackageMeta(con, project, name).should.eventually.deep.equal({
       name,
       project,
       title: "A code coverage report generator using GNU gcov",
@@ -78,10 +76,11 @@ generates an HTML-formatted report.
   });
 
   it("gets a package _meta with a develPackage", async () => {
-    const vagrant = await getPackageMeta(con, "openSUSE:Factory", "vagrant")
-      .should.be.fulfilled;
-
-    expect(vagrant).to.deep.equal({
+    await getPackageMeta(
+      con,
+      "openSUSE:Factory",
+      "vagrant"
+    ).should.eventually.deep.equal({
       name: "vagrant",
       project: "openSUSE:Factory",
       description: "",
@@ -92,18 +91,18 @@ generates an HTML-formatted report.
 });
 
 describe("#setPackageMeta", () => {
-  beforeEach(beforeEachRecord);
-  afterEach(afterEachRecord);
+  before(skipIfNoMiniObs);
 
-  const con = getTestConnection(ApiType.Staging);
+  const con = getTestConnection(ApiType.MiniObs);
   const statusOk = {
     code: "ok",
     summary: "Ok"
   };
+  const project = `home:${miniObsUsername}`;
 
   it("creates a new package", async function () {
     this.timeout(5000);
-    const project = "home:dancermak";
+
     const name = "testPkg";
     const newPkg: PackageMeta = {
       description: `This is a package that has been created to test obs.ts
@@ -113,26 +112,25 @@ It should be gone soon-ish.`,
       title: "Testpackage, please ignore me"
     };
 
-    let res: StatusReply = await checkApiCallSucceeds(
-      this.scopes?.[0],
-      async () => setPackageMeta(con.clone(), project, name, newPkg)
-    );
-    res.should.deep.equal(statusOk);
+    await setPackageMeta(
+      con,
+      project,
+      name,
+      newPkg
+    ).should.eventually.deep.equal(statusOk);
 
-    const pkgReply = await checkApiCallSucceeds(this.scopes?.[1], async () =>
-      getPackageMeta(con.clone(), project, name)
+    await getPackageMeta(con, project, name).should.eventually.deep.equal(
+      newPkg
     );
-    pkgReply.should.deep.equal(newPkg);
 
-    res = await checkApiCallSucceeds(this.scopes?.[2], async () =>
-      deletePackage(con.clone(), project, name)
+    await deletePackage(con, project, name).should.eventually.deep.equal(
+      statusOk
     );
-    res.should.deep.equal(statusOk);
   });
 
   it("creates a complicated package", async function () {
     this.timeout(5000);
-    const project = "home:dancermak";
+
     const name = "complexPkg";
     const newPkg: PackageMeta = {
       description: `This is a package that has been created to test whether obs.ts can set a lot of values for packages.
@@ -143,30 +141,33 @@ It will be deleted when everything works out.
       project,
       title: "Testpackage, please ignore me or not, your choice",
       url: "https://build.opensuse.org",
-      develPackage: { package: "gcc", project: "openSUSE:Factory" },
       build: { defaultValue: DefaultValue.Disable, enable: [], disable: [] },
       debugInfo: { defaultValue: DefaultValue.Enable, enable: [], disable: [] }
     };
 
-    let res: StatusReply = await checkApiCallSucceeds(
-      this.scopes?.[0],
-      async () => setPackageMeta(con.clone(), project, name, newPkg)
-    );
-    res.should.deep.equal(statusOk);
+    await setPackageMeta(
+      con,
+      project,
+      name,
+      newPkg
+    ).should.eventually.deep.equal(statusOk);
 
-    const pkgReply = await checkApiCallSucceeds(this.scopes?.[1], async () =>
-      getPackageMeta(con.clone(), project, name)
+    await getPackageMeta(con, project, name).should.eventually.deep.equal(
+      newPkg
     );
-    pkgReply.should.deep.equal(newPkg);
 
-    res = await checkApiCallSucceeds(this.scopes?.[2], async () =>
-      deletePackage(con.clone(), project, name)
+    await deletePackage(con, project, name).should.eventually.deep.equal(
+      statusOk
     );
-    res.should.deep.equal(statusOk);
+
+    await getPackageMeta(con, project, name).should.be.rejectedWith(
+      ApiError,
+      "unknown_package"
+    );
   });
 
   it("throws an error when the project & package names don't match", async () => {
-    await setPackageMeta(con.clone(), "fooProj", "barPkg", {
+    await setPackageMeta(con, "fooProj", "barPkg", {
       project: "barProj",
       name: "fooPkg",
       description: "",

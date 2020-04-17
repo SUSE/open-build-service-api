@@ -36,16 +36,16 @@ import {
   modifyProjectMeta,
   ProjectMeta
 } from "../../src/api/project-meta";
-import { StatusReply } from "../../src/error";
+import { ApiError } from "../../src/error";
 import { deleteProject } from "../../src/project";
 import { LocalRole } from "../../src/user";
 import {
   afterEachRecord,
   ApiType,
   beforeEachRecord,
-  checkApiCallFails,
-  checkApiCallSucceeds,
-  getTestConnection
+  getTestConnection,
+  miniObsUsername,
+  skipIfNoMiniObs
 } from "./../test-setup";
 
 const findRepoByNameBuilder = (proj: ProjectMeta) => (repoName: string) =>
@@ -153,7 +153,7 @@ describe("#fetchProjectMeta", () => {
     });
 
     // no groups defined
-    expect(proj.group).to.be.undefined;
+    expect(proj.group).to.equal(undefined);
 
     // title & description
     expect(proj.title).to.equal("Devel project for Vagrant");
@@ -294,15 +294,13 @@ describe("#fetchProjectMeta", () => {
 });
 
 describe("#modifyOrCreateProject", () => {
-  const stagingCon = getTestConnection(ApiType.Staging);
+  const con = getTestConnection(ApiType.MiniObs);
 
-  beforeEach(beforeEachRecord);
-
-  afterEach(afterEachRecord);
+  before(skipIfNoMiniObs);
 
   it("creates a new project", async function () {
     this.timeout(5000);
-    const name = "home:dancermak:obs_ts_test";
+    const name = `home:${miniObsUsername}:obs_ts_test`;
     const newProj: ProjectMeta = {
       description: `This is a project that has been created to test obs.ts
 It should be gone soon.`,
@@ -314,38 +312,33 @@ It should be gone soon.`,
       summary: "Ok"
     };
 
-    let res: StatusReply | ProjectMeta = await checkApiCallSucceeds(
-      this.scopes?.[0],
-      async () => modifyProjectMeta(stagingCon.clone(), newProj)
+    await modifyProjectMeta(con, newProj).should.eventually.deep.equal(
+      statusOk
     );
-    res.should.deep.equal(statusOk);
 
     // OBS automatically adds the owner of the home project as the maintainer
-    newProj.person = [{ userId: "dancermak", role: LocalRole.Maintainer }];
+    newProj.person = [{ userId: miniObsUsername, role: LocalRole.Maintainer }];
 
-    res = await checkApiCallSucceeds(this.scopes?.[1], async () =>
-      fetchProjectMeta(stagingCon.clone(), name)
+    await fetchProjectMeta(con, name).should.eventually.deep.equal(newProj);
+
+    await deleteProject(con, name).should.eventually.deep.equal(statusOk);
+
+    await fetchProjectMeta(con, name).should.be.rejectedWith(
+      ApiError,
+      "unknown_project"
     );
-    res.should.deep.equal(newProj);
-
-    res = await checkApiCallSucceeds(this.scopes?.[2], async () =>
-      deleteProject(stagingCon.clone(), name)
-    );
-    res.should.deep.equal(statusOk);
-
-    const err = await checkApiCallFails(this.scopes?.[3], async () =>
-      fetchProjectMeta(stagingCon.clone(), name)
-    ).should.be.fulfilled;
-
-    expect(err.status).to.deep.equal({
-      code: "unknown_project",
-      summary: name
-    });
   });
 
   it("creates a new complicated project", async function () {
     this.timeout(10000);
-    const name = "home:dancermak:set_as_many_properties_as_we_can";
+    const name = `home:${miniObsUsername}:set_as_many_properties_as_we_can`;
+
+    try {
+      await deleteProject(con, name);
+    } catch {
+      // we just want to make sure it is gone
+    }
+
     const newProj: ProjectMeta = {
       description: `This is a project that has been created to test obs.ts
 It should be gone soon.
@@ -354,19 +347,19 @@ Here we just try to set as many different options as possible, to check that the
       name,
       title: "Testproject created by obs.ts ;-)",
       person: [
-        { userId: "dancermak", role: LocalRole.Bugowner },
-        { userId: "hennevogel", role: LocalRole.Reader }
+        { userId: miniObsUsername, role: LocalRole.Bugowner },
+        { userId: "Admin", role: LocalRole.Reader }
       ],
       link: [{ vrevmode: VrevMode.Unextend, project: "openSUSE:Factory" }],
       group: [
-        { groupId: "factory-staging", role: LocalRole.Downloader },
-        { groupId: "suse-fuzzies", role: LocalRole.Reviewer }
+        { groupId: "admins", role: LocalRole.Downloader },
+        { groupId: "everyone", role: LocalRole.Reviewer }
       ],
       access: true,
       sourceAccess: false,
       lock: false,
       kind: Kind.Maintenance,
-      url: "https://gitlab.suse.de/dancermak/obs.ts",
+      url: "https://github.com/SUSE/open-build-service-api",
       build: { defaultValue: DefaultValue.Enable, enable: [], disable: [] },
       useForBuild: {
         defaultValue: DefaultValue.Disable,
@@ -419,36 +412,24 @@ Here we just try to set as many different options as possible, to check that the
       summary: "Ok"
     };
 
-    let res: StatusReply | ProjectMeta = await checkApiCallSucceeds(
-      this.scopes?.[0],
-      async () => modifyProjectMeta(stagingCon.clone(), newProj)
-    ).should.be.fulfilled;
-    res.should.deep.equal(statusOk);
+    await modifyProjectMeta(con, newProj).should.eventually.deep.equal(
+      statusOk
+    );
 
     // OBS adds the home project owner automatically as a maintainer
     // ...unfortunately at another position
-    newProj.person?.splice(1, 0, {
-      userId: "dancermak",
+    newProj.person!.splice(1, 0, {
+      userId: miniObsUsername,
       role: LocalRole.Maintainer
     });
 
-    res = await checkApiCallSucceeds(this.scopes?.[1], async () =>
-      fetchProjectMeta(stagingCon.clone(), name)
-    ).should.be.fulfilled;
-    res.should.deep.equal(newProj);
+    await fetchProjectMeta(con, name).should.eventually.deep.equal(newProj);
 
-    res = await checkApiCallSucceeds(this.scopes?.[2], async () =>
-      deleteProject(stagingCon.clone(), name)
-    ).should.be.fulfilled;
-    res.should.deep.equal(statusOk);
+    await deleteProject(con, name).should.eventually.deep.equal(statusOk);
 
-    const err = await checkApiCallFails(this.scopes?.[3], async () =>
-      fetchProjectMeta(stagingCon.clone(), name)
-    ).should.be.fulfilled;
-
-    expect(err.status).to.deep.equal({
-      code: "unknown_project",
-      summary: name
-    });
+    await fetchProjectMeta(con, name).should.be.rejectedWith(
+      ApiError,
+      "unknown_project"
+    );
   });
 });

@@ -37,12 +37,12 @@ import {
   readInModifiedPackageFromDir
 } from "../../src/vcs";
 import {
-  afterEachRecord,
   ApiType,
-  beforeEachRecord,
   castToAsyncFunc,
   createTemporaryDirectory,
-  getTestConnection
+  getTestConnection,
+  miniObsUsername,
+  skipIfNoMiniObs
 } from "../test-setup";
 
 type TestFixture = Context & {
@@ -54,19 +54,18 @@ type TestFixture = Context & {
 describe("ModifiedPackage", function () {
   this.timeout(50000);
 
-  beforeEach(beforeEachRecord);
-  afterEach(afterEachRecord);
+  before(skipIfNoMiniObs);
 
   describe("#commit", () => {
+    const con = getTestConnection(ApiType.MiniObs);
+
     beforeEach(async function () {
       this.tmpPath = await createTemporaryDirectory();
 
-      this.getCon = () => getTestConnection(ApiType.Staging);
-
       this.testPkg = {
-        apiUrl: ApiType.Staging,
+        apiUrl: ApiType.MiniObs,
         name: "test_package",
-        projectName: "home:dancermak:test",
+        projectName: `home:${miniObsUsername}:test`,
         files: []
       };
     });
@@ -78,22 +77,17 @@ describe("ModifiedPackage", function () {
     it(
       "commits a simple package",
       castToAsyncFunc<TestFixture>(async function () {
-        await createProject(this.getCon(), {
+        await createProject(con, {
           name: this.testPkg.projectName,
           description: "test project",
           title: "Test project"
         });
 
-        await setPackageMeta(
-          this.getCon(),
-          this.testPkg.projectName,
-          this.testPkg.name,
-          {
-            name: this.testPkg.name,
-            title: "Test Package",
-            description: "Just a package for testing"
-          }
-        );
+        await setPackageMeta(con, this.testPkg.projectName, this.testPkg.name, {
+          name: this.testPkg.name,
+          title: "Test Package",
+          description: "Just a package for testing"
+        });
 
         await checkOutPackage(
           this.testPkg,
@@ -114,7 +108,7 @@ describe("ModifiedPackage", function () {
         );
 
         let modPkg = await readInModifiedPackageFromDir(
-          this.getCon(),
+          con,
           join(this.tmpPath, this.testPkg.name)
         );
 
@@ -158,7 +152,7 @@ describe("ModifiedPackage", function () {
 
         const msg = "Add foo.txt";
 
-        modPkg = await commit(this.getCon(), modPkg, msg);
+        modPkg = await commit(con, modPkg, msg);
         expect(modPkg.files.find((f) => f.name === "foo.txt")).to.deep.include({
           name: "foo.txt",
           state: FileState.Unmodified
@@ -172,7 +166,7 @@ describe("ModifiedPackage", function () {
           })
         );
 
-        const hist = await fetchHistory(this.getCon(), modPkg);
+        const hist = await fetchHistory(con, modPkg);
         hist.should.have.length(1);
         hist[0].should.deep.include({
           commitMessage: msg,
@@ -189,9 +183,9 @@ describe("ModifiedPackage", function () {
         expect(await pathExists(join(modPkg.path, "foo.txt"))).to.equal(false);
 
         const msg2 = "Add bar.txt, remove foo.txt";
-        modPkg = await commit(this.getCon(), modPkg, msg2);
+        modPkg = await commit(con, modPkg, msg2);
 
-        const laterHist = await fetchHistory(this.getCon(), modPkg);
+        const laterHist = await fetchHistory(con, modPkg);
         laterHist.should.have.length(2);
         laterHist[1].should.deep.include({
           commitMessage: msg2,
@@ -212,17 +206,17 @@ describe("ModifiedPackage", function () {
         modPkg = await addAndDeleteFilesFromPackage(modPkg, [], ["baz.txt"]);
         const msg3 = "Add baz.txt on top of that";
 
-        modPkg = await commit(this.getCon(), modPkg, msg3);
+        modPkg = await commit(con, modPkg, msg3);
         modPkg.files.should.all.have.property("state", FileState.Unmodified);
 
-        const lastHist = await fetchHistory(this.getCon(), modPkg);
+        const lastHist = await fetchHistory(con, modPkg);
         lastHist.should.have.length(3);
         lastHist[2].should.deep.include({
           commitMessage: msg3,
           revisionHash: modPkg.md5Hash
         });
 
-        await deleteProject(this.getCon(), this.testPkg.projectName);
+        await deleteProject(con, this.testPkg.projectName);
       })
     );
   });
