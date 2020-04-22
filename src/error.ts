@@ -108,27 +108,38 @@ export class ApiError extends Error {
     method: RequestMethod,
     status: any
   ) {
-    super(`Failed to load URL ${url}, status code: ${statusCode}`);
-
     assert(
       statusCode > 299 || statusCode < 200,
       `statusCode indicates success (${statusCode}), while the request should have failed`
     );
 
-    this.statusCode = statusCode;
-    this.url = url;
-    this.method = method;
-
+    let decodedStatus: StatusReply | undefined;
     // status can actually be anything, it needn't be a status-reply element.
     // E.g. when authorization fails, then we get a HTML file instead, which
     // xml2js decodes, but the following would throw and so we need to guard
     // against that.
     try {
-      this.status = statusReplyFromApi(status);
+      decodedStatus = statusReplyFromApi(status);
     } catch {
       // something went wrong while decoding the status, it is probably not a
       // status-reply then
     }
+
+    let errMsg = `Failed to make a ${method} request to ${url}, got a ${statusCode}`;
+    if (decodedStatus !== undefined) {
+      errMsg = errMsg.concat(`:
+status: ${decodedStatus.code}
+summary: ${decodedStatus.summary}
+details: ${decodedStatus.details}
+`);
+    }
+
+    super(errMsg);
+
+    this.statusCode = statusCode;
+    this.url = url;
+    this.method = method;
+    this.status = decodedStatus;
 
     Object.setPrototypeOf(this, ApiError.prototype);
   }

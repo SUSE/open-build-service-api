@@ -175,6 +175,8 @@ export class Connection {
    * @param username  An optional new username.
    * @param url  An optional new URL to the API.
    * @param serverCaCertificate  An optional new server certificate.
+   * @param forceHttps  Whether to enforce https or permit http as well (defaults
+   *     to `true` = enforce https).
    *
    * @return A new Connection that has the same password as the current
    *     Connection object.

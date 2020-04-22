@@ -21,6 +21,7 @@
 
 import { expect } from "chai";
 import { describe, it } from "mocha";
+import { URL } from "url";
 import { Connection, normalizeUrl } from "../src/connection";
 import { ApiError } from "../src/error";
 import {
@@ -109,23 +110,30 @@ describe("Connection", () => {
 
     it("throws an exception when the HTTP request fails", async () => {
       // invalid credentials => get a 401
-      const wrongAuthConn = new Connection("suspicouslyFake", "evenFaker");
-      await wrongAuthConn
-        .makeApiCall("superInvalidRouteFromOuterSpace")
-        .should.be.rejectedWith(ApiError, /failed to load url/i)
-        .and.eventually.have.property("statusCode", 401);
+      const route = "superInvalidRouteFromOuterSpace";
+      const wrongAuthCon = new Connection("suspicouslyFake", "evenFaker");
+      const err = await wrongAuthCon
+        .makeApiCall(route)
+        .should.be.rejectedWith(ApiError, /failed to make a get request to/i);
+      err.should.have.property("statusCode", 401);
+      err.should.have
+        .property("url")
+        .that.deep.equals(new URL(`${wrongAuthCon.url}${route}`));
+      // no status is received from the API as we got a authentication error
+      err.should.have.property("status", undefined);
     });
 
     it("decodes the status reply from OBS and throws an ApiError", async () => {
+      const proj = "blablabbliiii";
       const con = getTestConnection(ApiType.Production);
       await con
-        .makeApiCall("source/blablabbliiii/_meta")
+        .makeApiCall(`source/${proj}/_meta`)
         .should.be.rejectedWith(ApiError)
         .and.eventually.deep.include({
           method: "GET",
           status: {
             code: "unknown_project",
-            summary: "blablabbliiii"
+            summary: proj
           },
           statusCode: 404
         });
