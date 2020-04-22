@@ -106,7 +106,7 @@ export async function fetchFileList(
   if (retrieveFileContents !== undefined && retrieveFileContents) {
     await Promise.all(
       files.map(async (f) => {
-        f.contents = await fetchFileContents(con, f, revision);
+        f.contents = await fetchFileContents(con, f, { expandLinks, revision });
       })
     );
   }

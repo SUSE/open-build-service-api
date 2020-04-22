@@ -114,8 +114,16 @@ export function packageFileFromDirectoryEntry(
 }
 
 /**
- * Retrieve the contents of the specified `pkgFile`.
+ * Retrieve the contents of the specified file.
  *
+ * @param con  The [[Connection]] that will be used for API calls.
+ * @param pkgFile  The file which contents should be retrieved.
+ * @param expandLinks  Whether package links should be expanded (defaults to
+ *     `true`).
+ *     It is generally recommended to always expand links, as that is the
+ *     content that is used in the end by OBS. Note that for packages that are
+ *     pure links (i.e. just a `_link` file), will have no other files present
+ *     and thus fetching their contents requires `expandLinks = true`.
  * @param revision  If provided, then the package contents will be fetched at
  *     the specified revision. Otherwise they will be fetched from the HEAD
  *     commit.
@@ -123,13 +131,26 @@ export function packageFileFromDirectoryEntry(
  *     - the revision number
  *     - the md5 hash of the revision
  *     - a [[Commit]] object
+ *
+ * @return A `Buffer` with the contents of `pkgFile`.
  */
 export function fetchFileContents(
   con: Connection,
   pkgFile: PackageFile,
-  revision?: Commit | string | number
+  {
+    expandLinks,
+    revision
+  }: {
+    expandLinks?: boolean;
+    revision?: Commit | string | number;
+  } = {}
 ): Promise<Buffer> {
-  let route = `/source/${pkgFile.projectName}/${pkgFile.packageName}/${pkgFile.name}`;
+  if (expandLinks === undefined) {
+    expandLinks = true;
+  }
+  let route = `/source/${pkgFile.projectName}/${pkgFile.packageName}/${
+    pkgFile.name
+  }?expand=${expandLinks ? 1 : 0}`;
 
   if (revision !== undefined) {
     const rev =
@@ -138,7 +159,7 @@ export function fetchFileContents(
         : typeof revision === "number"
         ? revision.toString()
         : revision.revisionHash;
-    route = route.concat(`?rev=${rev}`);
+    route = route.concat(`&rev=${rev}`);
   }
 
   return con.makeApiCall(route, { decodeResponseFromXml: false });
