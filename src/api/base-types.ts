@@ -86,6 +86,19 @@ export enum LinkedBuildMode {
   All = "all"
 }
 
+/** possible triggers for a release of a repository */
+export enum ReleaseTrigger {
+  /** DEFAULT: not set, no release action possible */
+  NoRelease = "no_release",
+  /** only on manual commands the release gets started */
+  Manual = "manual",
+  /**
+   * Release just once on maintenance release event. This attribute get removed
+   * at the same time.
+   */
+  Maintenance = "maintenance"
+}
+
 /** TODO */
 export interface ReleaseTarget {
   readonly project: string;
@@ -240,19 +253,6 @@ export enum Arch {
   Sparcv9v = "sparcv9v",
   X86_64 = "x86_64",
   Local = "local"
-}
-
-/** possible triggers for a release of a repository */
-export enum ReleaseTrigger {
-  /** DEFAULT: not set, no release action possible */
-  NoRelease = "no_release",
-  /** only on manual commands the release gets started */
-  Manual = "manual",
-  /**
-   * Release just once on maintenance release event. This attribute get removed
-   * at the same time.
-   */
-  Maintenance = "maintenance"
 }
 
 export interface HostSystem {
