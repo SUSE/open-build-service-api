@@ -28,7 +28,7 @@ import {
   extractElementAsArray,
   extractElementIfPresent
 } from "../util";
-import * as base_types from "./base-types";
+import * as baseTypes from "./base-types";
 import * as flag from "./flag";
 
 /** Project types */
@@ -48,33 +48,33 @@ interface BaseRepositoryApiReply {
     linkedbuild?: string;
   };
   arch?: string[];
-  releasetarget?: base_types.ReleaseTargetApiReply[];
-  path?: base_types.PathApiReply[];
+  releasetarget?: baseTypes.ReleaseTargetApiReply[];
+  path?: baseTypes.PathApiReply[];
 }
 
 function baseRepositoryFromApi(
   data: BaseRepositoryApiReply
-): base_types.BaseRepository {
+): baseTypes.BaseRepository {
   return deleteUndefinedAndEmptyMembers({
     arch: extractElementAsArray(data, "arch"),
-    block: extractElementIfPresent<base_types.BlockMode>(data.$, "block"),
-    linkedbuild: extractElementIfPresent<base_types.LinkedBuildMode>(
+    block: extractElementIfPresent<baseTypes.BlockMode>(data.$, "block"),
+    linkedbuild: extractElementIfPresent<baseTypes.LinkedBuildMode>(
       data.$,
       "linkedbuild"
     ),
     name: data.$.name,
     path: extractElementAsArray(data, "path", {
-      construct: base_types.pathFromApi
+      construct: baseTypes.pathFromApi
     }),
-    rebuild: extractElementIfPresent<base_types.RebuildMode>(data.$, "rebuild"),
+    rebuild: extractElementIfPresent<baseTypes.RebuildMode>(data.$, "rebuild"),
     releasetarget: extractElementAsArray(data, "releasetarget", {
-      construct: base_types.releaseTargetFromApi
+      construct: baseTypes.releaseTargetFromApi
     })
   });
 }
 
 function baseRepositoryToApi(
-  repo: base_types.BaseRepository
+  repo: baseTypes.BaseRepository
 ): BaseRepositoryApiReply {
   return deleteUndefinedMembers({
     $: deleteUndefinedMembers({
@@ -84,9 +84,9 @@ function baseRepositoryToApi(
       rebuild: repo.rebuild
     }),
     arch: repo.arch,
-    path: repo.path?.map((pth) => base_types.pathToApi(pth)),
+    path: repo.path?.map((pth) => baseTypes.pathToApi(pth)),
     releasetarget: repo.releasetarget?.map((relTgt) =>
-      base_types.releaseTargetToApi(relTgt)
+      baseTypes.releaseTargetToApi(relTgt)
     )
   });
 }
@@ -101,14 +101,14 @@ function baseRepositoryToApi(
  * convert it to a more useful form later.
  */
 export interface ProjectMeta
-  extends base_types.CommonMeta,
-    base_types.BaseProjectMeta {
+  extends baseTypes.CommonMeta,
+    baseTypes.BaseProjectMeta {
   // <binarydownload> field is used for things...
   // No idea what for and according to Adrian it should be hidden better, so here we go ;-)
   // readonly binarydownload?: flag.Flag;
 
   /** repositories for this project */
-  readonly repository?: base_types.BaseRepository[];
+  readonly repository?: baseTypes.BaseRepository[];
 }
 
 /**
@@ -126,10 +126,10 @@ interface ProjectMetaApiReply {
       kind?: Kind;
     };
     access?: flag.SimpleFlagApiReply;
-    link?: base_types.LinkApiReply[];
+    link?: baseTypes.LinkApiReply[];
     mountproject?: string;
     repository?: BaseRepositoryApiReply[];
-  } & base_types.CommonMetaApiReply;
+  } & baseTypes.CommonMetaApiReply;
 }
 
 /**
@@ -148,8 +148,8 @@ export function projectMetaFromApi(data: ProjectMetaApiReply): ProjectMeta {
   const res = {
     access,
     kind: extractElementIfPresent<Kind>(data.project.$, "kind"),
-    link: extractElementAsArray<base_types.Link>(data.project, "link", {
-      construct: base_types.linkFromApi
+    link: extractElementAsArray<baseTypes.Link>(data.project, "link", {
+      construct: baseTypes.linkFromApi
     }),
 
     mountProject: extractElementIfPresent<string>(data.project, "mountproject"),
@@ -157,7 +157,7 @@ export function projectMetaFromApi(data: ProjectMetaApiReply): ProjectMeta {
     repository: extractElementAsArray(data.project, "repository", {
       construct: baseRepositoryFromApi
     }),
-    ...base_types.commonMetaFromApi(data.project)
+    ...baseTypes.commonMetaFromApi(data.project)
   };
   return deleteUndefinedAndEmptyMembers(res);
 }
@@ -170,9 +170,9 @@ export function projectMetaToApi(proj: ProjectMeta): ProjectMetaApiReply {
   const projApi: ProjectMetaApiReply = {
     project: deleteUndefinedMembers({
       $: deleteUndefinedAndEmptyMembers({ name: proj.name, kind: proj.kind }),
-      ...base_types.commonMetaToApi(proj),
+      ...baseTypes.commonMetaToApi(proj),
       access: flag.booleanToSimpleFlag(proj.access),
-      link: proj.link?.map((lnk) => base_types.linkToApi(lnk)),
+      link: proj.link?.map((lnk) => baseTypes.linkToApi(lnk)),
       mountproject: proj.mountProject,
       repository: proj.repository?.map((repo) => baseRepositoryToApi(repo))
     })
