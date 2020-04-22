@@ -138,10 +138,10 @@ describe("Distribution", () => {
     });
 
     it("fetches the distributions including remotes from api-test.opensuse.org", async () => {
-      const stagingCon = getTestConnection(ApiType.Staging);
+      const getStagingCon = () => getTestConnection(ApiType.Staging);
 
       const obsTestDistros: Distribution[] = await fetchHostedDistributions(
-        stagingCon
+        getStagingCon()
       ).should.be.fulfilled;
 
       expect(obsTestDistros).to.deep.equal([
@@ -170,7 +170,7 @@ describe("Distribution", () => {
       ]);
 
       const obsTestIncludingRemotes = await fetchHostedDistributions(
-        stagingCon,
+        getStagingCon(),
         true
       ).should.be.fulfilled;
 
@@ -178,7 +178,7 @@ describe("Distribution", () => {
         obsTestIncludingRemotes.should.include.a.thing.that.deep.equals(distro)
       );
 
-      expect(obsDistros).to.not.be.undefined;
+      expect(obsDistros).to.not.equal(undefined);
       obsDistros = obsDistros!;
 
       // Check that all distros (except arch community, which is missing) from
