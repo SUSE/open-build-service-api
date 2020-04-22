@@ -87,22 +87,10 @@ describe("Package", function () {
       expect(pkg.files).to.deep.equal(
         [
           {
-            name: "CVE-2020-8130.patch",
-            md5Hash: "fece8cafc259ced5ffd56ab85d936113",
-            size: 498,
-            modifiedTime: new Date("Fri, 06 Mar 2020 16:49:03 +0100")
-          },
-          {
-            name: "rake-12.3.2.gem",
-            md5Hash: "b97fd18f57ab31788face9b4d26b41de",
-            size: 87040,
-            modifiedTime: new Date("Fri, 06 Mar 2020 16:49:04 +0100")
-          },
-          {
-            name: "ruby-2.6.5.tar.xz",
-            md5Hash: "b8a4e2bdbb76485c3d6690e57be67750",
-            size: 11553580,
-            modifiedTime: new Date("Tue, 08 Oct 2019 11:57:55 +0200")
+            name: "ruby-2.6.6.tar.xz",
+            md5Hash: "1aa8bd34dcaf5c4b58d563546de16919",
+            size: 11567284,
+            modifiedTime: new Date("Wed, 08 Apr 2020 01:41:12 +0200")
           },
           {
             name: "ruby2.6-default.macros",
@@ -118,9 +106,9 @@ describe("Package", function () {
           },
           {
             name: "ruby2.6.changes",
-            md5Hash: "38aa6af34c205fca7c283b1e9f69226a",
-            size: 6412,
-            modifiedTime: new Date("Fri, 06 Mar 2020 16:49:04 +0100")
+            md5Hash: "54cb152363061b0afd93546f52929462",
+            size: 6873,
+            modifiedTime: new Date("Wed, 08 Apr 2020 16:42:56 +0200")
           },
           {
             name: "ruby2.6.macros",
@@ -130,9 +118,9 @@ describe("Package", function () {
           },
           {
             name: "ruby2.6.spec",
-            md5Hash: "a2e7118a84f7ec7f03336eda93abb841",
-            size: 13745,
-            modifiedTime: new Date("Fri, 06 Mar 2020 16:49:05 +0100")
+            md5Hash: "c45d3c1ee83a51c3bf08c98693a50975",
+            size: 13644,
+            modifiedTime: new Date("Wed, 08 Apr 2020 01:41:15 +0200")
           },
           {
             name: "series",
@@ -153,7 +141,7 @@ describe("Package", function () {
         }))
       );
 
-      pkg.should.have.property("md5Hash", "13b55f9f232992fb7aea136112eeb5c6");
+      pkg.should.have.property("md5Hash", "655cb52f5301b85d5707730c383df2d0");
       pkg.projectName.should.equal("Virtualization:vagrant");
       pkg.name.should.equal("ruby2.6");
     });

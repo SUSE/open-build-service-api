@@ -60,7 +60,7 @@
         "path": "/source/Virtualization:vagrant/ruby2.6?expand=1&linkrev=base",
         "body": "",
         "status": 200,
-        "response": "<directory name=\"ruby2.6\" rev=\"13b55f9f232992fb7aea136112eeb5c6\" vrev=\"29\" srcmd5=\"13b55f9f232992fb7aea136112eeb5c6\">\n  <linkinfo project=\"devel:languages:ruby\" package=\"ruby2.6\" srcmd5=\"5e4f007f1a321de148022d16578ff8f4\" lsrcmd5=\"f71d3715b36d6a5100ada5c7ede53032\"/>\n  <entry name=\"CVE-2020-8130.patch\" md5=\"fece8cafc259ced5ffd56ab85d936113\" size=\"498\" mtime=\"1583509743\"/>\n  <entry name=\"rake-12.3.2.gem\" md5=\"b97fd18f57ab31788face9b4d26b41de\" size=\"87040\" mtime=\"1583509744\"/>\n  <entry name=\"ruby-2.6.5.tar.xz\" md5=\"b8a4e2bdbb76485c3d6690e57be67750\" size=\"11553580\" mtime=\"1570528675\"/>\n  <entry name=\"ruby2.6-default.macros\" md5=\"0cb12b4f7f5bb2c6c09462717bc9d6d8\" size=\"186\" mtime=\"1530277150\"/>\n  <entry name=\"ruby2.6-rpmlintrc\" md5=\"41ac278955542049457b30562282ef43\" size=\"93\" mtime=\"1530277150\"/>\n  <entry name=\"ruby2.6.changes\" md5=\"38aa6af34c205fca7c283b1e9f69226a\" size=\"6412\" mtime=\"1583509744\"/>\n  <entry name=\"ruby2.6.macros\" md5=\"d9ea685eb891c4105b28038ac237b2c0\" size=\"585\" mtime=\"1530277151\"/>\n  <entry name=\"ruby2.6.spec\" md5=\"a2e7118a84f7ec7f03336eda93abb841\" size=\"13745\" mtime=\"1583509745\"/>\n  <entry name=\"series\" md5=\"d0b1b5813b722adf168ad5e694dcf246\" size=\"14\" mtime=\"1553707081\"/>\n  <entry name=\"use-pie.patch\" md5=\"991c0d4f9626b2c12a20647a15b3aff1\" size=\"610\" mtime=\"1553707081\"/>\n</directory>\n",
+        "response": "<directory name=\"ruby2.6\" rev=\"655cb52f5301b85d5707730c383df2d0\" vrev=\"31\" srcmd5=\"655cb52f5301b85d5707730c383df2d0\">\n  <linkinfo project=\"devel:languages:ruby\" package=\"ruby2.6\" srcmd5=\"e4fe2b8a5f2278773dea8093a33ac1d7\" lsrcmd5=\"f71d3715b36d6a5100ada5c7ede53032\"/>\n  <entry name=\"ruby-2.6.6.tar.xz\" md5=\"1aa8bd34dcaf5c4b58d563546de16919\" size=\"11567284\" mtime=\"1586302872\"/>\n  <entry name=\"ruby2.6-default.macros\" md5=\"0cb12b4f7f5bb2c6c09462717bc9d6d8\" size=\"186\" mtime=\"1530277150\"/>\n  <entry name=\"ruby2.6-rpmlintrc\" md5=\"41ac278955542049457b30562282ef43\" size=\"93\" mtime=\"1530277150\"/>\n  <entry name=\"ruby2.6.changes\" md5=\"54cb152363061b0afd93546f52929462\" size=\"6873\" mtime=\"1586356976\"/>\n  <entry name=\"ruby2.6.macros\" md5=\"d9ea685eb891c4105b28038ac237b2c0\" size=\"585\" mtime=\"1530277151\"/>\n  <entry name=\"ruby2.6.spec\" md5=\"c45d3c1ee83a51c3bf08c98693a50975\" size=\"13644\" mtime=\"1586302875\"/>\n  <entry name=\"series\" md5=\"d0b1b5813b722adf168ad5e694dcf246\" size=\"14\" mtime=\"1553707081\"/>\n  <entry name=\"use-pie.patch\" md5=\"991c0d4f9626b2c12a20647a15b3aff1\" size=\"610\" mtime=\"1553707081\"/>\n</directory>\n",
         "rawHeaders": [
             "Date",
             "Thu, 19 Mar 2020 11:27:38 GMT",
@@ -97,7 +97,7 @@
             "cache-control",
             "no-cache",
             "content-length",
-            "1317",
+            "1105",
             "Set-Cookie",
             "openSUSE_session=05fc8fac1ba10b0416d671c4ef1489a4; path=/; Max-Age=86400; Secure; HttpOnly; domain=.opensuse.org",
             "Connection",
