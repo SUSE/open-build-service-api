@@ -142,7 +142,7 @@ export async function addAndDeleteFilesFromPackage(
   );
   if (toAddAndDelete.size > 0) {
     throw new Error(
-      `Cannot add *and* remove the files: ${[...toAddAndDelete.entries()].join(
+      `Cannot add and remove the files: ${[...toAddAndDelete.entries()].join(
         ", "
       )}.`
     );
@@ -264,8 +264,8 @@ export async function readInModifiedPackageFromDir(
         const matchingPkgFile = filesAtHead.find((f) => f.name === dentry.name);
         if (matchingPkgFile === undefined) {
           // the current file is not tracked
-          // either it is already registered as to be added (then we don't )or it is really
-          // untracked
+          // either it is already registered as to be added (then we don't add
+          // it) or it is really untracked
           const common = {
             name: dentry.name,
             packageName: pkg.name,
@@ -308,6 +308,9 @@ export async function readInModifiedPackageFromDir(
   notSeenFiles
     .filter(
       (notSeenFileName) =>
+        // result undefined
+        // => notSeenFileName is *not* to be deleted
+        // => needs to be kept in the list to be added as missing files
         toBeDeleted.find((fname) => fname === notSeenFileName) === undefined
     )
     .forEach((name) => {
