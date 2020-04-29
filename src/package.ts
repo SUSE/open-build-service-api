@@ -382,6 +382,10 @@ export async function readInCheckedOutPackage(path: string): Promise<Package> {
     )
   );
 
+  apiUrl = apiUrl.trim();
+  name = name.trim();
+  projectName = projectName.trim();
+
   const [metaXml] = await Promise.all(
     optionalPkgUnderscoreFiles.map(async (fname) => {
       try {
