@@ -25,7 +25,6 @@ import { afterEach, beforeEach, Context, describe } from "mocha";
 import { join } from "path";
 import { setPackageMeta } from "../../src/api/package-meta";
 import { calculateHash } from "../../src/checksum";
-import { Connection } from "../../src/connection";
 import { fetchHistory } from "../../src/history";
 import { checkOutPackage, Package } from "../../src/package";
 import { createProject, deleteProject } from "../../src/project";
@@ -46,7 +45,6 @@ import {
 } from "../test-setup";
 
 type TestFixture = Context & {
-  getCon: () => Connection;
   testPkg: Package;
   tmpPath: string;
 };
@@ -55,25 +53,23 @@ describe("ModifiedPackage", function () {
   this.timeout(50000);
 
   before(skipIfNoMiniObs);
+  const con = getTestConnection(ApiType.MiniObs);
+  beforeEach(async function () {
+    this.tmpPath = await createTemporaryDirectory();
+
+    this.testPkg = {
+      apiUrl: ApiType.MiniObs,
+      name: "test_package",
+      projectName: `home:${miniObsUsername}:test`,
+      files: []
+    };
+  });
+
+  afterEach(async function () {
+    await rmRf(this.tmpPath);
+  });
 
   describe("#commit", () => {
-    const con = getTestConnection(ApiType.MiniObs);
-
-    beforeEach(async function () {
-      this.tmpPath = await createTemporaryDirectory();
-
-      this.testPkg = {
-        apiUrl: ApiType.MiniObs,
-        name: "test_package",
-        projectName: `home:${miniObsUsername}:test`,
-        files: []
-      };
-    });
-
-    afterEach(async function () {
-      await rmRf(this.tmpPath);
-    });
-
     it(
       "commits a simple package",
       castToAsyncFunc<TestFixture>(async function () {
@@ -108,7 +104,6 @@ describe("ModifiedPackage", function () {
         );
 
         let modPkg = await readInModifiedPackageFromDir(
-          con,
           join(this.tmpPath, this.testPkg.name)
         );
 

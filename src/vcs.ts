@@ -224,10 +224,9 @@ export async function addAndDeleteFilesFromPackage(
 }
 
 export async function readInModifiedPackageFromDir(
-  con: Connection,
   dir: string
 ): Promise<ModifiedPackage> {
-  const pkg = await readInCheckedOutPackage(dir, con);
+  const pkg = await readInCheckedOutPackage(dir);
   assert(
     pkg.files !== undefined,
     "readInCheckedOutPackage must populate the file list, but it did not"

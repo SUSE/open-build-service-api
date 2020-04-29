@@ -365,16 +365,11 @@ export async function checkOutPackage(
  * Construct a [[Package]] from a previously checked out package.
  *
  * @param path  Path to the directory where the package has been checked out to.
- * @param con  A [[Connection]] that will be used to refetch the metadata in
- *     `.osc` if they appear to be in an inconsistent state.
  *
  * @return A [[Package]] object with the files
  */
-export async function readInCheckedOutPackage(
-  path: string,
-  con: Connection
-): Promise<Package> {
-  const [
+export async function readInCheckedOutPackage(path: string): Promise<Package> {
+  let [
     osclibVersion,
     apiUrl,
     name,
@@ -401,7 +396,7 @@ export async function readInCheckedOutPackage(
   const meta =
     metaXml !== undefined
       ? packageMetaFromApi(await newXmlParser().parseStringPromise(metaXml))
-      : await getPackageMeta(con, projectName, name);
+      : undefined;
 
   if (parseFloat(osclibVersion) !== 1.0) {
     throw Error(
@@ -417,37 +412,24 @@ export async function readInCheckedOutPackage(
 
   const files = fileListFromDirectory(pkg, dir);
 
-  let needsRefetch: boolean = false;
-
   await Promise.all(
     files.map(async (f) => {
-      try {
-        f.contents = await fsPromises.readFile(join(path, ".osc", f.name));
+      f.contents = await fsPromises.readFile(join(path, ".osc", f.name));
 
-        // ensure that the hash is present
-        const curHash = calculateHash(f.contents, "md5");
-        if (f.md5Hash === undefined) {
-          f.md5Hash = curHash;
-        } else {
-          // !the hash is wrong!
-          if (curHash !== f.md5Hash) {
-            needsRefetch = true;
-          }
+      // ensure that the hash is present
+      const curHash = calculateHash(f.contents, "md5");
+      if (f.md5Hash === undefined) {
+        f.md5Hash = curHash;
+      } else {
+        // !the hash is wrong!
+        if (curHash !== f.md5Hash) {
+          throw new Error(
+            `Error reading in package ${pkg.name} from ${path}: file hash of ${f.name} (${curHash}) does not match the expected hash ${f.md5Hash}`
+          );
         }
-      } catch (err) {
-        // file I/O error, e.g. file not present => need to get it again
-        needsRefetch = true;
       }
     })
   );
-
-  if (needsRefetch) {
-    const newPkg = await fetchPackage(con, pkg.projectName, pkg.name, {
-      retrieveFileContents: true,
-      expandLinks: true
-    });
-    await writePackageUnderscoreFiles(newPkg, path);
-  }
 
   return { files, ...pkg };
 }
