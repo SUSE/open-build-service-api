@@ -322,6 +322,13 @@ export async function readInModifiedPackageFromDir(
       });
     });
 
+  toBeDeleted.forEach((fname) => {
+    const fileToDelete = filesAtHead.find((f) => f.name === fname);
+    if (fileToDelete !== undefined) {
+      files.push({ ...fileToDelete, state: FileState.ToBeDeleted });
+    }
+  });
+
   const { files: ignored, ...restOfPkg } = pkg;
 
   return {
