@@ -4,7 +4,7 @@ set -euo pipefail
 
 export repo_dir="open-build-service"
 export obs_url="http://localhost:3000"
-obs_version=2.10.2
+obs_version=2.10.3
 
 pushd .
 
@@ -37,7 +37,7 @@ TEST_USER="obsTestUser"
 CREDENTIALS="Admin:opensuse"
 
 # setup a test user
-curl --user ${CREDENTIALS} -X PUT ${obs_url}/person/obsTestUser -d "
+curl --user ${CREDENTIALS} -X PUT ${obs_url}/person/${TEST_USER} -d "
 <person>
 <login>${TEST_USER}</login>
 <email>${TEST_USER}@notexisting.com</email>
