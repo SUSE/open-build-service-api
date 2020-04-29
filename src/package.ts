@@ -140,7 +140,8 @@ export function fileListFromDirectory(
   );
 }
 
-function fileListToDirectory(pkg: Package): Directory {
+/** handy for tests, don't make it public though... */
+export function fileListToDirectory(pkg: Package): Directory {
   return {
     name: pkg.name,
     sourceMd5: pkg.md5Hash,

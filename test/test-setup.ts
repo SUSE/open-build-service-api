@@ -19,6 +19,8 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import mockFs = require("mock-fs");
+
 import { expect, should, use } from "chai";
 import * as chaiAsPromised from "chai-as-promised";
 import * as chaiThings from "chai-things";
@@ -32,7 +34,57 @@ import { AsyncFunc, Context, Func } from "mocha";
 import * as nock from "nock";
 import { tmpdir } from "os";
 import { join, sep } from "path";
+import { directoryToApi } from "../src/api/directory";
 import { Connection } from "../src/connection";
+import { fileListToDirectory, Package } from "../src/package";
+import { newXmlBuilder } from "../src/xml";
+
+/**
+ * Create a checked out package using mock-fs in the current working directory.
+ *
+ * This function sets up a mocked file system in the current working directory
+ * and creates all files necessary for it to be a valid checked out package.
+ *
+ * @param pkg  The package which should be checked out.
+ * @param additionalFiles  A configuration object that can be passed to
+ *     `mockFs()` containing additional files or directories that should be
+ *     added to the mocked file system.
+ * @param addFilesToCwd Boolean flag whether the files of `pkg` should be added
+ *     to the current working directory (i.e. the package is checked out as
+ *     normal). Defaults to true.
+ */
+export function setupPackageFileMock(
+  pkg: Package,
+  {
+    additionalFiles,
+    addFilesToCwd
+  }: {
+    additionalFiles?: any;
+    addFilesToCwd?: boolean;
+  } = {}
+): void {
+  const files: {
+    [name: string]: string | Buffer;
+  } = {};
+  pkg.files?.forEach((f) => (files[`.osc/${f.name}`] = f.contents ?? ""));
+  if (addFilesToCwd === undefined || addFilesToCwd) {
+    pkg.files?.forEach((f) => (files[`${f.name}`] = f.contents ?? ""));
+  }
+  mockFs({
+    ".osc/_apiurl": `${pkg.apiUrl}
+`,
+    ".osc/_osclib_version": "1.0",
+    ".osc/_package": `${pkg.name}
+`,
+    ".osc/_project": `${pkg.projectName}
+`,
+    ".osc/_files": newXmlBuilder().buildObject(
+      directoryToApi(fileListToDirectory(pkg))
+    ),
+    ...files,
+    ...(additionalFiles ?? {})
+  });
+}
 
 /** Payload that has been extracted from the nock and received from the API call */
 interface InterceptedApiCall<T> {
