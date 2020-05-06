@@ -227,17 +227,17 @@ function extractPropertyFromObjectAsArray<T>(
   data: any,
   key: string,
   {
-    default_value,
+    defaultValue,
     construct,
     type
   }: {
-    default_value?: T;
+    defaultValue?: T;
     construct?: (data: any) => T;
     type?: new (data: any) => T;
   } = {}
 ): T[] | undefined {
   if (!(key in data)) {
-    return default_value === undefined ? undefined : [default_value];
+    return defaultValue === undefined ? undefined : [defaultValue];
   }
 
   const constructF = makeConstruct<T>(construct, type);
