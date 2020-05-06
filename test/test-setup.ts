@@ -36,7 +36,7 @@ import { tmpdir } from "os";
 import { join, sep } from "path";
 import { directoryToApi } from "../src/api/directory";
 import { Connection } from "../src/connection";
-import { fileListToDirectory, Package } from "../src/package";
+import { fileListToDirectory, FrozenPackage } from "../src/package";
 import { newXmlBuilder } from "../src/xml";
 
 /**
@@ -54,7 +54,7 @@ import { newXmlBuilder } from "../src/xml";
  *     normal). Defaults to true.
  */
 export function setupPackageFileMock(
-  pkg: Package,
+  pkg: FrozenPackage,
   {
     additionalFiles,
     addFilesToCwd
@@ -70,6 +70,7 @@ export function setupPackageFileMock(
   if (addFilesToCwd === undefined || addFilesToCwd) {
     pkg.files?.forEach((f) => (files[`${f.name}`] = f.contents ?? ""));
   }
+
   mockFs({
     ".osc/_apiurl": `${pkg.apiUrl}
 `,

@@ -23,7 +23,7 @@ import { Arch } from "../../src/api/base-types";
 import { DefaultValue } from "../../src/api/flag";
 import { Project } from "../../src/project";
 import { LocalRole } from "../../src/user";
-import { PackageFile } from "./../../src/file";
+import { PackageFile, FrozenPackageFile } from "./../../src/file";
 import { Revision } from "./../../src/history";
 
 const commonEntries = {
@@ -389,44 +389,39 @@ const baseFile = {
   packageName: "vagrant-sshfs"
 };
 
-export const vagrantSshfsDotChangesWithExtraFields: PackageFile = {
+export const vagrantSshfsDotChangesWithExtraFields = {
   ...vagrantSshfsDotChanges,
   md5Hash: "5e8a27e8637502765a7aea82c81613ea",
   size: 3365,
   modifiedTime: new Date("Wed, 01 Apr 2020 22:49:21 +0200")
 };
 
-const vagrantSshfsFileList: PackageFile[] = [
+const vagrantSshfsFileList: FrozenPackageFile[] = [
   {
-    ...baseFile,
     name: "0001-Use-var-run-run-symlink-for-tests.patch",
     md5Hash: "aa67a02848aa376bcfe4b592e68fcfa7",
     size: 1774,
     modifiedTime: new Date("Wed, 01 Apr 2020 22:49:18 +0200")
   },
   {
-    ...baseFile,
     name: "0002-Use-opensuse-Tumbleweed.-uname-m-box-instead-of-Fedo.patch",
     md5Hash: "cb8759e4f95d2e9976b3cc45439d75ab",
     size: 836,
     modifiedTime: new Date("Wed, 01 Apr 2020 22:49:20 +0200")
   },
   {
-    ...baseFile,
     name: "testsuite.sh",
     md5Hash: "49f6bfd714eb157c56a6cf78c22e6ff3",
     size: 1503,
     modifiedTime: new Date("Wed, 01 Apr 2020 22:49:20 +0200")
   },
   {
-    ...baseFile,
     name: "vagrant-sshfs-1.3.4.tar.gz",
     md5Hash: "9de559bf9dcf0b9af4f2d0dd96663a34",
     size: 27579,
     modifiedTime: new Date("Mon, 16 Mar 2020 13:03:27 +0100")
   },
   {
-    ...baseFile,
     name: "vagrant-sshfs-1.3.4.tar.gz.asc",
     md5Hash: "55600e43b3c7ab4286e3d94d8b4e4b90",
     size: 833,
@@ -434,20 +429,18 @@ const vagrantSshfsFileList: PackageFile[] = [
   },
   vagrantSshfsDotChangesWithExtraFields,
   {
-    ...baseFile,
     name: "vagrant-sshfs.keyring",
     md5Hash: "f868df2487146cd0b2a716014e62f4a0",
     size: 32547,
     modifiedTime: new Date("Wed, 29 Jan 2020 11:07:33 +0100")
   },
   {
-    ...baseFile,
     name: "vagrant-sshfs.spec",
     md5Hash: "2002203fe5e5e22daea44ba86ca98ebb",
     size: 4097,
     modifiedTime: new Date("Wed, 01 Apr 2020 22:49:27 +0200")
   }
-];
+].map((f) => ({ ...f, ...baseFile, contents: Buffer.from(f.name) }));
 
 export const vagrantSshfs = {
   apiUrl: "https://api.opensuse.org/",

@@ -46,13 +46,23 @@ describe("Package", function () {
 
   describe("#fetchPackage", () => {
     it("fetches the file list and sets the file properties of vagrant-sshfs", async function () {
+      const { files, ...rest } = vagrantSshfs;
+      const vagrantSshfsWithoutContents = {
+        ...rest,
+        files: files.map((f) => {
+          const { contents, ...restOfFile } = f;
+          return restOfFile;
+        })
+      };
       await fetchPackage(this.con, "Virtualization:vagrant", "vagrant-sshfs", {
         retrieveFileContents: false
-      }).should.be.fulfilled.and.eventually.deep.equal(vagrantSshfs);
+      }).should.be.fulfilled.and.eventually.deep.equal(
+        vagrantSshfsWithoutContents
+      );
     });
 
     it("doesn't expand links when told so", async function () {
-      const pkg: Package = await fetchPackage(
+      const pkg = await fetchPackage(
         this.con,
         "Virtualization:vagrant",
         "ruby2.6",
@@ -60,7 +70,7 @@ describe("Package", function () {
           retrieveFileContents: false,
           expandLinks: false
         }
-      ).should.be.fulfilled;
+      );
 
       expect(pkg.files).to.deep.equal([
         {

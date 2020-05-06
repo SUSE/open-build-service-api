@@ -21,11 +21,16 @@
 
 import { expect } from "chai";
 import { describe, it } from "mocha";
-import { PackageFile, packageFileFromDirectoryEntry } from "../src/file";
+import {
+  FrozenPackageFile,
+  PackageFile,
+  packageFileFromDirectoryEntry
+} from "../src/file";
+import { calculateHash } from "../src/checksum";
 
 describe("File", () => {
   describe("#packageFileFromDirectoryEntry", () => {
-    const testFile: PackageFile = {
+    const testFile: FrozenPackageFile = {
       name: "foo",
       packageName: "fooPkg",
       projectName: "fooProj",
@@ -35,9 +40,10 @@ describe("File", () => {
       modifiedTime: new Date("1970-01-01")
     };
 
-    it("throws an error when the directory's name is not set", () => {
+    it("throws an Error when the directory's name is not set", () => {
       expect(() => packageFileFromDirectoryEntry(testFile, {})).to.throw(
-        "Cannot create a PackageFile from the DirectoryEntry: the directory name is undefined"
+        Error,
+        /file name.*and directory name.*do not match/i
       );
     });
 
@@ -49,13 +55,15 @@ describe("File", () => {
       expect(modified).to.have.property("contents", testFile.contents);
     });
 
-    it("removes the hash and modifiedTime, if the Directory does not contain them", () => {
+    it("reuses the hash and modifiedTime, if the Directory does not contain them", () => {
       const modified = packageFileFromDirectoryEntry(testFile, {
         name: "foo"
       });
 
       ["md5Hash", "modifiedTime"].forEach((key) =>
-        expect(modified).to.not.have.property(key)
+        expect(modified)
+          .to.have.property(key)
+          .that.equals(testFile[key as keyof PackageFile])
       );
     });
 
@@ -68,12 +76,49 @@ describe("File", () => {
         .that.equals(16);
     });
 
-    it("takes the new directory entries size from file contents", () => {
+    it("takes the new package file size from the old package", () => {
       packageFileFromDirectoryEntry(testFile, {
-        name: "foo"
+        name: "foo",
+        md5: "something"
+      })
+        .should.have.property("size")
+        .that.equals(testFile.size);
+    });
+
+    it("takes the new package file size from the old package's contents", () => {
+      const { size, ...rest } = testFile;
+      packageFileFromDirectoryEntry(rest, {
+        name: "foo",
+        md5: "something"
       })
         .should.have.property("size")
         .that.equals(testFile.contents!.length);
+    });
+
+    it("takes the md5Hash from the directory at first", () => {
+      packageFileFromDirectoryEntry(testFile, {
+        name: "foo",
+        md5: "I go first"
+      })
+        .should.have.property("md5Hash")
+        .that.equals("I go first");
+    });
+
+    it("takes the md5Hash from the file if not in the directory", () => {
+      packageFileFromDirectoryEntry(testFile, {
+        name: "foo"
+      })
+        .should.have.property("md5Hash")
+        .that.equals(testFile.md5Hash);
+    });
+
+    it("calculates the md5hash from the file contents if not present in the directory or the file", () => {
+      const { md5Hash, ...rest } = testFile;
+      packageFileFromDirectoryEntry(rest, {
+        name: "foo"
+      })
+        .should.have.property("md5Hash")
+        .that.equals(calculateHash(testFile.contents!, "md5"));
     });
   });
 });

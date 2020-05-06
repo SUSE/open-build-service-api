@@ -37,14 +37,16 @@ describe("Package", () => {
 
   describe("#checkOutPackage", () => {
     it("checks out vagrant-sshfs", async () => {
-      const modPkg: ModifiedPackage = await checkOutPackage(vagrantSshfs, path)
-        .should.be.fulfilled;
-
+      const modPkg: ModifiedPackage = await checkOutPackage(vagrantSshfs, path);
       const { files, ...restOfVagrantSshfs } = vagrantSshfs;
       modPkg.should.deep.equal({
         ...restOfVagrantSshfs,
         path,
-        files: files.map((f) => ({ ...f, state: FileState.Unmodified }))
+        files,
+        filesInWorkdir: files.map((f) => ({
+          ...f,
+          state: FileState.Unmodified
+        }))
       });
 
       existsSync(join(dotOscPath)).should.equal(true);
@@ -87,24 +89,23 @@ connection from the Vagrant guest back to the Vagrant host.
 </package>`);
 
       vagrantSshfs.files.forEach((f) => {
-        readFileSync(join(dotOscPath, f.name)).toString().should.equal("");
-        readFileSync(join(path, f.name)).toString().should.equal("");
+        readFileSync(join(dotOscPath, f.name)).toString().should.equal(f.name);
+        readFileSync(join(path, f.name)).toString().should.equal(f.name);
       });
     });
 
-    it("throws an error if the package list has not been fetched yet", async () => {
-      const { apiUrl, name, projectName } = vagrantSshfs;
-      await checkOutPackage(
-        { apiUrl, name, projectName },
-        join("empty", "vagrant-sshfs")
-      ).should.be.rejectedWith(Error, /file list has not been retrieved/i);
-    });
-
     it("does not write a _meta file if the project's meta has not been fetched yet", async () => {
-      const { apiUrl, name, projectName, files } = vagrantSshfs;
-      await checkOutPackage({ apiUrl, name, projectName, files }, path).should
-        .be.fulfilled;
-
+      const { apiUrl, name, projectName, files, md5Hash } = vagrantSshfs;
+      await checkOutPackage(
+        {
+          apiUrl,
+          name,
+          projectName,
+          md5Hash,
+          files
+        },
+        path
+      );
       existsSync(join(dotOscPath, "_meta")).should.be.false;
     });
   });

@@ -20,10 +20,14 @@
  */
 import mockFs = require("mock-fs");
 
+import { expect } from "chai";
 import { describe, it } from "mocha";
+import { calculateHash } from "../src/checksum";
+import { FrozenPackageFile } from "../src/file";
 import {
   addAndDeleteFilesFromPackage,
   FileState,
+  ModifiedPackage,
   readInModifiedPackageFromDir,
   VcsFile
 } from "../src/vcs";
@@ -36,22 +40,36 @@ describe("ModifiedPackage", () => {
     const pkgBase = {
       apiUrl: "https://api.foobar.org",
       name: "fooPkg",
-      projectName: "fooProj"
+      projectName: "fooProj",
+      md5Hash: "somethingSomethingButNotAHash"
     };
 
+    const files: FrozenPackageFile[] = ["foo", "bar"].map((name) => ({
+      name,
+      packageName: pkgBase.name,
+      projectName: pkgBase.projectName,
+      md5Hash: calculateHash(Buffer.from(name), "md5"),
+      modifiedTime: new Date(),
+      contents: Buffer.from(name),
+      size: 3
+    }));
+
     it("reads in the files from .osc/_to_be_added", async () => {
-      setupPackageFileMock(pkgBase, {
-        additionalFiles: {
-          ".osc/_to_be_added": `foo
+      setupPackageFileMock(
+        { ...pkgBase, files: [] },
+        {
+          additionalFiles: {
+            ".osc/_to_be_added": `foo
 bar
 `,
-          foo: "",
-          bar: `bar is not empty!
+            foo: "",
+            bar: `bar is not empty!
 `
+          }
         }
-      });
+      );
 
-      const modifiedPkg = await readInModifiedPackageFromDir(
+      const modifiedPkg: ModifiedPackage = await readInModifiedPackageFromDir(
         "."
       ).should.eventually.deep.include({
         ...pkgBase,
@@ -59,24 +77,20 @@ bar
       });
 
       modifiedPkg.should.have
-        .property("files")
+        .property("filesInWorkdir")
         .that.is.an("array")
         .and.has.length(2);
 
-      const files = modifiedPkg.files;
-      files.forEach((f: VcsFile) => f.state.should.equal(FileState.ToBeAdded));
-      files.map((f: VcsFile) => f.name).should.deep.equal(["foo", "bar"]);
+      const filesInWorkdir = modifiedPkg.filesInWorkdir;
+      filesInWorkdir.forEach((f) => f.state.should.equal(FileState.ToBeAdded));
+      expect(filesInWorkdir.map((f) => f.name)).to.deep.equal(["foo", "bar"]);
     });
 
     it("reads in the files from .osc/_to_be_deleted", async () => {
       setupPackageFileMock(
         {
           ...pkgBase,
-          files: ["foo", "bar"].map((name) => ({
-            name,
-            packageName: pkgBase.name,
-            projectName: pkgBase.projectName
-          }))
+          files
         },
         {
           additionalFiles: {
@@ -88,7 +102,7 @@ bar
         }
       );
 
-      const modifiedPkg = await readInModifiedPackageFromDir(
+      const modifiedPkg: ModifiedPackage = await readInModifiedPackageFromDir(
         "."
       ).should.eventually.deep.include({
         ...pkgBase,
@@ -96,26 +110,22 @@ bar
       });
 
       modifiedPkg.should.have
-        .property("files")
+        .property("filesInWorkdir")
         .that.is.an("array")
         .and.has.length(2);
 
-      const files = modifiedPkg.files;
-      files.forEach((f: VcsFile) =>
+      const filesInWorkdir = modifiedPkg.filesInWorkdir;
+      filesInWorkdir.forEach((f) =>
         f.state.should.equal(FileState.ToBeDeleted)
       );
-      files.map((f: VcsFile) => f.name).should.deep.equal(["foo", "bar"]);
+      expect(filesInWorkdir.map((f) => f.name)).to.deep.equal(["foo", "bar"]);
     });
 
     it("it adds untracked files", async () => {
       setupPackageFileMock(
         {
           ...pkgBase,
-          files: ["foo", "bar"].map((name) => ({
-            name,
-            packageName: pkgBase.name,
-            projectName: pkgBase.projectName
-          }))
+          files
         },
         {
           additionalFiles: {
@@ -124,7 +134,7 @@ bar
         }
       );
 
-      const modifiedPkg = await readInModifiedPackageFromDir(
+      const modifiedPkg: ModifiedPackage = await readInModifiedPackageFromDir(
         "."
       ).should.eventually.deep.include({
         ...pkgBase,
@@ -132,21 +142,21 @@ bar
       });
 
       modifiedPkg.should.have
-        .property("files")
+        .property("filesInWorkdir")
         .that.is.an("array")
         .and.has.length(3);
 
-      const files = modifiedPkg.files;
-      files
-        .find((f: VcsFile) => f.name === "baz")
-        .should.deep.include({ name: "baz", state: FileState.Untracked });
+      const filesInWorkdir = modifiedPkg.filesInWorkdir;
+      expect(
+        filesInWorkdir.find((f: VcsFile) => f.name === "baz")
+      ).to.deep.include({ name: "baz", state: FileState.Untracked });
       ["foo", "bar"].forEach((unmodifiedFname) =>
-        files
-          .find((f: VcsFile) => f.name === unmodifiedFname)
-          .should.deep.include({
-            name: unmodifiedFname,
-            state: FileState.Unmodified
-          })
+        expect(
+          filesInWorkdir.find((f) => f.name === unmodifiedFname)
+        ).to.deep.include({
+          name: unmodifiedFname,
+          state: FileState.Unmodified
+        })
       );
     });
 
@@ -158,12 +168,7 @@ here
       setupPackageFileMock(
         {
           ...pkgBase,
-          files: ["foo", "bar"].map((name) => ({
-            name,
-            packageName: pkgBase.name,
-            projectName: pkgBase.projectName,
-            contents: Buffer.from(name)
-          }))
+          files
         },
         {
           additionalFiles: {
@@ -174,7 +179,7 @@ here
         }
       );
 
-      const modifiedPkg = await readInModifiedPackageFromDir(
+      const modifiedPkg: ModifiedPackage = await readInModifiedPackageFromDir(
         "."
       ).should.eventually.deep.include({
         ...pkgBase,
@@ -186,36 +191,30 @@ here
         .that.is.an("array")
         .and.has.length(2);
 
-      const files = modifiedPkg.files;
-      files
-        .find((f: VcsFile) => f.name === "foo")
-        .should.deep.include({
-          name: "foo",
-          state: FileState.Modified,
-          contents: Buffer.from(fooContents)
-        });
-      files
-        .find((f: VcsFile) => f.name === "bar")
-        .should.deep.include({ name: "bar", state: FileState.Unmodified });
+      const filesInWorkdir = modifiedPkg.filesInWorkdir;
+      expect(filesInWorkdir.find((f) => f.name === "foo")).to.deep.include({
+        name: "foo",
+        state: FileState.Modified,
+        contents: Buffer.from(fooContents)
+      });
+      expect(filesInWorkdir.find((f) => f.name === "bar")).to.deep.include({
+        name: "bar",
+        state: FileState.Unmodified
+      });
     });
 
     it("it finds missing files", async () => {
       setupPackageFileMock(
         {
           ...pkgBase,
-          files: ["foo", "bar"].map((name) => ({
-            name,
-            packageName: pkgBase.name,
-            projectName: pkgBase.projectName,
-            contents: Buffer.from(name)
-          }))
+          files
         },
         {
           addFilesToCwd: false
         }
       );
 
-      const modifiedPkg = await readInModifiedPackageFromDir(
+      const modifiedPkg: ModifiedPackage = await readInModifiedPackageFromDir(
         "."
       ).should.eventually.deep.include({
         ...pkgBase,
@@ -223,18 +222,16 @@ here
       });
 
       modifiedPkg.should.have
-        .property("files")
+        .property("filesInWorkdir")
         .that.is.an("array")
         .and.has.length(2);
 
-      const files = modifiedPkg.files;
+      const filesInWorkdir = modifiedPkg.filesInWorkdir;
       ["foo", "bar"].forEach((fname) =>
-        files
-          .find((f: VcsFile) => f.name === fname)
-          .should.deep.include({
-            name: fname,
-            state: FileState.Missing
-          })
+        expect(filesInWorkdir.find((f) => f.name === fname)).to.deep.include({
+          name: fname,
+          state: FileState.Missing
+        })
       );
     });
 
@@ -242,11 +239,7 @@ here
       setupPackageFileMock(
         {
           ...pkgBase,
-          files: ["foo", "bar"].map((name) => ({
-            name,
-            packageName: pkgBase.name,
-            projectName: pkgBase.projectName
-          }))
+          files
         },
         {
           additionalFiles: {
@@ -258,7 +251,7 @@ bar
         }
       );
 
-      const modifiedPkg = await readInModifiedPackageFromDir(
+      const modifiedPkg: ModifiedPackage = await readInModifiedPackageFromDir(
         "."
       ).should.eventually.deep.include({
         ...pkgBase,
@@ -266,16 +259,16 @@ bar
       });
 
       modifiedPkg.should.have
-        .property("files")
+        .property("filesInWorkdir")
         .that.is.an("array")
         .and.has.length(2);
 
       // FIXME: which state *do* we actually expect here?
-      const files = modifiedPkg.files;
-      files.forEach((f: VcsFile) =>
+      const filesInWorkdir = modifiedPkg.filesInWorkdir;
+      filesInWorkdir.forEach((f) =>
         f.state.should.equal(FileState.ToBeDeleted)
       );
-      files.map((f: VcsFile) => f.name).should.deep.equal(["foo", "bar"]);
+      expect(filesInWorkdir.map((f) => f.name)).to.deep.equal(["foo", "bar"]);
     });
   });
 
@@ -287,9 +280,17 @@ bar
       path: "/path/to/fooProj/foo"
     };
 
+    const dummyContents = {
+      md5Hash: "irrelevant",
+      contents: Buffer.from("a"),
+      size: 1,
+      modifiedTime: new Date()
+    };
+
     it("rejects overlapping file additions and removals", async () => {
       await addAndDeleteFilesFromPackage(
         {
+          filesInWorkdir: [],
           files: [],
           ...modifiedPkgBase
         },
@@ -299,16 +300,16 @@ bar
     });
 
     it("rejects adding files that are not untracked", async () => {
+      const missing = {
+        name: "missingFile",
+        projectName: modifiedPkgBase.projectName,
+        packageName: modifiedPkgBase.name,
+        ...dummyContents
+      };
       await addAndDeleteFilesFromPackage(
         {
-          files: [
-            {
-              name: "missingFile",
-              projectName: modifiedPkgBase.projectName,
-              packageName: modifiedPkgBase.name,
-              state: FileState.Missing
-            }
-          ],
+          filesInWorkdir: [{ ...missing, state: FileState.Missing }],
+          files: [missing],
           ...modifiedPkgBase
         },
         [],
@@ -317,16 +318,16 @@ bar
     });
 
     it("rejects removing files that are not tracked", async () => {
+      const untracked = {
+        name: "untrackedFile",
+        projectName: modifiedPkgBase.projectName,
+        packageName: modifiedPkgBase.name,
+        ...dummyContents
+      };
       await addAndDeleteFilesFromPackage(
         {
-          files: [
-            {
-              name: "untrackedFile",
-              projectName: modifiedPkgBase.projectName,
-              packageName: modifiedPkgBase.name,
-              state: FileState.Untracked
-            }
-          ],
+          filesInWorkdir: [{ ...untracked, state: FileState.Untracked }],
+          files: [untracked],
           ...modifiedPkgBase
         },
         ["untrackedFile"],

@@ -24,9 +24,10 @@ import { promises as fsPromises } from "fs";
 import { afterEach, beforeEach, Context, describe } from "mocha";
 import { join } from "path";
 import { setPackageMeta } from "../../src/api/package-meta";
+import { ProjectMeta } from "../../src/api/project-meta";
 import { calculateHash } from "../../src/checksum";
 import { fetchHistory } from "../../src/history";
-import { checkOutPackage, Package } from "../../src/package";
+import { checkOutPackage, FrozenPackage } from "../../src/package";
 import { createProject, deleteProject } from "../../src/project";
 import { pathExists, rmRf } from "../../src/util";
 import {
@@ -45,12 +46,14 @@ import {
 } from "../test-setup";
 
 type TestFixture = Context & {
-  testPkg: Package;
+  testPkg: FrozenPackage;
+  testProjMeta: ProjectMeta;
+  checkoutPath: string;
   tmpPath: string;
 };
 
 describe("ModifiedPackage", function () {
-  this.timeout(50000);
+  this.timeout(10000);
 
   before(skipIfNoMiniObs);
   const con = getTestConnection(ApiType.MiniObs);
@@ -61,34 +64,40 @@ describe("ModifiedPackage", function () {
       apiUrl: ApiType.MiniObs,
       name: "test_package",
       projectName: `home:${miniObsUsername}:test`,
-      files: []
+      files: [],
+      md5Hash: "notReallyAHash"
     };
+    this.testProjMeta = {
+      name: this.testPkg.projectName,
+      description: "test project",
+      title: "Test project"
+    };
+
+    this.checkoutPath = join(this.tmpPath, this.testPkg.name);
   });
 
   afterEach(async function () {
+    await deleteProject(con, this.testPkg.projectName);
     await rmRf(this.tmpPath);
   });
+
+  const createAndCheckoutPkg = async (ctx: TestFixture) => {
+    await createProject(con, ctx.testProjMeta);
+
+    await setPackageMeta(con, ctx.testPkg.projectName, ctx.testPkg.name, {
+      name: ctx.testPkg.name,
+      title: "Test Package",
+      description: "Just a package for testing"
+    });
+
+    await checkOutPackage(ctx.testPkg, ctx.checkoutPath);
+  };
 
   describe("#commit", () => {
     it(
       "commits a simple package",
       castToAsyncFunc<TestFixture>(async function () {
-        await createProject(con, {
-          name: this.testPkg.projectName,
-          description: "test project",
-          title: "Test project"
-        });
-
-        await setPackageMeta(con, this.testPkg.projectName, this.testPkg.name, {
-          name: this.testPkg.name,
-          title: "Test Package",
-          description: "Just a package for testing"
-        });
-
-        await checkOutPackage(
-          this.testPkg,
-          join(this.tmpPath, this.testPkg.name)
-        );
+        await createAndCheckoutPkg(this);
 
         // we create some testfiles with a preset time stamp, as otherwise the
         // recorded requests with OBS will never match
@@ -107,26 +116,28 @@ describe("ModifiedPackage", function () {
           join(this.tmpPath, this.testPkg.name)
         );
 
-        expect(modPkg.files).to.have.length(3);
+        expect(modPkg.filesInWorkdir).to.have.length(3);
 
         ["foo.txt", "bar.txt", "baz.txt"].forEach((f) =>
-          expect(modPkg.files!.find((file) => f === file.name)).to.deep.include(
-            {
-              name: f,
-              state: FileState.Untracked,
-              projectName: this.testPkg.projectName,
-              packageName: this.testPkg.name
-            }
-          )
+          expect(
+            modPkg.filesInWorkdir!.find((file) => f === file.name)
+          ).to.deep.include({
+            name: f,
+            state: FileState.Untracked,
+            projectName: this.testPkg.projectName,
+            packageName: this.testPkg.name
+          })
         );
 
         modPkg = await addAndDeleteFilesFromPackage(modPkg, [], ["foo.txt"]);
         const fooContents = Buffer.from("foo.txt contains just foo");
 
-        expect(modPkg.files).to.have.length(3);
+        expect(modPkg.filesInWorkdir).to.have.length(3);
         ["bar", "baz"].forEach((untrackedFname) =>
           expect(
-            modPkg.files.find((f) => f.name === `${untrackedFname}.txt`)
+            modPkg.filesInWorkdir.find(
+              (f) => f.name === `${untrackedFname}.txt`
+            )
           ).to.deep.include({
             name: `${untrackedFname}.txt`,
             state: FileState.Untracked
@@ -134,7 +145,9 @@ describe("ModifiedPackage", function () {
         );
         // now that the file has been explicitly added, we should have *all*
         // metadata
-        expect(modPkg.files.find((f) => f.name === "foo.txt")).to.deep.equal({
+        expect(
+          modPkg.filesInWorkdir.find((f) => f.name === "foo.txt")
+        ).to.deep.equal({
           name: "foo.txt",
           state: FileState.ToBeAdded,
           projectName: this.testPkg.projectName,
@@ -148,13 +161,17 @@ describe("ModifiedPackage", function () {
         const msg = "Add foo.txt";
 
         modPkg = await commit(con, modPkg, msg);
-        expect(modPkg.files.find((f) => f.name === "foo.txt")).to.deep.include({
+        expect(
+          modPkg.filesInWorkdir.find((f) => f.name === "foo.txt")
+        ).to.deep.include({
           name: "foo.txt",
           state: FileState.Unmodified
         });
         ["bar", "baz"].forEach((untrackedFname) =>
           expect(
-            modPkg.files.find((f) => f.name === `${untrackedFname}.txt`)
+            modPkg.filesInWorkdir.find(
+              (f) => f.name === `${untrackedFname}.txt`
+            )
           ).to.deep.include({
             name: `${untrackedFname}.txt`,
             state: FileState.Untracked
@@ -187,12 +204,16 @@ describe("ModifiedPackage", function () {
           revisionHash: modPkg.md5Hash
         });
 
-        expect(modPkg.files).to.have.length(2);
-        expect(modPkg.files.find((f) => f.name === "baz.txt")).to.deep.include({
+        expect(modPkg.filesInWorkdir).to.have.length(2);
+        expect(
+          modPkg.filesInWorkdir.find((f) => f.name === "baz.txt")
+        ).to.deep.include({
           name: "baz.txt",
           state: FileState.Untracked
         });
-        expect(modPkg.files.find((f) => f.name === "bar.txt")).to.deep.include({
+        expect(
+          modPkg.filesInWorkdir.find((f) => f.name === "bar.txt")
+        ).to.deep.include({
           name: "bar.txt",
           state: FileState.Unmodified
         });
@@ -202,7 +223,10 @@ describe("ModifiedPackage", function () {
         const msg3 = "Add baz.txt on top of that";
 
         modPkg = await commit(con, modPkg, msg3);
-        modPkg.files.should.all.have.property("state", FileState.Unmodified);
+        modPkg.filesInWorkdir.should.all.have.property(
+          "state",
+          FileState.Unmodified
+        );
 
         const lastHist = await fetchHistory(con, modPkg);
         lastHist.should.have.length(3);
@@ -210,8 +234,41 @@ describe("ModifiedPackage", function () {
           commitMessage: msg3,
           revisionHash: modPkg.md5Hash
         });
+      })
+    );
 
-        await deleteProject(con, this.testPkg.projectName);
+    it(
+      "clears up .osc/_to_be_added after a commit",
+      castToAsyncFunc<TestFixture>(async function () {
+        await createAndCheckoutPkg(this);
+
+        const fd = await fsPromises.open(
+          join(this.checkoutPath, "testfile.spec"),
+          "w"
+        );
+        await fd.write(Buffer.from("this is not really a specfile ;-)"));
+        await fd.close();
+
+        const modifiedPkg = await readInModifiedPackageFromDir(
+          this.checkoutPath
+        );
+
+        const pkgWithAddedFiles = await addAndDeleteFilesFromPackage(
+          modifiedPkg,
+          [],
+          ["testfile.spec"]
+        );
+        const modifiedPkgAfterCommit = await commit(
+          con,
+          pkgWithAddedFiles,
+          "Add testfile.spec"
+        );
+
+        const readInFromPath = await readInModifiedPackageFromDir(
+          this.checkoutPath
+        );
+
+        readInFromPath.should.deep.equal(modifiedPkgAfterCommit);
       })
     );
   });
