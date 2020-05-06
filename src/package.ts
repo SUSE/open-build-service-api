@@ -39,8 +39,10 @@ import { Connection, RequestMethod } from "./connection";
 import { StatusReply, statusReplyFromApi } from "./error";
 import {
   fetchFileContents,
+  FrozenPackageFile,
   PackageFile,
-  packageFileFromDirectoryEntry
+  packageFileFromDirectoryEntry,
+  isFrozenPackageFile
 } from "./file";
 import { Project } from "./project";
 import { unixTimeStampFromDate, zip } from "./util";
@@ -72,26 +74,67 @@ export interface Package {
   files?: PackageFile[];
 }
 
+export interface FrozenPackage
+  extends Readonly<Required<Omit<Package, "meta" | "files">>> {
+  /** The files present in this package at HEAD. */
+  readonly files: FrozenPackageFile[];
+
+  /** The package's configuration (meta) */
+  meta?: PackageMeta;
+}
+
+export interface FetchFileListBaseOptions {
+  /** Defines if package links should be expanded, defaults to true */
+  expandLinks?: boolean;
+
+  /**
+   * If a different revision than HEAD should be fetched, specify a valid
+   * identifier for it (numeric id or md5 hash).
+   */
+  revision?: string;
+}
+
+function isFrozenPackage(pkg: Package): pkg is FrozenPackage {
+  return (
+    pkg.md5Hash !== undefined &&
+    pkg.files !== undefined &&
+    Object.isFrozen(pkg) &&
+    pkg.files
+      .map((f) => isFrozenPackageFile(f))
+      .reduce(
+        (prevPkgFileIsFrozen, curPkgFileIsFrozen) =>
+          prevPkgFileIsFrozen && curPkgFileIsFrozen,
+        true // defaults to true in case the file list is empty
+      )
+  );
+}
+
 export async function fetchFileList(
   con: Connection,
   pkg: Package,
-  {
-    retrieveFileContents,
-    expandLinks,
-    revision
-  }: {
-    retrieveFileContents?: boolean;
-    expandLinks?: boolean;
-    revision?: string;
-  } = {}
-): Promise<[PackageFile[], string]> {
-  const expand = expandLinks === undefined || expandLinks;
+  options?: FetchFileListBaseOptions & { retrieveFileContents: true }
+): Promise<[FrozenPackageFile[], string]>;
+
+export async function fetchFileList(
+  con: Connection,
+  pkg: Package,
+  options?: FetchFileListBaseOptions & {
+    retrieveFileContents: false | undefined;
+  }
+): Promise<[PackageFile[], string]>;
+
+export async function fetchFileList(
+  con: Connection,
+  pkg: Package,
+  options?: FetchFileListBaseOptions & { retrieveFileContents?: boolean }
+): Promise<[(PackageFile | FrozenPackageFile)[], string]> {
+  const expand = options?.expandLinks === undefined || options.expandLinks;
   const directoryBaseRoute = `/source/${pkg.projectName}/${pkg.name}?expand=${
     expand ? "1&linkrev=base" : 0
   }`;
   const route =
-    revision !== undefined
-      ? directoryBaseRoute.concat(`&rev=${revision}`)
+    options?.revision !== undefined
+      ? directoryBaseRoute.concat(`&rev=${options.revision}`)
       : directoryBaseRoute;
   const fileDir = await fetchDirectory(con, route);
 
@@ -103,14 +146,24 @@ export async function fetchFileList(
 
   const files = fileListFromDirectory(pkg, fileDir);
 
-  if (retrieveFileContents !== undefined && retrieveFileContents) {
+  const retrieveFileContents =
+    options?.retrieveFileContents !== undefined && options.retrieveFileContents;
+
+  if (retrieveFileContents) {
     await Promise.all(
       files.map(async (f) => {
-        f.contents = await fetchFileContents(con, f, { expandLinks, revision });
+        f.contents = await fetchFileContents(con, f, {
+          expandLinks: options?.expandLinks,
+          revision: options?.revision
+        });
       })
     );
   }
-  return [files, fileDir.sourceMd5];
+
+  return [
+    retrieveFileContents ? files.map((f) => Object.freeze(f)) : files,
+    fileDir.sourceMd5
+  ];
 }
 
 // FIXME: this should maybe not be exported
@@ -131,7 +184,10 @@ export function fileListFromDirectory(
       return {
         name: dentry.name!,
         projectName: pkg.projectName,
-        packageName: pkg.name
+        packageName: pkg.name,
+        size: dentry.size,
+        modifiedTime: dentry.modifiedTime,
+        md5Hash: dentry.md5
       };
     });
 
@@ -162,6 +218,24 @@ export function fileListToDirectory(pkg: Package): Directory {
   };
 }
 
+export async function fetchPackage(
+  con: Connection,
+  project: Project | string,
+  packageName: string,
+  options?: Omit<FetchFileListBaseOptions, "revision"> & {
+    retrieveFileContents: true;
+  }
+): Promise<FrozenPackage>;
+
+export async function fetchPackage(
+  con: Connection,
+  project: Project | string,
+  packageName: string,
+  options?: Omit<FetchFileListBaseOptions, "revision"> & {
+    retrieveFileContents: false | undefined;
+  }
+): Promise<Package>;
+
 /**
  * Fetch the information about package from OBS and populate a [[Package]]
  * object with the retrieved data.
@@ -180,14 +254,10 @@ export async function fetchPackage(
   con: Connection,
   project: Project | string,
   packageName: string,
-  {
-    retrieveFileContents,
-    expandLinks
-  }: {
+  options?: Omit<FetchFileListBaseOptions, "revision"> & {
     retrieveFileContents?: boolean;
-    expandLinks?: boolean;
-  } = {}
-): Promise<Package> {
+  }
+): Promise<Package | FrozenPackage> {
   const projName: string = typeof project === "string" ? project : project.name;
 
   const pkg: Package = {
@@ -198,10 +268,16 @@ export async function fetchPackage(
   };
 
   const [filesAndHash, pkgMeta] = await Promise.all([
-    fetchFileList(con, pkg, {
-      retrieveFileContents,
-      expandLinks
-    }),
+    fetchFileList(
+      con,
+      pkg,
+      // HACK: the cast here is required as typescript is for some reason not
+      // able to figure out that undefined|false and true are equal to
+      // undefined|boolean...
+      options as FetchFileListBaseOptions & {
+        retrieveFileContents: false | undefined;
+      }
+    ),
     getPackageMeta(con, projName, packageName)
   ]);
 
@@ -210,6 +286,14 @@ export async function fetchPackage(
     filesAndHash[1],
     pkgMeta
   ];
+
+  if (options?.retrieveFileContents) {
+    Object.freeze(pkg);
+    assert(
+      isFrozenPackage(pkg),
+      `Package ${packageName} should have resulted in a FrozenPackage, but got an ordinary one instead`
+    );
+  }
 
   return pkg;
 }
@@ -338,14 +422,9 @@ export async function writePackageUnderscoreFiles(
  *     directory **must not** exist already.
  */
 export async function checkOutPackage(
-  pkg: Package,
+  pkg: FrozenPackage,
   path: string
 ): Promise<ModifiedPackage> {
-  if (pkg.files === undefined) {
-    throw new Error(
-      `Cannot checkout package ${pkg.name}: file list has not been retrieved yet`
-    );
-  }
   await fsPromises.mkdir(path, { recursive: false });
   await fsPromises.mkdir(join(path, ".osc"), { recursive: false });
 
@@ -357,7 +436,8 @@ export async function checkOutPackage(
   const { files, ...restOfPkg } = pkg;
   return {
     ...restOfPkg,
-    files: files.map((f) => ({ state: FileState.Unmodified, ...f })),
+    files: files.map((f) => Object.freeze(f)),
+    filesInWorkdir: files.map((f) => ({ state: FileState.Unmodified, ...f })),
     path
   };
 }
@@ -369,12 +449,14 @@ export async function checkOutPackage(
  *
  * @return A [[Package]] object with the files
  */
-export async function readInCheckedOutPackage(path: string): Promise<Package> {
-  let [
+export async function readInCheckedOutPackage(
+  path: string
+): Promise<FrozenPackage> {
+  const [
     osclibVersion,
-    apiUrl,
-    name,
-    projectName,
+    apiUrlRaw,
+    nameRaw,
+    projectNameRaw,
     fileDirectoryXml
   ] = await Promise.all(
     mandatoryPkgUnderscoreFiles.map(async (fname) =>
@@ -382,9 +464,9 @@ export async function readInCheckedOutPackage(path: string): Promise<Package> {
     )
   );
 
-  apiUrl = apiUrl.trim();
-  name = name.trim();
-  projectName = projectName.trim();
+  const apiUrl = apiUrlRaw.trim();
+  const name = nameRaw.trim();
+  const projectName = projectNameRaw.trim();
 
   const [metaXml] = await Promise.all(
     optionalPkgUnderscoreFiles.map(async (fname) => {
@@ -413,12 +495,20 @@ export async function readInCheckedOutPackage(path: string): Promise<Package> {
     await newXmlParser().parseStringPromise(fileDirectoryXml)
   );
 
+  // FIXME: actually we should be able to calculate the md5Hash of the package
+  // if we have all contents
+  if (dir.sourceMd5 === undefined) {
+    throw new Error(
+      `Got an invalid package: '${path}/.osc/_files' does not have the srcmd5 attribute.`
+    );
+  }
+
   const pkg = { apiUrl, name, projectName, meta, md5Hash: dir.sourceMd5 };
 
-  const files = fileListFromDirectory(pkg, dir);
+  const emptyFiles = fileListFromDirectory(pkg, dir);
 
-  await Promise.all(
-    files.map(async (f) => {
+  const files = await Promise.all(
+    emptyFiles.map(async (f) => {
       f.contents = await fsPromises.readFile(join(path, ".osc", f.name));
 
       // ensure that the hash is present
@@ -429,10 +519,11 @@ export async function readInCheckedOutPackage(path: string): Promise<Package> {
         // !the hash is wrong!
         if (curHash !== f.md5Hash) {
           throw new Error(
-            `Error reading in package ${pkg.name} from ${path}: file hash of ${f.name} (${curHash}) does not match the expected hash ${f.md5Hash}`
+            `reading in package ${pkg.name} from ${path}: file hash of ${f.name} (${curHash}) does not match the expected hash '${f.md5Hash}'`
           );
         }
       }
+      return f as FrozenPackageFile;
     })
   );
 
