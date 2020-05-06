@@ -78,7 +78,13 @@ export async function packagFileFromFile(
     fsPromises.stat(path),
     fsPromises.readFile(path)
   ]);
-  return {
+
+  // as OBS uses time stamps with 1s precision, we must truncate the ms part of
+  // the mtime to get consistent results (see catches_and_warnings.md)
+  stat.mtime.setMilliseconds(0);
+  await fsPromises.utimes(path, stat.atime, stat.mtime);
+
+  return Object.freeze({
     name: basename(path),
     packageName,
     projectName,
@@ -86,7 +92,7 @@ export async function packagFileFromFile(
     contents,
     md5Hash: calculateHash(contents, "md5"),
     modifiedTime: stat.mtime
-  };
+  });
 }
 
 export function packageFileFromDirectoryEntry(
