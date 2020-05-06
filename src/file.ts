@@ -31,9 +31,9 @@ import { Package } from "./package";
 import { deleteUndefinedMembers, pathExists, PathType } from "./util";
 
 export interface PackageFile {
-  name: string;
-  packageName: string;
-  projectName: string;
+  readonly name: string;
+  readonly packageName: string;
+  readonly projectName: string;
   /** The contents of this file. */
   contents?: Buffer;
   md5Hash?: string;
@@ -41,23 +41,42 @@ export interface PackageFile {
   modifiedTime?: Date;
 }
 
-export async function packagFileFromFile(
+/** Good lord what a terrible name :-/ */
+type FrozenPackageFileWithOptionalContents = Readonly<
+  Required<Omit<PackageFile, "contents">>
+> & { contents?: Buffer };
+
+export type FrozenPackageFile = Readonly<Required<PackageFile>>;
+
+export function isFrozenPackageFile(
+  file: PackageFile
+): file is FrozenPackageFile {
+  return (
+    file.contents !== undefined &&
+    file.md5Hash !== undefined &&
+    file.size !== undefined &&
+    file.modifiedTime !== undefined &&
+    Object.isFrozen(file)
+  );
+}
+
+export async function packageFileFromFile(
   path: string,
   pkg: Package
-): Promise<PackageFile>;
+): Promise<FrozenPackageFile>;
 
-export async function packagFileFromFile(
+export async function packageFileFromFile(
   path: string,
   packageName: string,
   projectName: string
-): Promise<PackageFile>;
+): Promise<FrozenPackageFile>;
 
 /** Create a [[PackageFile]] from an existing file on the file system */
-export async function packagFileFromFile(
+export async function packageFileFromFile(
   path: string,
   packageOrPackageName: string | Package,
   project?: string
-): Promise<PackageFile> {
+): Promise<FrozenPackageFile> {
   if (!(await pathExists(path, PathType.File))) {
     throw new Error(`${path} is not a file or does not exist`);
   }
@@ -98,23 +117,38 @@ export async function packagFileFromFile(
 export function packageFileFromDirectoryEntry(
   file: PackageFile,
   dentry: DirectoryEntry
-): PackageFile {
-  if (dentry.name === undefined) {
+): FrozenPackageFileWithOptionalContents {
+  const md5Hash =
+    dentry.md5 ??
+    file.md5Hash ??
+    (file.contents !== undefined
+      ? calculateHash(file.contents, "md5")
+      : undefined);
+  const modifiedTime = dentry.modifiedTime ?? file.modifiedTime;
+  const size = dentry.size ?? file.size ?? file.contents?.length;
+
+  if (file.name !== dentry.name) {
     throw new Error(
-      "Cannot create a PackageFile from the DirectoryEntry: the directory name is undefined"
+      `file name (${file.name}) and directory name (${dentry.name}) do not match`
     );
   }
-  assert(
-    file.name === dentry.name,
-    `file name (${file.name}) and directory name (${dentry.name}) do not match`
-  );
+  [
+    [md5Hash, "md5Hash"],
+    [modifiedTime, "modifiedTime"],
+    [size, "size"]
+  ].forEach(([value, name]) => {
+    if (value === undefined) {
+      throw new Error(`Invalid directory or package: could not obtain ${name}`);
+    }
+  });
+
   return deleteUndefinedMembers({
     name: dentry.name,
     packageName: file.packageName,
     projectName: file.projectName,
-    md5Hash: dentry.md5,
-    modifiedTime: dentry.modifiedTime,
-    size: dentry.size !== undefined ? dentry.size : file.contents?.length,
+    md5Hash: md5Hash!,
+    modifiedTime: modifiedTime!,
+    size: size!,
     contents: file.contents
   });
 }
@@ -186,14 +220,8 @@ export function fetchFileContents(
  */
 export async function uploadFileContents(
   con: Connection,
-  pkgFile: PackageFile
+  pkgFile: FrozenPackageFile
 ): Promise<string> {
-  if (pkgFile.contents === undefined) {
-    throw new Error(
-      `File ${pkgFile.name} from the package ${pkgFile.packageName} and project ${pkgFile.projectName} has no file contents.`
-    );
-  }
-
   const route = `/source/${pkgFile.projectName}/${pkgFile.packageName}/${pkgFile.name}?rev=repository`;
 
   const response = await con.makeApiCall(route, {
@@ -209,6 +237,10 @@ export async function uploadFileContents(
 
 /**
  * Deletes the specified file from its package on OBS and commits the changes.
+ *
+ * Note: this is usually **not** the thing that you want to do, as this will
+ * create a single commit just deleting the file. In case you want to delete a
+ * file as part of a commit use [[addAndDeleteFilesFromPackage]].
  */
 export async function deleteFile(
   con: Connection,

@@ -582,7 +582,7 @@ async function fetchHead(
 ): Promise<Commit> {
   const [unexpandedHistory, filesAndHash] = await Promise.all([
     fetchHistory(con, pkg),
-    fetchFileList(con, pkg, { expandLinks })
+    fetchFileList(con, pkg, { expandLinks, retrieveFileContents: false })
   ]);
   const [files, md5Hash] = filesAndHash;
   const { revisionHash, ...head } = unexpandedHistory[-1];
