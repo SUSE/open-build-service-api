@@ -321,7 +321,11 @@ export async function deletePackage(
   projNameOrPkg: string | Package,
   packageName?: string
 ): Promise<StatusReply> {
-  assert(typeof projNameOrPkg === "string" && packageName !== undefined);
+  assert(
+    typeof projNameOrPkg === "string"
+      ? packageName !== undefined
+      : packageName === undefined
+  );
   const route =
     typeof projNameOrPkg === "string"
       ? `/source/${projNameOrPkg}/${packageName}`
