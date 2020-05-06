@@ -30,7 +30,11 @@ import {
 } from "./api/directory";
 import { calculateFileHash, calculateHash } from "./checksum";
 import { Connection, RequestMethod } from "./connection";
-import { PackageFile, packagFileFromFile, uploadFileContents } from "./file";
+import {
+  FrozenPackageFile,
+  packageFileFromFile,
+  uploadFileContents
+} from "./file";
 import {
   Package,
   readInCheckedOutPackage,
@@ -63,8 +67,8 @@ function isTrackedFile(file: VcsFile): boolean {
   );
 }
 
-export interface VcsFile extends PackageFile {
-  state: FileState;
+export interface VcsFile extends FrozenPackageFile {
+  readonly state: FileState;
 }
 
 export interface ModifiedPackage extends Omit<Package, "files"> {
@@ -75,35 +79,11 @@ export interface ModifiedPackage extends Omit<Package, "files"> {
    * Files that are or were in the directory where the package has been checked
    * out.
    */
-  readonly files: VcsFile[];
+  readonly filesInWorkdir: VcsFile[];
 
-  /** Files that have been modified from the state at HEAD */
-  // readonly dirtyFiles: PackageFile[];
-
-  /**
-   * Files in the directory that should be added to the package on the next
-   * commit.
-   */
-  // readonly filesToBeAdded: PackageFile[];
-
-  /** Files that should be deleted from the package on the next commit */
-  // readonly filesToBeDeleted: PackageFile[];
-
-  /**
-   * Files in the directory that are not tracked (= neither a part of the
-   * package nor should they become a part of it)
-   */
-  // readonly untrackedFiles: string[];
-
-  /**
-   * Files that were not explicitly deleted but that are no longer in the
-   * directory
-   */
-  // readonly missingFiles: string[];
+  /** The files in this package in the state at the current HEAD */
+  readonly files: FrozenPackageFile[];
 }
-
-// function ModifiedPkgFromPkg(pkg: Package): ModifiedPackage {
-// }
 
 const enum FileListType {
   ToBeAdded = "_to_be_added",
@@ -148,25 +128,39 @@ export async function addAndDeleteFilesFromPackage(
     );
   }
 
-  const { files, ...restOfPkg } = pkg;
+  const { filesInWorkdir, ...restOfPkg } = pkg;
 
   // cannot add files that are not untracked (= they don't exist or they are in
   // a different state)
-  filesToAdd.forEach((toAddFname) => {
-    if (
-      files.find(
-        (f) => toAddFname === f.name && f.state === FileState.Untracked
-      ) === undefined
-    ) {
-      throw new Error(`Cannot add file ${toAddFname}, it is not untracked`);
+  for (const toAddFname of filesToAdd) {
+    let matchingFile = filesInWorkdir.find((f) => toAddFname === f.name);
+    // file is not in the list => either it doesn't exist or the list in pkg is stale
+    if (matchingFile === undefined) {
+      const pathToBeAddedFile = join(pkg.path, toAddFname);
+      if (!(await pathExists(pathToBeAddedFile))) {
+        throw new Error(`Cannot add file ${toAddFname}: file does not exist`);
+      }
+      const newFile: VcsFile = {
+        ...(await packageFileFromFile(pathToBeAddedFile, pkg)),
+        state: FileState.Untracked
+      };
+      filesInWorkdir.push(newFile);
+      matchingFile = newFile;
     }
-  });
+    assert(matchingFile !== undefined);
+    if (matchingFile.state !== FileState.Untracked) {
+      throw new Error(
+        `Cannot add file ${toAddFname}, it is not untracked, got state '${matchingFile.state}' instead.`
+      );
+    }
+  }
 
   // can only remove files that are tracked
   filesToDelete.forEach((toDeleteFname) => {
     if (
-      files.find((f) => f.name === toDeleteFname && isTrackedFile(f)) ===
-      undefined
+      filesInWorkdir.find(
+        (f) => f.name === toDeleteFname && isTrackedFile(f)
+      ) === undefined
     ) {
       throw new Error(`Cannot remove ${toDeleteFname}: not tracked`);
     }
@@ -174,7 +168,7 @@ export async function addAndDeleteFilesFromPackage(
 
   const newFiles: VcsFile[] = [];
 
-  for (const oldFile of files) {
+  for (const oldFile of filesInWorkdir) {
     let { state, ...restOfFile } = oldFile;
 
     // contents of files to be added need to be read so that we can commit them later on
@@ -184,7 +178,7 @@ export async function addAndDeleteFilesFromPackage(
         `File ${oldFile.name} must be untracked, but it has the state: ${state}`
       );
       state = FileState.ToBeAdded;
-      restOfFile = await packagFileFromFile(join(pkg.path, oldFile.name), pkg);
+      restOfFile = await packageFileFromFile(join(pkg.path, oldFile.name), pkg);
     }
 
     if (filesToDelete.find((fname) => fname === oldFile.name) !== undefined) {
@@ -220,7 +214,7 @@ export async function addAndDeleteFilesFromPackage(
     filesToDelete.map((fname) => fsPromises.unlink(join(pkg.path, fname)))
   );
 
-  return { files: newFiles, ...restOfPkg };
+  return { filesInWorkdir: newFiles, ...restOfPkg };
 }
 
 export async function readInModifiedPackageFromDir(
@@ -228,11 +222,7 @@ export async function readInModifiedPackageFromDir(
 ): Promise<ModifiedPackage> {
   const pkg = await readInCheckedOutPackage(dir);
   assert(
-    pkg.files !== undefined,
-    "readInCheckedOutPackage must populate the file list, but it did not"
-  );
-  assert(
-    pkg.files!.reduce(
+    pkg.files.reduce(
       (accum, curVal) => accum && curVal.md5Hash !== undefined,
       true
     ),
@@ -244,8 +234,8 @@ export async function readInModifiedPackageFromDir(
     readFileListFromDir(dir, FileListType.ToBeDeleted)
   ]);
 
-  const filesAtHead = pkg.files!;
-  const files: VcsFile[] = [];
+  const filesAtHead = pkg.files;
+  const filesInWorkdir: VcsFile[] = [];
   let notSeenFiles = filesAtHead.map((f) => f.name);
 
   const dentries = await fsPromises.readdir(dir, { withFileTypes: true });
@@ -266,18 +256,15 @@ export async function readInModifiedPackageFromDir(
           // the current file is not tracked
           // either it is already registered as to be added (then we don't add
           // it) or it is really untracked
-          const common = {
-            name: dentry.name,
-            packageName: pkg.name,
-            projectName: pkg.projectName,
-            md5Hash: curFileMd5Hash
-          };
           const state =
             toBeAdded.find((fname) => fname === dentry.name) !== undefined
               ? FileState.ToBeAdded
               : FileState.Untracked;
 
-          files.push({ ...common, state });
+          filesInWorkdir.push({
+            ...(await packageFileFromFile(join(dir, dentry.name), pkg)),
+            state
+          });
         } else {
           // file is tracked => drop it from the list of seen files
           notSeenFiles = notSeenFiles.filter((fname) => fname !== dentry.name);
@@ -290,13 +277,14 @@ export async function readInModifiedPackageFromDir(
               : FileState.Unmodified;
 
           const { contents, md5Hash, ...rest } = matchingPkgFile;
-          files.push({
+          filesInWorkdir.push({
             state,
             contents:
               state === FileState.Modified
                 ? await fsPromises.readFile(filePath)
                 : contents,
-            md5Hash: curFileMd5Hash,
+            // we have asserted previously that this is not undefined
+            md5Hash: curFileMd5Hash!,
             ...rest
           });
         }
@@ -314,10 +302,8 @@ export async function readInModifiedPackageFromDir(
         toBeDeleted.find((fname) => fname === notSeenFileName) === undefined
     )
     .forEach((name) => {
-      files.push({
-        name,
-        packageName: pkg.name,
-        projectName: pkg.projectName,
+      filesInWorkdir.push({
+        ...filesAtHead.find((f) => f.name === name)!,
         state: FileState.Missing
       });
     });
@@ -325,7 +311,7 @@ export async function readInModifiedPackageFromDir(
   toBeDeleted.forEach((fname) => {
     const fileToDelete = filesAtHead.find((f) => f.name === fname);
     if (fileToDelete !== undefined) {
-      files.push({ ...fileToDelete, state: FileState.ToBeDeleted });
+      filesInWorkdir.push({ ...fileToDelete, state: FileState.ToBeDeleted });
     }
   });
 
@@ -333,13 +319,14 @@ export async function readInModifiedPackageFromDir(
 
   return {
     ...restOfPkg,
-    files,
+    files: filesAtHead,
+    filesInWorkdir,
     path: dir
   };
 }
 
 function directoryFromModifiedPackage(pkg: ModifiedPackage): Directory {
-  const dentries: DirectoryEntry[] = pkg.files
+  const dentries: DirectoryEntry[] = pkg.filesInWorkdir
     .filter((f) => f.state !== FileState.Untracked)
     .map((f) => ({
       name: f.name,
@@ -361,7 +348,7 @@ export async function commit(
   commitMessage?: string
 ): Promise<ModifiedPackage> {
   await Promise.all(
-    pkg.files.map(async (f) => {
+    pkg.filesInWorkdir.map(async (f) => {
       if (f.state === FileState.Modified || f.state === FileState.ToBeAdded) {
         await uploadFileContents(con, f);
       }
@@ -384,8 +371,22 @@ export async function commit(
     `Invalid reply received from OBS: replied package as a different name, expected ${pkg.name} but got ${newDir.name}`
   );
 
-  const { files, md5Hash, ...restOfPkg } = pkg;
-  const newPkg = {
+  const { files, filesInWorkdir, md5Hash, ...restOfPkg } = pkg;
+
+  // * all files that were uploaded to OBS should now become Unmodified
+  // * all deleted files should be dropped from this list as we committed the
+  //   changes
+  const newFilesInWorkdir = filesInWorkdir
+    .filter((f) => f.state !== FileState.ToBeDeleted)
+    .map(({ state, ...restOfFile }) => ({
+      state:
+        state === FileState.Modified || state === FileState.ToBeAdded
+          ? FileState.Unmodified
+          : state,
+      ...restOfFile
+    }));
+
+  const newPkg: ModifiedPackage = {
     // If the package is a link, then we'll get a <linkinfo> in the reply from
     // OBS which *should* contain a xsrcmd5 element containing the md5Hash of
     // the expanded sources (the value that we're after).
@@ -395,12 +396,12 @@ export async function commit(
       (newDir.linkInfos !== undefined && newDir.linkInfos.length > 0
         ? newDir.linkInfos[0].xsrcmd5
         : undefined) ?? newDir.sourceMd5,
-    files: files
-      .filter((f) => f.state !== FileState.ToBeDeleted)
-      .map(({ state, ...restOfFile }) => ({
-        state: state === FileState.ToBeAdded ? FileState.Unmodified : state,
-        ...restOfFile
-      })),
+    files: newFilesInWorkdir
+      .filter(
+        (f) => f.state === FileState.Unmodified || f.state === FileState.Missing
+      )
+      .map(({ state, ...restOfFile }) => ({ ...restOfFile })),
+    filesInWorkdir: newFilesInWorkdir,
     ...restOfPkg
   };
 
