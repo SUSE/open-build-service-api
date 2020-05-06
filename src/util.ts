@@ -66,14 +66,14 @@ export function mapOrApply<T, U>(
   }
 }
 
-/** Convert a UNIX time stamp to a Date */
+/** Convert a Unix time stamp to a Date */
 export function dateFromUnixTimeStamp(unixTime: string | number): Date {
   return new Date(
     (typeof unixTime === "string" ? parseInt(unixTime, 10) : unixTime) * 1000
   );
 }
 
-/** Convert a Date to a UNIX time stamp */
+/** Convert a Date to a Unix time stamp */
 export function unixTimeStampFromDate(date: Date): number {
   return Math.floor(date.getTime() / 1000);
 }
