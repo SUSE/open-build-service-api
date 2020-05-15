@@ -1,9 +1,9 @@
 {
-  "name": "@dcermak/open-build-service-api",
+  "name": "@SUSE/open-build-service-api",
   "version": "0.0.1",
   "description": "Typescript wrapper for the API of the Open Build Service",
   "license": "MIT",
-  "repository": "https://github.com/dcermak/open-build-service-api",
+  "repository": "https://github.com/SUSE/open-build-service-api",
   "author": {
     "name": "Dan Čermák",
     "email": "dcermak@suse.com",
