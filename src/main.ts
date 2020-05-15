@@ -43,4 +43,11 @@ export {
 export * from "./project";
 export { Group, User } from "./user";
 export { pathExists, PathType, rmRf, runProcess } from "./util";
-export { commit, ModifiedPackage, VcsFile } from "./vcs";
+export {
+  commit,
+  ModifiedPackage,
+  readInModifiedPackageFromDir,
+  VcsFile,
+  FileState,
+  addAndDeleteFilesFromPackage
+} from "./vcs";
