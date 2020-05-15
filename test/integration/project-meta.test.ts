@@ -293,13 +293,13 @@ describe("#fetchProjectMeta", () => {
   });
 });
 
-describe("#modifyOrCreateProject", () => {
+describe("#modifyOrCreateProject", function () {
   const con = getTestConnection(ApiType.MiniObs);
 
   before(skipIfNoMiniObs);
+  this.timeout(10000);
 
   it("creates a new project", async function () {
-    this.timeout(5000);
     const name = `home:${miniObsUsername}:obs_ts_test`;
     const newProj: ProjectMeta = {
       description: `This is a project that has been created to test obs.ts
