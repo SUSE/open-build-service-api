@@ -45,8 +45,6 @@
             "200 OK",
             "content-type",
             "application/xml; charset=utf-8",
-            "Set-Cookie",
-            "openSUSE_session=847d58df89fde466ee3a488ba66bccdf; path=/; Max-Age=86400; Secure; HttpOnly; domain=.opensuse.org",
             "Connection",
             "close",
             "Transfer-Encoding",

@@ -20,8 +20,6 @@
             "83",
             "Connection",
             "close",
-            "Set-Cookie",
-            "__cfduid=d190bbfa68c09dc3018ad52fca85909351573033531; expires=Thu, 05-Nov-20 09:45:31 GMT; path=/; domain=.typicode.com; HttpOnly",
             "X-Powered-By",
             "Express",
             "Vary",

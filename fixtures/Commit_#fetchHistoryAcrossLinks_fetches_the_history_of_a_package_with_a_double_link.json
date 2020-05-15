@@ -43,8 +43,6 @@
             "no-cache",
             "content-length",
             "226",
-            "Set-Cookie",
-            "openSUSE_session=f71c08849de6a1c5dafd5550b0b294d7; path=/; Max-Age=86400; Secure; HttpOnly; domain=.opensuse.org",
             "Connection",
             "close"
         ],

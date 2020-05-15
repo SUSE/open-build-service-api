@@ -24,12 +24,7 @@ import mockFs = require("mock-fs");
 import { expect, should, use } from "chai";
 import * as chaiAsPromised from "chai-as-promised";
 import * as chaiThings from "chai-things";
-import {
-  existsSync,
-  promises as fsPromises,
-  readFileSync,
-  writeFileSync
-} from "fs";
+import { promises as fsPromises, readFileSync, writeFileSync } from "fs";
 import { AsyncFunc, Context, Func } from "mocha";
 import * as nock from "nock";
 import { tmpdir } from "os";
@@ -37,6 +32,7 @@ import { join, sep } from "path";
 import { directoryToApi } from "../src/api/directory";
 import { Connection } from "../src/connection";
 import { fileListToDirectory, FrozenPackage } from "../src/package";
+import { pathExists, PathType } from "../src/util";
 import { newXmlBuilder } from "../src/xml";
 
 /**
@@ -164,8 +160,6 @@ use(chaiAsPromised);
 
 should();
 
-nock.back.fixtures = join(__dirname, "..", "fixtures");
-
 const envOrDefault = (envVar: string, defaultValue: string): string => {
   const envVarVal = process.env[envVar];
   return envVarVal === undefined ? defaultValue : envVarVal;
@@ -201,7 +195,9 @@ interface IScope {
   body: string;
 }
 
-export function beforeEachRecord(this: Context) {
+const SET_COOKIE = "Set-Cookie";
+
+export async function beforeEachRecord(this: Context): Promise<void> {
   this.recordJsonPath = join(
     __dirname,
     "..",
@@ -211,14 +207,13 @@ export function beforeEachRecord(this: Context) {
       .join("_") + ".json"
   );
 
-  // see: https://github.com/nock/nock/blob/master/lib/back.js#L142
-  // and: https://github.com/nock/nock/blob/master/lib/back.js#L188
+  // see: https://github.com/nock/nock/blob/master/lib/back.js#L180
   nock.restore();
   nock.recorder.clear();
   nock.cleanAll();
   nock.activate();
 
-  if (existsSync(this.recordJsonPath)) {
+  if (await pathExists(this.recordJsonPath, PathType.File)) {
     const nockDefs = nock.loadDefs(this.recordJsonPath);
     const rawData = JSON.parse(readFileSync(this.recordJsonPath).toString());
     const extractedScopes = nock.define(nockDefs);
@@ -242,6 +237,19 @@ export function beforeEachRecord(this: Context) {
 export function afterEachRecord(this: Context) {
   if (this.scopes === undefined) {
     const nockCallObjects = nock.recorder.play();
+
+    for (const nockCall of nockCallObjects) {
+      if (typeof nockCall === "string") {
+        return;
+      }
+      if ((nockCall as any).rawHeaders !== undefined) {
+        const setCookieIndex = (nockCall as any).rawHeaders.indexOf(SET_COOKIE);
+        if (setCookieIndex !== -1) {
+          (nockCall as any).rawHeaders.splice(setCookieIndex, 2);
+        }
+      }
+    }
+
     writeFileSync(
       this.recordJsonPath,
       JSON.stringify(nockCallObjects, undefined, 4)
