@@ -18,8 +18,7 @@
  * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-
-import mock = require("mock-fs");
+import mockFs = require("mock-fs");
 
 import { expect } from "chai";
 import { existsSync, promises as fsPromises } from "fs";
@@ -109,10 +108,10 @@ const setupFsMocks = () => {
     "test/.osc/_packages": `<project name="test" />
 `,
 
-    noDotOsc: mock.directory({ items: {} }),
-    noUnderscorePackage: mock.directory({
+    noDotOsc: mockFs.directory({ items: {} }),
+    noUnderscorePackage: mockFs.directory({
       items: {
-        ".osc": mock.directory({
+        ".osc": mockFs.directory({
           items: { _project: "foo", _apiurl: "https://api.foo.org" }
         })
       }
@@ -145,7 +144,7 @@ const setupFsMocks = () => {
     `${targetDir}_with_meta/.osc_obs_ts/_project_meta.json`
   ] = `{"name":"Virtualization:Appliances:Images:openSUSE-Tumbleweed","title":"openSUSE Tumbleweed Images","description":"Contains the Live CD, JeOS, Vagrant boxes and possibly more.","person":[{"userId":"dancermak","role":"maintainer"},{"userId":"dcassany","role":"maintainer"},{"userId":"favogt","role":"maintainer"},{"userId":"gmoro","role":"maintainer"}],"repository":[{"name":"rpm","path":[{"project":"openSUSE:Factory","repository":"snapshot"}],"arch":["x86_64","i586"]},{"name":"openSUSE_Tumbleweed_vanilla","path":[{"project":"openSUSE:Factory","repository":"snapshot"}],"arch":["x86_64"]},{"name":"openSUSE_Tumbleweed_ARM","path":[{"project":"openSUSE:Factory:ARM","repository":"standard"}],"arch":["aarch64"]},{"name":"openSUSE_Tumbleweed","path":[{"project":"Virtualization:Appliances:Images:openSUSE-Tumbleweed","repository":"rpm"},{"project":"openSUSE:Factory","repository":"snapshot"}],"arch":["x86_64","i586"]}]}`;
 
-  mock(options);
+  mockFs(options);
 };
 
 describe("Project", () => {
@@ -172,8 +171,8 @@ describe("Project", () => {
       }
     };
 
-    beforeEach(() => mock({ dirExists: mock.directory({ items: {} }) }));
-    afterEach(() => mock.restore());
+    beforeEach(() => mockFs({ dirExists: mockFs.directory({ items: {} }) }));
+    afterEach(() => mockFs.restore());
 
     it("creates the project directory", async () => {
       const testProj: Project = {
@@ -236,7 +235,7 @@ describe("Project", () => {
 
   describe("#readInCheckedOutProject", () => {
     beforeEach(setupFsMocks);
-    afterEach(() => mock.restore());
+    afterEach(() => mockFs.restore());
 
     it("correctly reads in a test project", async () => {
       const testProj = await readInCheckedOutProject("test").should.be
@@ -291,7 +290,7 @@ describe("Project", () => {
 
   describe("#updateCheckedOutProject", () => {
     beforeEach(setupFsMocks);
-    afterEach(() => mock.restore());
+    afterEach(() => mockFs.restore());
 
     it("throws an exception when the target project does not exist", async () => {
       expect(existsSync("fooDir")).to.be.false;
