@@ -23,7 +23,7 @@ import { Arch } from "../../src/api/base-types";
 import { DefaultValue } from "../../src/api/flag";
 import { Project } from "../../src/project";
 import { LocalRole } from "../../src/user";
-import { PackageFile, FrozenPackageFile } from "./../../src/file";
+import { FrozenPackageFile, PackageFile } from "./../../src/file";
 import { Revision } from "./../../src/history";
 
 const commonEntries = {
