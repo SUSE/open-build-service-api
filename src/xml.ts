@@ -19,7 +19,7 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import xml2js = require("xml2js");
+import * as xml2js from "xml2js";
 
 /**
  * @return A new
