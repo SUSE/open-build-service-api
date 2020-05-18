@@ -18,30 +18,37 @@
  * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-
-import mock = require("mock-fs");
-
-import { existsSync, readFileSync } from "fs";
+import { existsSync, promises as fsPromises, readFileSync } from "fs";
 import { join } from "path";
 import { checkOutPackage } from "../src/package";
+import { rmRf } from "../src/util";
 import { FileState, ModifiedPackage } from "../src/vcs";
 import { vagrantSshfs, virtualizationVagrant } from "./integration/data";
+import { createTemporaryDirectory } from "./test-setup";
 
 describe("Package", () => {
-  const path = join("empty", "vagrant-sshfs");
-  const dotOscPath = join(path, ".osc");
+  beforeEach(async function () {
+    this.tmpDir = await createTemporaryDirectory();
+    const rootDir = join(this.tmpDir, "empty");
+    this.path = join(rootDir, "vagrant-sshfs");
+    this.dotOscPath = join(this.path, ".osc");
+    await fsPromises.mkdir(rootDir, { recursive: true });
+  });
 
-  beforeEach(() => mock({ empty: mock.directory({ items: {} }) }));
-
-  afterEach(() => mock.restore());
+  afterEach(function () {
+    return rmRf(this.tmpDir);
+  });
 
   describe("#checkOutPackage", () => {
-    it("checks out vagrant-sshfs", async () => {
-      const modPkg: ModifiedPackage = await checkOutPackage(vagrantSshfs, path);
+    it("checks out vagrant-sshfs", async function () {
+      const modPkg: ModifiedPackage = await checkOutPackage(
+        vagrantSshfs,
+        this.path
+      );
       const { files, ...restOfVagrantSshfs } = vagrantSshfs;
       modPkg.should.deep.equal({
         ...restOfVagrantSshfs,
-        path,
+        path: this.path,
         files,
         filesInWorkdir: files.map((f) => ({
           ...f,
@@ -49,12 +56,12 @@ describe("Package", () => {
         }))
       });
 
-      existsSync(join(dotOscPath)).should.equal(true);
+      existsSync(join(this.dotOscPath)).should.equal(true);
 
-      readFileSync(join(dotOscPath, "_apiurl"))
+      readFileSync(join(this.dotOscPath, "_apiurl"))
         .toString()
         .should.deep.equal(virtualizationVagrant.apiUrl);
-      readFileSync(join(dotOscPath, "_files")).toString().should.deep
+      readFileSync(join(this.dotOscPath, "_files")).toString().should.deep
         .equal(`<directory name="vagrant-sshfs" srcmd5="0c762c8491d7fc1d1d2f36801379c4c9">
   <entry name="0001-Use-var-run-run-symlink-for-tests.patch" size="1774" md5="aa67a02848aa376bcfe4b592e68fcfa7" mtime="1585774158"/>
   <entry name="0002-Use-opensuse-Tumbleweed.-uname-m-box-instead-of-Fedo.patch" size="836" md5="cb8759e4f95d2e9976b3cc45439d75ab" mtime="1585774160"/>
@@ -65,16 +72,16 @@ describe("Package", () => {
   <entry name="vagrant-sshfs.keyring" size="32547" md5="f868df2487146cd0b2a716014e62f4a0" mtime="1580292453"/>
   <entry name="vagrant-sshfs.spec" size="4097" md5="2002203fe5e5e22daea44ba86ca98ebb" mtime="1585774167"/>
 </directory>`);
-      readFileSync(join(dotOscPath, "_project"))
+      readFileSync(join(this.dotOscPath, "_project"))
         .toString()
         .should.equal(vagrantSshfs.projectName);
-      readFileSync(join(dotOscPath, "_package"))
+      readFileSync(join(this.dotOscPath, "_package"))
         .toString()
         .should.equal(vagrantSshfs.name);
-      readFileSync(join(dotOscPath, "_osclib_version"))
+      readFileSync(join(this.dotOscPath, "_osclib_version"))
         .toString()
         .should.equal("1.0");
-      readFileSync(join(dotOscPath, "_meta")).toString().should
+      readFileSync(join(this.dotOscPath, "_meta")).toString().should
         .equal(`<package name="vagrant-sshfs" project="Virtualization:vagrant">
   <title>SSHFS synced folder implementation for Vagrant</title>
   <description>This Vagrant plugin adds synced folder support for mounting folders from the
@@ -89,12 +96,14 @@ connection from the Vagrant guest back to the Vagrant host.
 </package>`);
 
       vagrantSshfs.files.forEach((f) => {
-        readFileSync(join(dotOscPath, f.name)).toString().should.equal(f.name);
-        readFileSync(join(path, f.name)).toString().should.equal(f.name);
+        readFileSync(join(this.dotOscPath, f.name))
+          .toString()
+          .should.equal(f.name);
+        readFileSync(join(this.path, f.name)).toString().should.equal(f.name);
       });
     });
 
-    it("does not write a _meta file if the project's meta has not been fetched yet", async () => {
+    it("does not write a _meta file if the project's meta has not been fetched yet", async function () {
       const { apiUrl, name, projectName, files, md5Hash } = vagrantSshfs;
       await checkOutPackage(
         {
@@ -104,9 +113,9 @@ connection from the Vagrant guest back to the Vagrant host.
           md5Hash,
           files
         },
-        path
+        this.path
       );
-      existsSync(join(dotOscPath, "_meta")).should.be.false;
+      existsSync(join(this.dotOscPath, "_meta")).should.be.false;
     });
   });
 });
