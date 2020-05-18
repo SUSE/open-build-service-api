@@ -21,7 +21,7 @@
 import mockFs = require("mock-fs");
 
 import { expect } from "chai";
-import { existsSync, promises as fsPromises } from "fs";
+import { promises as fsPromises } from "fs";
 import { afterEach, beforeEach, describe, it } from "mocha";
 import { Arch } from "../src/api/base-types";
 import {
@@ -31,6 +31,7 @@ import {
   updateCheckedOutProject
 } from "../src/project";
 import { LocalRole } from "../src/user";
+import { pathExists, PathType } from "../src/util";
 
 const VirtApplImgOpenSUSETW =
   "Virtualization:Appliances:Images:openSUSE-Tumbleweed";
@@ -192,7 +193,7 @@ describe("Project", () => {
         .toString()
         .should.include(`<project name="${testProj.name}"/>`);
 
-      expect(existsSync(`${dir}/.osc_obs_ts`)).to.be.false;
+      (await pathExists(`${dir}/.osc_obs_ts`)).should.equal(false);
     });
 
     it("populates the .osc/_packages file", async () => {
@@ -289,7 +290,7 @@ describe("Project", () => {
     afterEach(() => mockFs.restore());
 
     it("throws an exception when the target project does not exist", async () => {
-      expect(existsSync("fooDir")).to.be.false;
+      (await pathExists("fooDir")).should.equal(false);
 
       await updateCheckedOutProject(
         VirtApplImgOpenSUSETWProj,
@@ -325,12 +326,14 @@ describe("Project", () => {
         meta: VirtApplImgOpenSUSETWProjMeta
       };
 
-      expect(existsSync(`${targetDir}/.osc_obs_ts`)).to.be.false;
+      (await pathExists(`${targetDir}/.osc_obs_ts`)).should.equal(false);
 
       await updateCheckedOutProject(fullVirtApplImgOTWProj, targetDir).should.be
         .fulfilled;
 
-      expect(existsSync(`${targetDir}/.osc_obs_ts`)).to.be.true;
+      (
+        await pathExists(`${targetDir}/.osc_obs_ts`, PathType.Directory)
+      ).should.equal(true);
 
       await readInCheckedOutProject(targetDir).should.eventually.deep.equal(
         fullVirtApplImgOTWProj
