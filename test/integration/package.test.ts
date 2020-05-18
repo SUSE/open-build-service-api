@@ -56,9 +56,7 @@ describe("Package", function () {
       };
       await fetchPackage(this.con, "Virtualization:vagrant", "vagrant-sshfs", {
         retrieveFileContents: false
-      }).should.be.fulfilled.and.eventually.deep.equal(
-        vagrantSshfsWithoutContents
-      );
+      }).should.eventually.deep.equal(vagrantSshfsWithoutContents);
     });
 
     it("doesn't expand links when told so", async function () {
@@ -92,7 +90,7 @@ describe("Package", function () {
         {
           retrieveFileContents: false
         }
-      ).should.be.fulfilled;
+      );
 
       expect(pkg.files).to.deep.equal(
         [
@@ -157,11 +155,11 @@ describe("Package", function () {
     });
 
     it("fetches the file contents if pkgContents is set to true (but not otherwise)", async function () {
-      const pkg: Package = await fetchPackage(
+      const pkg = await fetchPackage(
         this.con,
         "Virtualization:vagrant",
         "vagrant-sshfs"
-      ).should.be.fulfilled;
+      );
 
       pkg.should.have
         .property("files")
@@ -169,14 +167,14 @@ describe("Package", function () {
           vagrantSshfsDotChangesWithExtraFields
         );
 
-      const pkgWithFiles: Package = await fetchPackage(
+      const pkgWithFiles = await fetchPackage(
         this.con,
         "Virtualization:vagrant",
         "vagrant-sshfs",
         {
           retrieveFileContents: true
         }
-      ).should.be.fulfilled;
+      );
 
       pkgWithFiles.should.have
         .property("files")

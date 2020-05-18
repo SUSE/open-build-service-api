@@ -38,8 +38,7 @@ describe("#fetchProject", () => {
 
   it("fetches the Project of Virtualization:vagrant", async () => {
     const projectName = "Virtualization:vagrant";
-    const virtualizationVagrant = await fetchProject(con, projectName, false)
-      .should.be.fulfilled;
+    const virtualizationVagrant = await fetchProject(con, projectName, false);
 
     expect(virtualizationVagrant).to.have.property("apiUrl", con.url);
     expect(virtualizationVagrant).to.have.property("name", projectName);

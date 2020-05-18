@@ -140,9 +140,7 @@ describe("Distribution", () => {
     it("fetches the distributions including remotes from api-test.opensuse.org", async () => {
       const getStagingCon = () => getTestConnection(ApiType.Staging);
 
-      const obsTestDistros: Distribution[] = await fetchHostedDistributions(
-        getStagingCon()
-      ).should.be.fulfilled;
+      const obsTestDistros = await fetchHostedDistributions(getStagingCon());
 
       expect(obsTestDistros).to.deep.equal([
         {
@@ -172,7 +170,7 @@ describe("Distribution", () => {
       const obsTestIncludingRemotes = await fetchHostedDistributions(
         getStagingCon(),
         true
-      ).should.be.fulfilled;
+      );
 
       obsTestDistros.forEach((distro) =>
         obsTestIncludingRemotes.should.include.a.thing.that.deep.equals(distro)

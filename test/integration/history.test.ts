@@ -626,13 +626,13 @@ describe("Commit", function () {
     });
 
     xit("fetches the history of a package with a double link", async function () {
-      const head: Commit = await fetchHistoryAcrossLinks(this.con, {
+      const head = await fetchHistoryAcrossLinks(this.con, {
         apiUrl,
         name: "ruby2.6",
         projectName: "Virtualization:vagrant"
-      }).should.be.fulfilled;
+      });
 
-      const img = await drawHistoryToSvg(head);
+      const img = await drawHistoryToSvg(head!);
       writeFileSync("./ruby2.6.svg", img);
     });
 
@@ -641,8 +641,8 @@ describe("Commit", function () {
         apiUrl,
         projectName: "OBS:Server:Unstable",
         name: "rubygem-rack"
-      }).should.be.fulfilled;
-      const img = await drawHistoryToSvg(head);
+      });
+      const img = await drawHistoryToSvg(head!);
       writeFileSync("./rubygem-rack.svg", img);
     });
   });
@@ -672,7 +672,7 @@ describe("Commit", function () {
           })),
           expanded: true
         }
-      ).should.be.fulfilled;
+      );
 
       expect(commit.files).to.contain.a.thing.that.deep.equal({
         name: "vagrant-sshfs.changes",
@@ -699,7 +699,7 @@ describe("Revision", () => {
         apiUrl,
         projectName: "Virtualization:vagrant",
         name: "vagrant-sshfs"
-      }).should.be.fulfilled.and.eventually.deep.equal(vagrantSshfsHistory);
+      }).should.eventually.deep.equal(vagrantSshfsHistory);
     });
 
     it("fetches the revisions of Virtualization:vagrant/vagrant-sshfs when invoked via Project and Package objects", async () => {
@@ -707,7 +707,7 @@ describe("Revision", () => {
         apiUrl,
         projectName: "Virtualization:vagrant",
         name: "vagrant-sshfs"
-      }).should.be.fulfilled.and.eventually.deep.equal(vagrantSshfsHistory);
+      }).should.eventually.deep.equal(vagrantSshfsHistory);
     });
 
     it("omits requestId when a commit was made directly", async () => {
@@ -715,7 +715,7 @@ describe("Revision", () => {
         apiUrl,
         projectName: "devel:tools",
         name: "ccls"
-      }).should.be.fulfilled;
+      });
 
       hist.should.include.a.thing.that.deep.equals({
         expanded: false,
@@ -736,7 +736,7 @@ describe("Revision", () => {
         apiUrl,
         projectName: "openSUSE:Factory",
         name: "make"
-      }).should.be.fulfilled;
+      });
 
       hist.should.contain.a.thing.that.deep.equals({
         expanded: false,

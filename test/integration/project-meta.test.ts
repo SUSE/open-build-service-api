@@ -59,8 +59,7 @@ describe("#fetchProjectMeta", () => {
   afterEach(afterEachRecord);
 
   it("should correctly parse openSUSE:Factory", async () => {
-    const proj = await fetchProjectMeta(prodCon.clone(), "openSUSE:Factory")
-      .should.be.fulfilled;
+    const proj = await fetchProjectMeta(prodCon.clone(), "openSUSE:Factory");
 
     expect(proj.name).to.equal("openSUSE:Factory");
 
@@ -131,7 +130,7 @@ describe("#fetchProjectMeta", () => {
     const proj = await fetchProjectMeta(
       prodCon.clone(),
       "Virtualization:vagrant"
-    ).should.be.fulfilled;
+    );
 
     expect(proj.name).to.equal("Virtualization:vagrant");
 
@@ -224,8 +223,7 @@ describe("#fetchProjectMeta", () => {
   });
 
   it("should correctly parse the Virtualization repositories", async () => {
-    const proj = await fetchProjectMeta(prodCon.clone(), "Virtualization")
-      .should.be.fulfilled;
+    const proj = await fetchProjectMeta(prodCon.clone(), "Virtualization");
     const findRepoByName = findRepoByNameBuilder(proj);
 
     expect(proj.name).to.equal("Virtualization");

@@ -125,7 +125,7 @@ pass = you
     });
 
     it("uses $HOME/.config/osc/oscrc by default", async () => {
-      const accounts = await readAccountsFromOscrc().should.be.fulfilled;
+      const accounts = await readAccountsFromOscrc();
       expect(accounts).to.be.a("array").and.to.have.length(1);
       expect(accounts[0]).to.deep.equals({
         aliases: [],

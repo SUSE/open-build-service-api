@@ -43,27 +43,21 @@ describe("hashes", () => {
     afterEach(() => mockFs.restore());
 
     it("calculates the hash of a file larger than the chunksize correctly", async () => {
-      await calculateFileHash(
-        "large",
-        "md5"
-      ).should.be.fulfilled.and.eventually.deep.equal(
+      await calculateFileHash("large", "md5").should.eventually.deep.equal(
         calculateHash(largeFile, "md5")
       );
     });
 
     it("calculates sha256sums correctly", async () => {
-      await calculateFileHash(
-        "test",
-        "sha256"
-      ).should.be.fulfilled.and.eventually.deep.equal(
+      await calculateFileHash("test", "sha256").should.eventually.deep.equal(
         // echo "test"|sha256sum:
         "f2ca1bb6c7e907d06dafe4687e579fce76b37e4e93b7605022da52e6ccc26fd2"
       );
     });
 
     it("returns undefined when the file doesn't exist", async () => {
-      await calculateFileHash("does_not_exist", "md5").should.be.fulfilled.and
-        .eventually.be.undefined;
+      await calculateFileHash("does_not_exist", "md5").should.eventually.be
+        .undefined;
     });
   });
 });

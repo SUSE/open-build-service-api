@@ -154,8 +154,8 @@ describe("Connection", () => {
       });
       const todo = await con.makeApiCall("todos/1", {
         decodeResponseFromXml: false
-      }).should.be.fulfilled;
-      expect(JSON.parse(todo)).to.deep.equal(todo1);
+      });
+      expect(JSON.parse(todo.toString())).to.deep.equal(todo1);
     });
 
     it("can make requests to http urls as well", async () => {
@@ -165,15 +165,15 @@ describe("Connection", () => {
       });
       const todo = await con.makeApiCall("todos/1", {
         decodeResponseFromXml: false
-      }).should.be.fulfilled;
-      expect(JSON.parse(todo)).to.deep.equal(todo1);
+      });
+      expect(JSON.parse(todo.toString())).to.deep.equal(todo1);
     });
 
     it("stores cookies persistently in the Connection", async () => {
       const con = getTestConnection(ApiType.Production);
       const route = "/source/Virtualization:vagrant/";
 
-      const virtVagrant = await con.makeApiCall(route).should.be.fulfilled;
+      const virtVagrant = await con.makeApiCall(route);
       // OBS should reply with a openSUSE_session cookie and only that
       con.should.have
         .property("cookies")
@@ -187,9 +187,7 @@ describe("Connection", () => {
       // tslint:disable-next-line: no-string-literal
       (con as any)["headers"] = "";
 
-      await con
-        .makeApiCall(route)
-        .should.be.fulfilled.and.eventually.deep.equal(virtVagrant);
+      await con.makeApiCall(route).should.eventually.deep.equal(virtVagrant);
 
       // now insert a faulty session cookie and ensure that we don't get an error
       // tslint:disable-next-line: no-string-literal
@@ -200,9 +198,7 @@ describe("Connection", () => {
       // tslint:disable-next-line: no-string-literal
       (con as any)["headers"] = oldHeaders;
 
-      await con
-        .makeApiCall(route)
-        .should.be.fulfilled.and.eventually.deep.equal(virtVagrant);
+      await con.makeApiCall(route).should.eventually.deep.equal(virtVagrant);
     });
   });
 
@@ -216,7 +212,7 @@ describe("Connection", () => {
 
       await con.makeApiCall("/", {
         decodeResponseFromXml: false
-      }).should.be.fulfilled;
+      });
     });
 
     it("rejects connections to a server with a custom cert when no ca is provided", async () => {

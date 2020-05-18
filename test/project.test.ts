@@ -180,7 +180,7 @@ describe("Project", () => {
         name: "testProject"
       };
       const dir = "./testDir";
-      await checkOutProject(testProj, dir).should.be.fulfilled;
+      await checkOutProject(testProj, dir);
 
       (await fsPromises.readFile(`${dir}/.osc/_apiurl`))
         .toString()
@@ -197,7 +197,7 @@ describe("Project", () => {
 
     it("populates the .osc/_packages file", async () => {
       const dir = "./someDir";
-      await checkOutProject(proj, dir).should.be.fulfilled;
+      await checkOutProject(proj, dir);
 
       (await fsPromises.readFile(`${dir}/.osc/_packages`)).toString().should
         .equal(`<project name="${proj.name}">
@@ -209,21 +209,17 @@ describe("Project", () => {
 
     it("it does not pollute .osc/ with files that osc doesn't expect", async () => {
       const dir = "testDirForOscCompat";
-      await checkOutProject(proj, dir).should.be.fulfilled;
+      await checkOutProject(proj, dir);
 
       await fsPromises
         .readdir(`${dir}/.osc/`)
-        .should.be.fulfilled.and.eventually.deep.equal([
-          "_apiurl",
-          "_packages",
-          "_project"
-        ]);
+        .should.eventually.deep.equal(["_apiurl", "_packages", "_project"]);
     });
 
     it("creates a .osc_obs_ts/_project_meta.json when proj.meta is defined", async () => {
       const dir = "./anotherDir";
 
-      await checkOutProject(projWithMeta, dir).should.be.fulfilled;
+      await checkOutProject(projWithMeta, dir);
 
       JSON.parse(
         (
@@ -336,9 +332,9 @@ describe("Project", () => {
 
       expect(existsSync(`${targetDir}/.osc_obs_ts`)).to.be.true;
 
-      await readInCheckedOutProject(
-        targetDir
-      ).should.be.fulfilled.and.eventually.deep.equal(fullVirtApplImgOTWProj);
+      await readInCheckedOutProject(targetDir).should.eventually.deep.equal(
+        fullVirtApplImgOTWProj
+      );
     });
 
     it("updates the project", async () => {
@@ -375,7 +371,7 @@ describe("Project", () => {
 
       await readInCheckedOutProject(
         `${targetDir}_with_meta`
-      ).should.be.fulfilled.and.eventually.deep.equal(newProj);
+      ).should.eventually.deep.equal(newProj);
     });
   });
 });

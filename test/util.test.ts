@@ -169,7 +169,7 @@ describe("#rmRf", () => {
   it("removes the directory fooDir and all its contents", async () => {
     expect(existsSync("fooDir")).to.equal(true);
 
-    await util.rmRf("fooDir").should.be.fulfilled;
+    await util.rmRf("fooDir");
 
     expect(existsSync("fooDir/foo")).to.equal(false);
     expect(existsSync("fooDir")).to.equal(false);
@@ -204,8 +204,8 @@ describe("#runProcess", () => {
   );
 
   myIt("resolves with the stdout of the command", async () => {
-    await util.runProcess("echo", { args: ["foo"] }).should.be.fulfilled.and
-      .eventually.deep.equal(`foo
+    await util.runProcess("echo", { args: ["foo"] }).should.eventually.deep
+      .equal(`foo
 `);
   });
 
@@ -216,7 +216,7 @@ bar
 baz
 `,
       args: ["foo"]
-    }).should.be.fulfilled.and.eventually.deep.equal(`fooo
+    }).should.eventually.deep.equal(`fooo
 `);
   });
 
@@ -252,38 +252,30 @@ describe("#pathExists", () => {
   afterEach(() => mockFs.restore());
 
   it("returns true for files and directories if no type is requested", async () => {
-    await util
-      .pathExists("fooDir")
-      .should.be.fulfilled.and.eventually.equal(true);
-    await util
-      .pathExists("fooFile")
-      .should.be.fulfilled.and.eventually.equal(true);
+    await util.pathExists("fooDir").should.eventually.equal(true);
+    await util.pathExists("fooFile").should.eventually.equal(true);
   });
 
   it("returns true for files and false for directories if we are checking for files", async () => {
     await util
       .pathExists("fooDir", util.PathType.File)
-      .should.be.fulfilled.and.eventually.equal(false);
+      .should.eventually.equal(false);
     await util
       .pathExists("fooFile", util.PathType.File)
-      .should.be.fulfilled.and.eventually.equal(true);
+      .should.eventually.equal(true);
   });
 
   it("returns false for files and true for directories if we are checking for directories", async () => {
     await util
       .pathExists("fooDir", util.PathType.Directory)
-      .should.be.fulfilled.and.eventually.equal(true);
+      .should.eventually.equal(true);
     await util
       .pathExists("fooFile", util.PathType.Directory)
-      .should.be.fulfilled.and.eventually.equal(false);
+      .should.eventually.equal(false);
   });
 
   it("recognizes links as existing", async () => {
-    await util
-      .pathExists("linkToDir")
-      .should.be.fulfilled.and.eventually.equal(true);
-    await util
-      .pathExists("linkToFile")
-      .should.be.fulfilled.and.eventually.equal(true);
+    await util.pathExists("linkToDir").should.eventually.equal(true);
+    await util.pathExists("linkToFile").should.eventually.equal(true);
   });
 });

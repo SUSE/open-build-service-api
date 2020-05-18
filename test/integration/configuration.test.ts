@@ -137,13 +137,13 @@ describe("Configuration", () => {
     it("gets the server info from build.opensuse.org", async () => {
       await fetchConfiguration(
         getTestConnection(ApiType.Production)
-      ).should.be.fulfilled.and.eventually.deep.equal(ObsConfiguration);
+      ).should.eventually.deep.equal(ObsConfiguration);
     });
 
     it("gets the server info from build-test.opensuse.org", async () => {
       await fetchConfiguration(
         getTestConnection(ApiType.Staging)
-      ).should.be.fulfilled.and.eventually.deep.equal(ObsTestConfiguration);
+      ).should.eventually.deep.equal(ObsTestConfiguration);
     });
   });
 });
