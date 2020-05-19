@@ -20,7 +20,6 @@
  */
 
 import * as assert from "assert";
-import { spawn } from "child_process";
 import { Directory, fetchDirectory } from "./api/directory";
 import { Connection } from "./connection";
 import { isApiError } from "./error";
@@ -29,7 +28,8 @@ import { fetchFileList, fileListFromDirectory, Package } from "./package";
 import {
   dateFromUnixTimeStamp,
   deleteUndefinedMembers,
-  mapOrApply
+  mapOrApply,
+  runProcess
 } from "./util";
 
 interface BaseCommit {
@@ -695,23 +695,5 @@ ${addNodes(commit)}
  * as a string.
  */
 export async function drawHistoryToSvg(HEAD: Commit): Promise<string> {
-  const graph = historyToGraphviz(HEAD);
-
-  return new Promise((resolve, reject) => {
-    const child = spawn("dot", ["-Tsvg"]);
-
-    const svgImage: any[] = [];
-
-    child.stdout.on("data", (data) => svgImage.push(data));
-    child.on("close", (code) => {
-      if (code === 0) {
-        resolve(svgImage.join(""));
-      } else {
-        reject(new Error(`dot exited with ${code}`));
-      }
-    });
-
-    child.stdin.write(graph);
-    child.stdin.end();
-  });
+  return runProcess("dot", { args: ["-Tsvg"], stdin: historyToGraphviz(HEAD) });
 }
