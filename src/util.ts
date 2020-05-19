@@ -104,7 +104,7 @@ function makeConstruct<T>(
       type !== undefined,
       "makeConstruct: type must not be undefined as construct is undefined"
     );
-    return (data: any) => new type!(data);
+    return (data: any) => new type(data);
   }
 }
 

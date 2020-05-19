@@ -284,7 +284,7 @@ export async function readInModifiedPackageFromDir(
                 ? await fsPromises.readFile(filePath)
                 : contents,
             // we have asserted previously that this is not undefined
-            md5Hash: curFileMd5Hash!,
+            md5Hash: curFileMd5Hash,
             ...rest
           });
         }
@@ -335,7 +335,7 @@ function directoryFromModifiedPackage(pkg: ModifiedPackage): Directory {
       modifiedTime: f.modifiedTime,
       hash: {
         hashFunction: "sha256",
-        hash: calculateHash(f.contents!, "sha256")
+        hash: calculateHash(f.contents, "sha256")
       }
     }));
   return { directoryEntries: dentries };

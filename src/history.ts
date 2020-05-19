@@ -282,7 +282,7 @@ async function fetchExpandedRevisions(
       cur = headCommit;
     } else {
       assert(cur !== undefined);
-      cur!.parentCommits = [next];
+      cur.parentCommits = [next];
       cur = next;
     }
   }
@@ -536,7 +536,7 @@ async function cachedFetchHistoryAcrossLinks(
             linkedCommit !== undefined,
             `Must find a commit with the revision ${validLink.baserev} in the package ${linkedPkg.projectName}/${linkedPkg.name}, but found none`
           );
-          cur.parentCommits!.push(linkedCommit!);
+          cur.parentCommits.push(linkedCommit);
         }
       }
     }
