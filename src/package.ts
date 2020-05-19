@@ -109,6 +109,36 @@ function isFrozenPackage(pkg: Package): pkg is FrozenPackage {
   );
 }
 
+// FIXME: this should maybe not be exported
+export function fileListFromDirectory(
+  pkg: Package,
+  fileDir: Directory
+): PackageFile[] {
+  if (
+    fileDir.directoryEntries === undefined ||
+    fileDir.directoryEntries.length === 0
+  ) {
+    return [];
+  }
+
+  const files: PackageFile[] = fileDir.directoryEntries
+    .filter((dentry) => dentry.name !== undefined)
+    .map((dentry) => {
+      return {
+        name: dentry.name!,
+        projectName: pkg.projectName,
+        packageName: pkg.name,
+        size: dentry.size,
+        modifiedTime: dentry.modifiedTime,
+        md5Hash: dentry.md5
+      };
+    });
+
+  return zip(fileDir.directoryEntries, files).map(([dentry, pkgFile]) =>
+    packageFileFromDirectoryEntry(pkgFile, dentry)
+  );
+}
+
 export async function fetchFileList(
   con: Connection,
   pkg: Package,
@@ -164,36 +194,6 @@ export async function fetchFileList(
     retrieveFileContents ? files.map((f) => Object.freeze(f)) : files,
     fileDir.sourceMd5
   ];
-}
-
-// FIXME: this should maybe not be exported
-export function fileListFromDirectory(
-  pkg: Package,
-  fileDir: Directory
-): PackageFile[] {
-  if (
-    fileDir.directoryEntries === undefined ||
-    fileDir.directoryEntries.length === 0
-  ) {
-    return [];
-  }
-
-  const files: PackageFile[] = fileDir.directoryEntries
-    .filter((dentry) => dentry.name !== undefined)
-    .map((dentry) => {
-      return {
-        name: dentry.name!,
-        projectName: pkg.projectName,
-        packageName: pkg.name,
-        size: dentry.size,
-        modifiedTime: dentry.modifiedTime,
-        md5Hash: dentry.md5
-      };
-    });
-
-  return zip(fileDir.directoryEntries, files).map(([dentry, pkgFile]) =>
-    packageFileFromDirectoryEntry(pkgFile, dentry)
-  );
 }
 
 /** handy for tests, don't make it public though... */
