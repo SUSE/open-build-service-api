@@ -27,7 +27,7 @@ import * as xml2js from "xml2js";
  * with some custom settings applied.
  */
 export const newXmlParser = (): xml2js.Parser =>
-  new xml2js.Parser({ explicitArray: false, async: true });
+  new xml2js.Parser({ explicitArray: false, async: false });
 
 /**
  * @return A new

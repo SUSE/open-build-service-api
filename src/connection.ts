@@ -270,28 +270,31 @@ export class Connection {
           // handle errors in the request here, because the API returns more
           // detailed error messages in the body, but the body is not available
           // until the "end" event occurs
-          response.on("end", async () => {
+          response.on("end", () => {
             const cookies = response.headers["set-cookie"];
             if (cookies !== undefined) {
               this.cookies = cookies;
             }
 
-            try {
-              const data =
-                options?.decodeResponseFromXml !== undefined &&
-                !options.decodeResponseFromXml
-                  ? Buffer.concat(body)
-                  : await newXmlParser().parseStringPromise(body.join(""));
-
+            const finish = (err: Error | null, payload: any): void => {
+              if (err) {
+                reject(err);
+              }
               if (response.statusCode! < 200 || response.statusCode! > 299) {
                 reject(
-                  new ApiError(response.statusCode!, url, reqMethod, data)
+                  new ApiError(response.statusCode!, url, reqMethod, payload)
                 );
               }
+              resolve(payload);
+            };
 
-              resolve(data);
-            } catch (err) {
-              reject(err);
+            if (
+              options?.decodeResponseFromXml !== undefined &&
+              !options.decodeResponseFromXml
+            ) {
+              finish(null, Buffer.concat(body));
+            } else {
+              newXmlParser().parseString(body.join(""), finish);
             }
           });
         }
