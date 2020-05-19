@@ -13,3 +13,7 @@ jobs:
     - name: unit tests
       script:
         - yarn run coverage
+
+    - name: lint
+      script:
+        - yarn run lint
