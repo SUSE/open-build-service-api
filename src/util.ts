@@ -37,8 +37,8 @@ import { join } from "path";
  *     length, then result is as long as the shortest of both.
  */
 export function zip<T, U>(
-  arr1: T[] | ReadonlyArray<T>,
-  arr2: U[] | ReadonlyArray<U>
+  arr1: T[] | readonly T[],
+  arr2: U[] | readonly U[]
 ): [T, U][] {
   const res: [T, U][] = [];
   for (let i = 0; i < Math.min(arr1.length, arr2.length); i++) {

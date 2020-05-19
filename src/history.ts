@@ -183,7 +183,7 @@ const apiRevisionToRevision = (
 export async function fetchHistory(
   con: Connection,
   pkg: Package
-): Promise<ReadonlyArray<Revision>> {
+): Promise<readonly Revision[]> {
   const revs: RevisionListApiReply = await con.makeApiCall(
     `/source/${pkg.projectName}/${pkg.name}/_history`
   );
