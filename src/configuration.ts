@@ -203,7 +203,7 @@ interface ConfigurationApiReply {
 }
 
 const constructUrlOpt = {
-  construct: (u: string) => new URL(u)
+  construct: (u: string): URL => new URL(u)
 };
 
 /**

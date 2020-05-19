@@ -71,9 +71,9 @@ export function statusReplyFromApi(data: StatusReplyApiReply): StatusReply {
 /** Typeguard for the custom [[ApiError]] type */
 export function isApiError(err: Error): err is ApiError {
   return (
-    (err as any).statusCode !== undefined &&
-    (err as any).url !== undefined &&
-    (err as any).method !== undefined
+    (err as ApiError).statusCode !== undefined &&
+    (err as ApiError).url !== undefined &&
+    (err as ApiError).method !== undefined
   );
 }
 
