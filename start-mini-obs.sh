@@ -1,10 +1,10 @@
 #!/bin/bash
 
-set -euo pipefail
+set -euox pipefail
 
 export repo_dir="open-build-service"
 export obs_url="http://localhost:3000"
-obs_version=2.10.3
+obs_version=2.10.5
 
 pushd .
 
@@ -13,8 +13,8 @@ if [[ ! -d "${repo_dir}" ]]; then
 fi
 
 cd "${repo_dir}"
-git fetch origin master
-git reset --hard ${obs_version}
+git fetch -tp origin
+git checkout -b v${obs_version} ${obs_version}
 git submodule init
 git submodule update
 
