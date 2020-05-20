@@ -4,13 +4,32 @@ node_js:
   - 12
   - 13
   - 14
+
+services:
+  - docker
+
 install:
-  - yarn install
+  - yarn install || yarn install || yarn install
+before_script:
+  - ./start-mini-obs.sh
+
+env:
+  - HAVE_MINI_OBS=1
 script:
   - yarn run coverage
+
+cache:
+  yarn: true
 
 jobs:
   include:
     - name: lint
+      stage: lint
+      before_script: skip
       script:
         - yarn run lint
+    - name: documentation
+      stage: lint
+      before_script: skip
+      script:
+        - yarn run documentation
