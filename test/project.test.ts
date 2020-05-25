@@ -109,6 +109,10 @@ const setupFsMocks = () => {
     "test/.osc/_packages": `<project name="test" />
 `,
 
+    "onePackage/.osc/_apiurl": `https://api.example.org/`,
+    "onePackage/.osc/_project": "justOnePackageInThisProject",
+    "onePackage/.osc/_packages": `<project name="test"><package name="jtc" state=" "/></project>`,
+
     noDotOsc: mockFs.directory({ items: {} }),
     noUnderscorePackage: mockFs.directory({
       items: {
@@ -282,6 +286,18 @@ describe("Project", () => {
       ).should.be.rejectedWith(
         /no such file or directory.*noUnderscorePackage\/.osc\/_package/
       );
+    });
+
+    it("does correctly read in a project with one package", async () => {
+      await readInCheckedOutProject("onePackage")
+        .should.eventually.have.property("packages")
+        .that.deep.equals([
+          {
+            apiUrl: "https://api.example.org/",
+            projectName: "justOnePackageInThisProject",
+            name: "jtc"
+          }
+        ]);
     });
   });
 
