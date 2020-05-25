@@ -14,7 +14,7 @@ fi
 
 cd "${repo_dir}"
 git fetch -tp origin
-git checkout -b v${obs_version} ${obs_version}
+git checkout -b v${obs_version} ${obs_version} || git checkout v${obs_version}
 git submodule init
 git submodule update
 
