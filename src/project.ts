@@ -46,7 +46,11 @@ import {
 import { Connection, normalizeUrl, RequestMethod } from "./connection";
 import { StatusReply, statusReplyFromApi } from "./error";
 import { Package } from "./package";
-import { deleteUndefinedAndEmptyMembers, deleteUndefinedMembers } from "./util";
+import {
+  deleteUndefinedAndEmptyMembers,
+  deleteUndefinedMembers,
+  mapOrApply
+} from "./util";
 import { newXmlBuilder, newXmlParser } from "./xml";
 
 /**
@@ -178,7 +182,7 @@ interface UnderscorePackages {
       name: string;
     };
     /** package list, only present if packages are there */
-    package?: PackageEntry[];
+    package?: PackageEntry[] | PackageEntry;
   };
 }
 
@@ -317,17 +321,15 @@ export async function readInCheckedOutProject(path: string): Promise<Project> {
   const underscorePackages = (await newXmlParser().parseStringPromise(
     underscorePackagesContents
   )) as UnderscorePackages;
-  if (
-    underscorePackages.project.package !== undefined &&
-    underscorePackages.project.package.length > 0
-  ) {
-    project.packages = underscorePackages.project.package.map((pkg) => {
-      return {
+  if (underscorePackages.project.package !== undefined) {
+    project.packages = mapOrApply(
+      underscorePackages.project.package,
+      (pkg) => ({
         apiUrl: project.apiUrl,
         name: pkg.$.name,
         projectName: project.name
-      };
-    });
+      })
+    );
   }
 
   return deleteUndefinedAndEmptyMembers(project);
