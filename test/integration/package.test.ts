@@ -21,7 +21,7 @@
 
 import { expect } from "chai";
 import { afterEach, beforeEach, describe, it } from "mocha";
-import { fetchPackage, Package } from "../../src/package";
+import { fetchPackage } from "../../src/package";
 import {
   afterEachRecord,
   ApiType,
@@ -83,7 +83,7 @@ describe("Package", function () {
     });
 
     it("expands the file sources by default", async function () {
-      const pkg: Package = await fetchPackage(
+      const pkg = await fetchPackage(
         this.con,
         "Virtualization:vagrant",
         "ruby2.6",
