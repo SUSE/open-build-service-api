@@ -45,7 +45,7 @@ export interface DevelPackage {
 }
 
 interface DevelPackageApiReply {
-  $: { project?: string; package?: string };
+  $?: { project?: string; package?: string };
 }
 
 function develPackageFromApi(
@@ -62,7 +62,7 @@ function develPackageToApi(
 
 interface PackageMetaApiReply {
   package: {
-    $: { name?: string; project?: string };
+    $?: { name?: string; project?: string };
     devel?: DevelPackageApiReply;
   } & CommonMetaApiReply;
 }
@@ -89,8 +89,8 @@ export function packageMetaFromApi(
   packageMetaApiReply: PackageMetaApiReply
 ): PackageMeta {
   const res: PackageMeta = {
-    name: packageMetaApiReply.package.$.name,
-    project: packageMetaApiReply.package.$.project,
+    name: packageMetaApiReply.package.$?.name,
+    project: packageMetaApiReply.package.$?.project,
     develPackage: develPackageFromApi(packageMetaApiReply.package.devel),
     ...commonMetaFromApi(packageMetaApiReply.package)
   };

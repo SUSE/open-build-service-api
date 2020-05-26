@@ -38,7 +38,7 @@ import { Arch } from "./base-types";
 /** Representation of a FlagSwitch as extracted from OBS' API */
 export type FlagSwitchApiReply =
   | {
-      $: { repository?: string; arch?: Arch };
+      $?: { repository?: string; arch?: Arch };
     }
   | "";
 

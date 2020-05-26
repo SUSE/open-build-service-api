@@ -94,7 +94,7 @@ export interface ServiceInfo {
 }
 
 interface DirectoryEntryApiReply {
-  $: {
+  $?: {
     name?: string;
     size?: string;
     md5?: string;
@@ -107,7 +107,12 @@ interface DirectoryEntryApiReply {
 }
 
 function directoryEntryFromApi(dentry: DirectoryEntryApiReply): DirectoryEntry {
-  const { hash, size, mtime, originproject, ...rest } = dentry.$;
+  const { hash, size, mtime, originproject, ...rest } = dentry.$ ?? {
+    hash: undefined,
+    size: undefined,
+    mtime: undefined,
+    originproject: undefined
+  };
   return {
     ...rest,
     originProject: originproject,
@@ -148,25 +153,25 @@ function directoryEntryToApi(dentry: DirectoryEntry): DirectoryEntryApiReply {
 }
 
 interface LinkInfoApiReply {
-  $: LinkInfo;
+  $?: LinkInfo;
 }
 
 function linkInfoFromApi(linkInfo: LinkInfoApiReply): LinkInfo {
-  return linkInfo.$;
+  return linkInfo.$ ?? {};
 }
 
 interface ServiceInfoApiReply {
-  $: ServiceInfo;
+  $?: ServiceInfo;
 }
 
 function serviceInfoFromApi(serviceInfo: ServiceInfoApiReply): ServiceInfo {
-  return serviceInfo.$;
+  return serviceInfo.$ ?? {};
 }
 
 interface DirectoryApiReply {
   /**  Directory listing */
   directory: {
-    $: {
+    $?: {
       name?: string;
       rev?: string;
       vrev?: string;
@@ -195,11 +200,11 @@ export function directoryFromApi(
   directoryApiReply: DirectoryApiReply
 ): Directory {
   const dir: Directory = {
-    name: directoryApiReply.directory.$.name,
-    revision: directoryApiReply.directory.$.rev,
-    versionRevision: directoryApiReply.directory.$.vrev,
-    sourceMd5: directoryApiReply.directory.$.srcmd5,
-    count: directoryApiReply.directory.$.count,
+    name: directoryApiReply.directory.$?.name,
+    revision: directoryApiReply.directory.$?.rev,
+    versionRevision: directoryApiReply.directory.$?.vrev,
+    sourceMd5: directoryApiReply.directory.$?.srcmd5,
+    count: directoryApiReply.directory.$?.count,
     directoryEntries: extractElementAsArrayIfPresent(
       directoryApiReply.directory,
       "entry",
