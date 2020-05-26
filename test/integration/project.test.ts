@@ -21,13 +21,20 @@
 
 import { expect } from "chai";
 import { afterEach, beforeEach, describe, it } from "mocha";
-import { fetchProject } from "../../src/project";
+import {
+  createProject,
+  deleteProject,
+  fetchProject,
+  fetchProjectList
+} from "../../src/project";
 import { LocalRole } from "../../src/user";
 import {
   afterEachRecord,
   ApiType,
   beforeEachRecord,
-  getTestConnection
+  getTestConnection,
+  miniObsUsername,
+  skipIfNoMiniObs
 } from "./../test-setup";
 
 describe("#fetchProject", () => {
@@ -83,5 +90,34 @@ describe("#fetchProject", () => {
         role: LocalRole.Maintainer
       }))
     });
+  });
+});
+
+describe("#fetchProjectList", function () {
+  this.timeout(15000);
+  before(skipIfNoMiniObs);
+
+  const con = getTestConnection(ApiType.MiniObs);
+
+  it("fetches the list of all projects", async () => {
+    const projectsBefore = await fetchProjectList(con);
+    const name = `home:${miniObsUsername}:for_the_search`;
+    expect(projectsBefore.find((proj) => proj.name === name)).to.equal(
+      undefined
+    );
+
+    await createProject(con, {
+      name,
+      description: "to show up in the search",
+      title: "For the search"
+    });
+
+    const projectsAfter = await fetchProjectList(con);
+    expect(projectsAfter).to.include.a.thing.that.deep.equals({
+      name,
+      apiUrl: con.url
+    });
+
+    await deleteProject(con, name);
   });
 });

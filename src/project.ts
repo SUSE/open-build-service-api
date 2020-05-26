@@ -37,7 +37,7 @@
 import * as assert from "assert";
 import { existsSync, promises as fsPromises } from "fs";
 import { join } from "path";
-import { fetchDirectory } from "./api/directory";
+import { fetchDirectory, directoryFromApi } from "./api/directory";
 import {
   fetchProjectMeta,
   modifyProjectMeta,
@@ -392,4 +392,28 @@ export async function deleteProject(
     method: RequestMethod.DELETE
   });
   return statusReplyFromApi(resp);
+}
+
+/**
+ * Retrieves the list of all projects that are known to the respective instance
+ * of the build service.
+ */
+export async function fetchProjectList(
+  con: Connection
+): Promise<readonly Project[]> {
+  const projectsDir = directoryFromApi(await con.makeApiCall("/source"));
+  if (
+    projectsDir.directoryEntries === undefined ||
+    !Array.isArray(projectsDir.directoryEntries)
+  ) {
+    throw new Error(
+      `Invalid response received from OBS, expected an array of directory entries, but got '${projectsDir.directoryEntries}' instead`
+    );
+  }
+  return Object.freeze(
+    projectsDir.directoryEntries.map((dentry) => ({
+      apiUrl: con.url,
+      name: dentry.name!
+    }))
+  );
 }
