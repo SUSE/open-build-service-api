@@ -26,6 +26,7 @@ import {
   PackageMeta,
   setPackageMeta
 } from "../../src/api/package-meta";
+import { ApiError } from "../../src/error";
 import { deletePackage } from "../../src/package";
 import { LocalRole } from "../../src/user";
 import {
@@ -34,9 +35,8 @@ import {
   beforeEachRecord,
   getTestConnection,
   miniObsUsername,
-  skipIfNoMiniObs
+  skipIfNoMiniObsHook
 } from "./../test-setup";
-import { ApiError } from "../../src/error";
 
 describe("#getPackageMeta", () => {
   beforeEach(beforeEachRecord);
@@ -91,7 +91,7 @@ generates an HTML-formatted report.
 });
 
 describe("#setPackageMeta", () => {
-  before(skipIfNoMiniObs);
+  before(skipIfNoMiniObsHook);
 
   const con = getTestConnection(ApiType.MiniObs);
   const statusOk = {

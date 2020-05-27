@@ -34,6 +34,7 @@ import {
   beforeEachRecord,
   getTestConnection,
   miniObsUsername,
+  skipIfNoMiniObsHook,
   skipIfNoMiniObs
 } from "./../test-setup";
 
@@ -95,7 +96,7 @@ describe("#fetchProject", () => {
 
 describe("#fetchProjectList", function () {
   this.timeout(15000);
-  before(skipIfNoMiniObs);
+  before(skipIfNoMiniObsHook);
 
   const con = getTestConnection(ApiType.MiniObs);
 

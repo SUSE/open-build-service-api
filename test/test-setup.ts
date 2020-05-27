@@ -317,10 +317,14 @@ export async function checkApiCallFails<T>(
   }
 }
 
-export function skipIfNoMiniObs(this: Context) {
+export function skipIfNoMiniObs(ctx: Context): void {
   if (process.env.HAVE_MINI_OBS === undefined) {
-    this.skip();
+    ctx.skip();
   }
+}
+
+export function skipIfNoMiniObsHook(this: Context): void {
+  skipIfNoMiniObs(this);
 }
 
 export const castToFuncT = <FC, FT>(func: (this: FC) => void): FT =>

@@ -45,7 +45,7 @@ import {
   beforeEachRecord,
   getTestConnection,
   miniObsUsername,
-  skipIfNoMiniObs
+  skipIfNoMiniObsHook
 } from "./../test-setup";
 
 const findRepoByNameBuilder = (proj: ProjectMeta) => (repoName: string) =>
@@ -294,7 +294,7 @@ describe("#fetchProjectMeta", () => {
 describe("#modifyOrCreateProject", function () {
   const con = getTestConnection(ApiType.MiniObs);
 
-  before(skipIfNoMiniObs);
+  before(skipIfNoMiniObsHook);
   this.timeout(10000);
 
   it("creates a new project", async function () {

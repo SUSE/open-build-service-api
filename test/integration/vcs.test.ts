@@ -42,7 +42,7 @@ import {
   createTemporaryDirectory,
   getTestConnection,
   miniObsUsername,
-  skipIfNoMiniObs
+  skipIfNoMiniObsHook
 } from "../test-setup";
 
 type TestFixture = Context & {
@@ -55,8 +55,9 @@ type TestFixture = Context & {
 describe("ModifiedPackage", function () {
   this.timeout(10000);
 
-  before(skipIfNoMiniObs);
+  before(skipIfNoMiniObsHook);
   const con = getTestConnection(ApiType.MiniObs);
+
   beforeEach(async function () {
     this.tmpPath = await createTemporaryDirectory();
 
