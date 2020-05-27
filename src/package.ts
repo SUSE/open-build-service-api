@@ -240,7 +240,7 @@ export async function fetchPackage(
   con: Connection,
   project: Project | string,
   packageName: string,
-  options?: Omit<FetchFileListBaseOptions, "revision"> & {
+  options: Omit<FetchFileListBaseOptions, "revision"> & {
     retrieveFileContents: true;
   }
 ): Promise<FrozenPackage>;
@@ -250,7 +250,7 @@ export async function fetchPackage(
   project: Project | string,
   packageName: string,
   options?: Omit<FetchFileListBaseOptions, "revision"> & {
-    retrieveFileContents: false | undefined;
+    retrieveFileContents?: boolean;
   }
 ): Promise<Package>;
 
