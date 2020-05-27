@@ -35,6 +35,9 @@ import { fileListToDirectory, FrozenPackage } from "../src/package";
 import { pathExists, PathType } from "../src/util";
 import { newXmlBuilder } from "../src/xml";
 
+nock.back.fixtures = join(__dirname, "..", "fixtures");
+nock.back.setMode("record");
+
 /**
  * Create a checked out package using mock-fs in the current working directory.
  *

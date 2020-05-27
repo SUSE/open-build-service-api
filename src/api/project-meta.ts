@@ -119,7 +119,7 @@ function metaRoute(name: string): string {
 }
 
 /** Layout of the project configuration as received from OBS' API */
-interface ProjectMetaApiReply {
+export interface ProjectMetaApiReply {
   project: {
     $: {
       name: string;

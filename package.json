@@ -27,7 +27,7 @@
     "prepare": "yarn run build",
     "prepublishOnly": "yarn run build",
     "build": "tsc --pretty",
-    "test": "yarn run build && mocha --require ts-node/register --recursive \"test/**/*.test.ts\"",
+    "test": "yarn run build && mocha --require ts-node/register \"test/integration/search.test.ts\"",
     "coverage": "nyc --include=\"src/**/*.ts\" --reporter=text --reporter=html --reporter=lcov mocha --require ts-node/register --recursive \"test/**/*.test.ts\"",
     "clean": "rm -rf ./lib ./coverage/ ./.nyc_output ./documentation",
     "watch": "yarn run build -- --watch",
