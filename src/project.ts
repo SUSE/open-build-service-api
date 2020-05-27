@@ -22,7 +22,7 @@
 /**
  * This module provides the high level methods to access and modify projects.
  *
- * Projects can be read in via OBS' API using [[getProject]] or from the file
+ * Projects can be read in via OBS' API using [[fetchProject]] or from the file
  * system via [[readInCheckedOutProject]]. When reading in projects from the
  * file system, we expect them to have a similar layout as created by running
  * `osc checkout`.
@@ -264,7 +264,7 @@ async function writeProjectUnderscoreFiles(
  * @param proj  The [[Project]] that should be checked out. If the package list
  *     is empty, then this function will not add packages into the local
  *     checkout.
- *     Note, if the project was retrieved via [[getProject]], then be sure to
+ *     Note, if the project was retrieved via [[fetchProject]], then be sure to
  *     set `getPackageList` to `true`, as the list of packages will otherwise
  *     not be retrieved.
  * @param path  Path to the directory into which the project should be checked
