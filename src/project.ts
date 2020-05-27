@@ -95,6 +95,9 @@ export interface Project {
   meta?: ProjectMeta;
 }
 
+/** A project where the package list is guaranteed to exist */
+export type ProjectWithPackages = Project & { packages: Package[] };
+
 /**
  * Retrieves the list of packages of the given project
  *
@@ -125,6 +128,18 @@ async function fetchPackageList(
   }
 }
 
+export async function fetchProject(
+  con: Connection,
+  projectName: string,
+  options: { getPackageList: true }
+): Promise<ProjectWithPackages>;
+
+export async function fetchProject(
+  con: Connection,
+  projectName: string,
+  options?: { getPackageList?: boolean }
+): Promise<Project>;
+
 /**
  * Get a [[Project]] structure from the build service instance.
  *
@@ -138,7 +153,7 @@ async function fetchPackageList(
 export async function fetchProject(
   con: Connection,
   projectName: string,
-  getPackageList: boolean = true
+  options?: { getPackageList?: boolean }
 ): Promise<Project> {
   const meta = await fetchProjectMeta(con, projectName);
   const proj = {
@@ -146,14 +161,14 @@ export async function fetchProject(
     name: projectName,
     meta
   };
-  if (!getPackageList) {
+  if (options?.getPackageList === undefined || options.getPackageList) {
+    return deleteUndefinedMembers({
+      ...proj,
+      packages: await fetchPackageList(con, proj)
+    });
+  } else {
     return proj;
   }
-
-  return deleteUndefinedMembers({
-    ...proj,
-    packages: await fetchPackageList(con, proj)
-  });
 }
 
 /** A package entry in `.osc/_packages` */
