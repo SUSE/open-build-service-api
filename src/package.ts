@@ -32,7 +32,8 @@ import {
   getPackageMeta,
   PackageMeta,
   packageMetaFromApi,
-  packageMetaToApi
+  packageMetaToApi,
+  setPackageMeta
 } from "./api/package-meta";
 import { calculateHash } from "./checksum";
 import { Connection, RequestMethod } from "./connection";
@@ -216,6 +217,23 @@ export function fileListToDirectory(pkg: Package): Directory {
             };
           })
   };
+}
+
+export async function createPackage(
+  con: Connection,
+  project: Project | string,
+  packageName: string,
+  title: string,
+  description?: string
+): Promise<Package> {
+  const meta: PackageMeta = {
+    title,
+    description: description ?? title,
+    name: packageName
+  };
+  const projectName = typeof project === "string" ? project : project.name;
+  await setPackageMeta(con, projectName, packageName, meta);
+  return { name: packageName, apiUrl: con.url, meta, projectName };
 }
 
 export async function fetchPackage(
