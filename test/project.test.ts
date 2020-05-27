@@ -21,11 +21,9 @@
 import mockFs = require("mock-fs");
 
 import { expect } from "chai";
-import { promises as fsPromises } from "fs";
 import { afterEach, beforeEach, describe, it } from "mocha";
 import { Arch } from "../src/api/base-types";
 import {
-  checkOutProject,
   Project,
   readInCheckedOutProject,
   updateCheckedOutProject
@@ -153,87 +151,6 @@ const setupFsMocks = () => {
 };
 
 describe("Project", () => {
-  describe("#checkOut", () => {
-    const projectName = "testProjectWithPackages";
-    const apiUrl = "https://api.opensuse.org/";
-    const proj: Project = {
-      apiUrl,
-      name: projectName,
-      packages: [
-        { name: "foo", projectName },
-        { name: "bar", projectName },
-        { name: "baz", projectName }
-      ].map((pkg) => ({ ...pkg, apiUrl }))
-    };
-
-    const projWithMeta: Project = {
-      ...proj,
-      meta: {
-        description: "a test project with a _meta",
-        title: proj.name.toLocaleUpperCase(),
-        name: proj.name,
-        repository: [{ name: "foo" }]
-      }
-    };
-
-    beforeEach(() => mockFs({ dirExists: mockFs.directory({ items: {} }) }));
-    afterEach(() => mockFs.restore());
-
-    it("creates the project directory", async () => {
-      const testProj: Project = {
-        apiUrl: "https://api.opensuse.org/",
-        name: "testProject"
-      };
-      const dir = "./testDir";
-      await checkOutProject(testProj, dir);
-
-      (await fsPromises.readFile(`${dir}/.osc/_apiurl`))
-        .toString()
-        .should.equal(testProj.apiUrl);
-      (await fsPromises.readFile(`${dir}/.osc/_project`))
-        .toString()
-        .should.equal(testProj.name);
-      (await fsPromises.readFile(`${dir}/.osc/_packages`))
-        .toString()
-        .should.include(`<project name="${testProj.name}"/>`);
-
-      (await pathExists(`${dir}/.osc_obs_ts`)).should.equal(false);
-    });
-
-    it("populates the .osc/_packages file", async () => {
-      const dir = "./someDir";
-      await checkOutProject(proj, dir);
-
-      (await fsPromises.readFile(`${dir}/.osc/_packages`)).toString().should
-        .equal(`<project name="${proj.name}">
-  <package name="foo" state=" "/>
-  <package name="bar" state=" "/>
-  <package name="baz" state=" "/>
-</project>`);
-    });
-
-    it("it does not pollute .osc/ with files that osc doesn't expect", async () => {
-      const dir = "testDirForOscCompat";
-      await checkOutProject(proj, dir);
-
-      await fsPromises
-        .readdir(`${dir}/.osc/`)
-        .should.eventually.deep.equal(["_apiurl", "_packages", "_project"]);
-    });
-
-    it("creates a .osc_obs_ts/_project_meta.json when proj.meta is defined", async () => {
-      const dir = "./anotherDir";
-
-      await checkOutProject(projWithMeta, dir);
-
-      JSON.parse(
-        (
-          await fsPromises.readFile(`${dir}/.osc_obs_ts/_project_meta.json`)
-        ).toString()
-      ).should.deep.equal(projWithMeta.meta);
-    });
-  });
-
   describe("#readInCheckedOutProject", () => {
     beforeEach(setupFsMocks);
     afterEach(() => mockFs.restore());

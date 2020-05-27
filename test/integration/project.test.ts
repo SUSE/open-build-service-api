@@ -19,13 +19,19 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import mockFs = require("mock-fs");
+
+import { promises as fsPromises } from "fs";
 import { expect } from "chai";
 import { afterEach, beforeEach, describe, it } from "mocha";
 import {
   createProject,
   deleteProject,
   fetchProject,
-  fetchProjectList
+  fetchProjectList,
+  Project,
+  checkOutProject,
+  readInCheckedOutProject
 } from "../../src/project";
 import { LocalRole } from "../../src/user";
 import {
@@ -37,6 +43,11 @@ import {
   skipIfNoMiniObsHook,
   skipIfNoMiniObs
 } from "./../test-setup";
+import { createPackage, readInCheckedOutPackage } from "../../src/package";
+import { newXmlParser } from "../../src/xml";
+import { pathExists, PathType } from "../../src/util";
+import { dirname, join } from "path";
+import { normalizeUrl } from "../../src/connection";
 
 describe("#fetchProject", () => {
   beforeEach(beforeEachRecord);
@@ -93,6 +104,163 @@ describe("#fetchProject", () => {
         role: LocalRole.Maintainer
       }))
     });
+  });
+});
+
+describe("#checkOut", function () {
+  const con = getTestConnection(ApiType.MiniObs);
+
+  this.timeout(15000);
+
+  const projectName = `home:${miniObsUsername}:testProjectWithPackages`;
+  const apiUrl = normalizeUrl(ApiType.MiniObs);
+  const proj: Project = {
+    apiUrl,
+    name: projectName,
+    packages: [
+      { name: "foo", projectName },
+      { name: "bar", projectName },
+      { name: "baz", projectName }
+    ].map((pkg) => ({ ...pkg, apiUrl }))
+  };
+
+  const projWithMeta: Project = {
+    ...proj,
+    meta: {
+      description: "a test project with a _meta",
+      title: proj.name.toLocaleUpperCase(),
+      name: proj.name,
+      person: [{ role: LocalRole.Maintainer, userId: miniObsUsername }],
+      repository: [{ name: "foo" }]
+    }
+  };
+
+  before(async () => {
+    await createProject(con, projWithMeta.meta!);
+    for (const pkg of proj.packages!) {
+      await createPackage(con, proj, pkg.name, pkg.name);
+    }
+  });
+  after(async () => deleteProject(con, proj));
+
+  beforeEach(function () {
+    skipIfNoMiniObs(this);
+    mockFs({
+      dirExists: mockFs.directory({ items: {} }),
+      nonEmpty: { aFile: "foo" }
+    });
+  });
+  afterEach(() => mockFs.restore());
+
+  it("populates the _* files in the .osc/ directory", async () => {
+    const dir = "./someDir";
+    await checkOutProject(con, proj.name, dir);
+
+    (await fsPromises.readFile(`${dir}/.osc/_apiurl`))
+      .toString()
+      .should.equal(proj.apiUrl);
+    (await fsPromises.readFile(`${dir}/.osc/_project`))
+      .toString()
+      .should.equal(proj.name);
+
+    // we have to parse the _packages file using the xml Parser, as the order of
+    // the entries is not guaranteed
+    const underscorePkg = await newXmlParser().parseStringPromise(
+      (await fsPromises.readFile(`${dir}/.osc/_packages`)).toString()
+    );
+    underscorePkg.project.$.name.should.deep.equal(proj.name);
+    proj.packages!.forEach((pkg) =>
+      underscorePkg.project.package.should.include.a.thing.that.deep.equals({
+        $: { name: pkg.name, state: " " }
+      })
+    );
+
+    const metaLoc = `${dir}/.osc_obs_ts/_project_meta.json`;
+    await pathExists(
+      dirname(metaLoc),
+      PathType.Directory
+    ).should.eventually.not.equal(undefined);
+    await pathExists(metaLoc, PathType.File).should.eventually.not.equal(
+      undefined
+    );
+
+    JSON.parse(
+      (await fsPromises.readFile(metaLoc)).toString()
+    ).should.deep.equal(projWithMeta.meta);
+  });
+
+  it("creates the directory when it doesn't exist already", async () => {
+    const dir = "./this_does_not_exist";
+    await pathExists(dir).should.eventually.equal(undefined);
+
+    await checkOutProject(con, proj, dir);
+    await pathExists(dir).should.eventually.not.equal(undefined);
+  });
+
+  it("checks the project out into an empty directory", async () => {
+    const dir = "./dirExists";
+    await pathExists(dir).should.eventually.not.equal(undefined);
+
+    await checkOutProject(con, proj, dir).should.be.fulfilled;
+
+    const readInProj = await readInCheckedOutProject(dir);
+    const { packages: ignore, ...rest } = readInProj;
+    const { packages: ignore2, ...expectedRest } = projWithMeta;
+    rest.should.deep.include(expectedRest);
+  });
+
+  it("refuses to checkout into a non-empty directory", async () => {
+    const dir = "./nonEmpty";
+    await pathExists(dir, PathType.Directory).should.eventually.not.equal(
+      undefined
+    );
+    await pathExists(join(dir, "aFile")).should.eventually.not.equal(undefined);
+
+    await checkOutProject(con, proj, dir).should.be.rejectedWith(
+      /cannot checkout.*the following files exist in the directory.*aFile/
+    );
+  });
+
+  it("refuses to checkout into a file", async () => {
+    const dir = "./nonEmpty/aFile";
+    await pathExists(dir, PathType.File).should.eventually.not.equal(undefined);
+
+    await checkOutProject(con, proj, dir).should.be.rejectedWith(
+      /cannot checkout.*not a directory/i
+    );
+  });
+
+  it("it does not pollute .osc/ with files that osc doesn't expect", async () => {
+    const dir = "testDirForOscCompat";
+    await checkOutProject(con, proj, dir);
+
+    await fsPromises
+      .readdir(`${dir}/.osc/`)
+      .should.eventually.deep.equal(["_apiurl", "_packages", "_project"]);
+  });
+
+  it("allows to checkout a subset of the packages", async () => {
+    const dir = `./${proj.name}`;
+    const pkgName = "foo";
+    await checkOutProject(con, proj, dir, [pkgName]);
+
+    const pkgDir = join(dir, pkgName);
+    await pathExists(pkgDir, PathType.Directory).should.eventually.not.equal(
+      undefined
+    );
+
+    await readInCheckedOutPackage(pkgDir).should.eventually.deep.include({
+      name: pkgName,
+      projectName: proj.name,
+      apiUrl: proj.apiUrl
+    });
+  });
+
+  it("throws an error when a non-existent package has been requested", async () => {
+    await checkOutProject(con, proj, "whatever", [
+      "foo",
+      "invalidPackage"
+    ]).should.be.rejectedWith(/invalid package list provided.*invalidPackage/);
   });
 });
 

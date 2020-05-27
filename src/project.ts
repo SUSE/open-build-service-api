@@ -37,7 +37,7 @@
 import * as assert from "assert";
 import { existsSync, promises as fsPromises } from "fs";
 import { join } from "path";
-import { fetchDirectory, directoryFromApi } from "./api/directory";
+import { directoryFromApi, fetchDirectory } from "./api/directory";
 import {
   fetchProjectMeta,
   modifyProjectMeta,
@@ -45,11 +45,13 @@ import {
 } from "./api/project-meta";
 import { Connection, normalizeUrl, RequestMethod } from "./connection";
 import { StatusReply, statusReplyFromApi } from "./error";
-import { Package } from "./package";
+import { checkOutPackage, fetchPackage, Package } from "./package";
+import { setDifference } from "./set-utils";
 import {
   deleteUndefinedAndEmptyMembers,
   deleteUndefinedMembers,
-  mapOrApply
+  mapOrApply,
+  pathExists
 } from "./util";
 import { newXmlBuilder, newXmlParser } from "./xml";
 
@@ -259,31 +261,84 @@ async function writeProjectUnderscoreFiles(
 }
 
 /**
- * Check a project out locally on the file system (= equivalent of `osc co $proj`)
+ * Check a project and its packages out locally to the file system (= equivalent
+ * of `osc co $proj`).
  *
- * @param proj  The [[Project]] that should be checked out. If the package list
- *     is empty, then this function will not add packages into the local
- *     checkout.
- *     Note, if the project was retrieved via [[fetchProject]], then be sure to
- *     set `getPackageList` to `true`, as the list of packages will otherwise
- *     not be retrieved.
+ *
+ * @param con  The [[Connection]] which will be used to retrieve the project and
+ *     the packages.
+ * @param proj  The [[Project]] or the name of the project that should be checked
+ *     out.
  * @param path  Path to the directory into which the project should be checked
- *     out. This folder must not exist.
+ *     out. If the folder does not exist, then it is created. If it exists, then
+ *     it must be empty and writable.
+ * @param packageList  An array of package names that will be checked out (and
+ *     all that are missing on this list are not checked out). If this parameter
+ *     is not provided, then all packages are checked out.
  *
- * @note This function does not perform any http requests, so the `proj` needs
- *     to be fully populated beforehand.
- *
- * @throw Error when `path` is not writable or the `path` already exists.
+ * @throw
+ *     - `Error` when `path` is not writable or the `path` already exists.
+ *     - `Error` when the `packageList` parameter contains package names that do not
+ *       exist in the project.
+ *     - [[ApiError]] when fetching the project or package fails.
  *
  * @return nothing
  */
 export async function checkOutProject(
-  proj: Project,
-  path: string
+  con: Connection,
+  project: string | Project,
+  path: string,
+  packageList?: string[]
 ): Promise<void> {
-  await fsPromises.mkdir(path, { recursive: false });
+  const pathStat = await pathExists(path);
+  if (pathStat === undefined) {
+    await fsPromises.mkdir(path, { recursive: false });
+  } else if (!pathStat.isDirectory()) {
+    throw new Error(
+      `cannot checkout project ${project} into ${path}: not a directory`
+    );
+  } else {
+    const contents = await fsPromises.readdir(path);
+    if (contents.length > 0) {
+      throw new Error(
+        `cannot checkout project ${project} into ${path}, the following files exist in the directory: ${contents.join(
+          ","
+        )}`
+      );
+    }
+  }
+  const projectName = typeof project === "string" ? project : project.name;
+  const proj = await fetchProject(con, projectName, { getPackageList: true });
+
+  if (packageList !== undefined) {
+    const invalidPackages = setDifference(
+      new Set(packageList),
+      new Set(proj.packages.map((pkg) => pkg.name))
+    );
+    if (invalidPackages.size > 0) {
+      throw new Error(
+        `invalid package list provided, the following packages are not known to the project: ${[
+          ...invalidPackages
+        ].join(", ")}`
+      );
+    }
+  }
+
+  const pkgNames = packageList ?? proj.packages.map((pkg) => pkg.name);
+
   await fsPromises.mkdir(join(path, ".osc"), { recursive: false });
   await writeProjectUnderscoreFiles(proj, path);
+  const pkgs = await Promise.all(
+    pkgNames.map((pkgName) =>
+      fetchPackage(con, project, pkgName, {
+        retrieveFileContents: true,
+        expandLinks: true
+      })
+    )
+  );
+  await Promise.all(
+    pkgs.map((pkg) => checkOutPackage(pkg, join(path, pkg.name)))
+  );
 }
 
 /**
