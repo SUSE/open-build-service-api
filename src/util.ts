@@ -26,7 +26,7 @@
 
 import * as assert from "assert";
 import { spawn } from "child_process";
-import { promises as fsPromises } from "fs";
+import { promises as fsPromises, Stats } from "fs";
 import { join } from "path";
 
 /**
@@ -361,26 +361,27 @@ export const enum PathType {
  * @param checkIsType  If provided, then `path` is checked whether it is of that
  *     type.
  *
- * @return `true` if path exists and if it is of the correct type.
+ * @return The result of `fs.stat(path)` if the path exist (and if it is of the
+ *     correct type), otherwise `undefined` is returned.
  */
 export async function pathExists(
   path: string,
   checkIsType?: PathType
-): Promise<boolean> {
+): Promise<Stats | undefined> {
   try {
     const stat = await fsPromises.stat(path);
     if (checkIsType === undefined) {
-      return true;
+      return stat;
     }
     switch (checkIsType) {
       case PathType.File:
-        return stat.isFile();
+        return stat.isFile() ? stat : undefined;
       case PathType.Directory:
-        return stat.isDirectory();
+        return stat.isDirectory() ? stat : undefined;
       default:
-        return false;
+        return undefined;
     }
   } catch {
-    return false;
+    return undefined;
   }
 }

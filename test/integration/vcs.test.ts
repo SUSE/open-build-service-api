@@ -192,7 +192,9 @@ describe("ModifiedPackage", function () {
           ["bar.txt"]
         );
 
-        expect(await pathExists(join(modPkg.path, "foo.txt"))).to.equal(false);
+        expect(await pathExists(join(modPkg.path, "foo.txt"))).to.equal(
+          undefined
+        );
 
         const msg2 = "Add bar.txt, remove foo.txt";
         modPkg = await commit(con, modPkg, msg2);

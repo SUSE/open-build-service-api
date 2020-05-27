@@ -51,7 +51,7 @@ export async function calculateFileHash(
   path: string,
   hashFunction: SupportedHashfunction
 ): Promise<string | undefined> {
-  if (!(await pathExists(path, PathType.File))) {
+  if ((await pathExists(path, PathType.File)) === undefined) {
     return undefined;
   }
   const hash = createHash(hashFunction);

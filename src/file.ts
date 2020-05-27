@@ -77,7 +77,7 @@ export async function packageFileFromFile(
   packageOrPackageName: string | Package,
   project?: string
 ): Promise<FrozenPackageFile> {
-  if (!(await pathExists(path, PathType.File))) {
+  if ((await pathExists(path, PathType.File)) === undefined) {
     throw new Error(`${path} is not a file or does not exist`);
   }
 

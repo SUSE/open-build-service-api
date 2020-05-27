@@ -252,30 +252,36 @@ describe("#pathExists", () => {
   afterEach(() => mockFs.restore());
 
   it("returns true for files and directories if no type is requested", async () => {
-    await util.pathExists("fooDir").should.eventually.equal(true);
-    await util.pathExists("fooFile").should.eventually.equal(true);
+    await util.pathExists("fooDir").should.eventually.not.equal(undefined);
+    await util.pathExists("fooFile").should.eventually.not.equal(undefined);
   });
 
   it("returns true for files and false for directories if we are checking for files", async () => {
     await util
       .pathExists("fooDir", util.PathType.File)
-      .should.eventually.equal(false);
-    await util
-      .pathExists("fooFile", util.PathType.File)
-      .should.eventually.equal(true);
+      .should.eventually.equal(undefined);
+    const fooStat = await util.pathExists("fooFile", util.PathType.File);
+    expect(fooStat).to.have.property("isFile");
+    expect(fooStat!.isFile()).to.equal(true);
   });
 
   it("returns false for files and true for directories if we are checking for directories", async () => {
-    await util
-      .pathExists("fooDir", util.PathType.Directory)
-      .should.eventually.equal(true);
+    const fooDirStat = await util.pathExists("fooDir", util.PathType.Directory);
+    expect(fooDirStat).to.not.equal(undefined);
+    expect(fooDirStat!.isDirectory()).to.equal(true);
+
     await util
       .pathExists("fooFile", util.PathType.Directory)
-      .should.eventually.equal(false);
+      .should.eventually.equal(undefined);
   });
 
   it("recognizes links as existing", async () => {
-    await util.pathExists("linkToDir").should.eventually.equal(true);
-    await util.pathExists("linkToFile").should.eventually.equal(true);
+    await util.pathExists("linkToDir").should.eventually.not.equal(undefined);
+    await util.pathExists("linkToFile").should.eventually.not.equal(undefined);
+  });
+
+  it("works when converting to boolean", async () => {
+    expect(!(await util.pathExists("fooDir"))).to.equal(false);
+    expect(!(await util.pathExists("nonExistent"))).to.equal(true);
   });
 });

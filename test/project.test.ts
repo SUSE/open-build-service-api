@@ -306,7 +306,7 @@ describe("Project", () => {
     afterEach(() => mockFs.restore());
 
     it("throws an exception when the target project does not exist", async () => {
-      (await pathExists("fooDir")).should.equal(false);
+      expect(await pathExists("fooDir")).to.equal(undefined);
 
       await updateCheckedOutProject(
         VirtApplImgOpenSUSETWProj,
@@ -342,14 +342,14 @@ describe("Project", () => {
         meta: VirtApplImgOpenSUSETWProjMeta
       };
 
-      (await pathExists(`${targetDir}/.osc_obs_ts`)).should.equal(false);
+      expect(await pathExists(`${targetDir}/.osc_obs_ts`)).to.equal(undefined);
 
       await updateCheckedOutProject(fullVirtApplImgOTWProj, targetDir).should.be
         .fulfilled;
 
-      (
+      expect(
         await pathExists(`${targetDir}/.osc_obs_ts`, PathType.Directory)
-      ).should.equal(true);
+      ).to.not.equal(undefined);
 
       await readInCheckedOutProject(targetDir).should.eventually.deep.equal(
         fullVirtApplImgOTWProj

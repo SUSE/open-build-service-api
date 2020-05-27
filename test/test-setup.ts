@@ -213,7 +213,7 @@ export async function beforeEachRecord(this: Context): Promise<void> {
   nock.cleanAll();
   nock.activate();
 
-  if (await pathExists(this.recordJsonPath, PathType.File)) {
+  if ((await pathExists(this.recordJsonPath, PathType.File)) !== undefined) {
     const nockDefs = nock.loadDefs(this.recordJsonPath);
     const rawData = JSON.parse(readFileSync(this.recordJsonPath).toString());
     const extractedScopes = nock.define(nockDefs);

@@ -103,7 +103,7 @@ async function readFileListFromDir(
   fileListType: FileListType
 ): Promise<string[]> {
   const targetFile = join(directory, ".osc", fileListType);
-  if (!(await pathExists(targetFile, PathType.File))) {
+  if ((await pathExists(targetFile, PathType.File)) === undefined) {
     return [];
   }
 
