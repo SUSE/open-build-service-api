@@ -109,21 +109,6 @@ function makeConstruct<T>(
 }
 
 /**
- * Sets a property of an object to `value` if `condition` is true, otherwise do
- * nothing.
- */
-export function setPropertyOnCondition<T, K extends keyof T>(
-  obj: T,
-  key: K,
-  value: T[K],
-  condition: boolean
-): void {
-  if (condition) {
-    obj[key] = value;
-  }
-}
-
-/**
  * Returns a new object that contains only the elements of `obj` that are not
  * undefined.
  */
