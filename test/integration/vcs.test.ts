@@ -61,13 +61,13 @@ describe("ModifiedPackage", function () {
   beforeEach(async function () {
     this.tmpPath = await createTemporaryDirectory();
 
-    this.testPkg = {
+    this.testPkg = Object.freeze({
       apiUrl: ApiType.MiniObs,
       name: "test_package",
       projectName: `home:${miniObsUsername}:test`,
       files: [],
       md5Hash: "notReallyAHash"
-    };
+    });
     this.testProjMeta = {
       name: this.testPkg.projectName,
       description: "test project",

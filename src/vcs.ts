@@ -71,7 +71,7 @@ export interface VcsFile extends FrozenPackageFile {
   readonly state: FileState;
 }
 
-export interface ModifiedPackage extends Omit<Package, "files"> {
+export type ModifiedPackage = Package & {
   /** Path to the directory containing the checked out Package */
   readonly path: string;
 
@@ -83,7 +83,7 @@ export interface ModifiedPackage extends Omit<Package, "files"> {
 
   /** The files in this package in the state at the current HEAD */
   readonly files: FrozenPackageFile[];
-}
+};
 
 const enum FileListType {
   ToBeAdded = "_to_be_added",

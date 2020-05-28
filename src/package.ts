@@ -46,7 +46,7 @@ import {
   isFrozenPackageFile
 } from "./file";
 import { Project } from "./project";
-import { unixTimeStampFromDate, zip } from "./util";
+import { unixTimeStampFromDate, zip, createOrEnsureEmptyDir } from "./util";
 import { FileState, ModifiedPackage } from "./vcs";
 import { newXmlBuilder, newXmlParser } from "./xml";
 
@@ -75,6 +75,8 @@ export interface Package {
   files?: PackageFile[];
 }
 
+type PackageWithRequiredFiles = Package & { files: FrozenPackageFile[] };
+
 export interface FrozenPackage
   extends Readonly<Required<Omit<Package, "meta" | "files">>> {
   /** The files present in this package at HEAD. */
@@ -95,7 +97,19 @@ export interface FetchFileListBaseOptions {
   revision?: string;
 }
 
-function isFrozenPackage(pkg: Package): pkg is FrozenPackage {
+function isPackage(pkg: any): pkg is Package {
+  for (const prop of ["name", "apiUrl", "projectName"]) {
+    if (pkg[prop] === undefined || typeof pkg[prop] !== "string") {
+      return false;
+    }
+  }
+  return true;
+}
+
+function isFrozenPackage(pkg: any): pkg is FrozenPackage {
+  if (!isPackage(pkg)) {
+    return false;
+  }
   return (
     pkg.md5Hash !== undefined &&
     pkg.files !== undefined &&
@@ -355,14 +369,12 @@ export async function deletePackage(
   return statusReplyFromApi(response);
 }
 
-async function writePackageFiles(pkg: Package, path: string): Promise<void> {
-  if (pkg.files === undefined) {
-    return;
-  }
+async function writePackageFiles(
+  pkg: PackageWithRequiredFiles,
+  path: string
+): Promise<void> {
   await Promise.all(
-    pkg.files.map((f) =>
-      fsPromises.writeFile(join(path, f.name), f.contents ?? "")
-    )
+    pkg.files.map((f) => fsPromises.writeFile(join(path, f.name), f.contents))
   );
 }
 
@@ -377,15 +389,9 @@ const mandatoryPkgUnderscoreFiles = [
 const optionalPkgUnderscoreFiles = ["_meta"];
 
 export async function writePackageUnderscoreFiles(
-  pkg: Package,
+  pkg: PackageWithRequiredFiles,
   path: string
 ): Promise<void> {
-  if (pkg.files === undefined) {
-    throw new Error(
-      `Cannot save package ${pkg.name}: the file list has not been retrieved yet.`
-    );
-  }
-
   const basePath = join(path, ".osc");
 
   const dir = fileListToDirectory(pkg);
@@ -424,8 +430,6 @@ export async function writePackageUnderscoreFiles(
 }
 
 /**
- * Checks a package out to the file system.
- *
  * This function saves a package to the file system in a similar fashion as
  * `osc` would:
  * - the files are saved in the directory `${path}`
@@ -437,18 +441,12 @@ export async function writePackageUnderscoreFiles(
  *   `_files`: contains the file list at the checked out revision as received
  *             from OBS' API (a so-called directory listing)
  * - the packages files at the checked out revision are saved in `${path}/.osc`
- *
- * @param pkg  The package that should be written to the file system.
- *     The package's files **must** have been retrieved beforehand, otherwise an
- *     exception is thrown.
- * @param path  Directory into which the package shall be checked out. The
- *     directory **must not** exist already.
  */
-export async function checkOutPackage(
+async function checkOutPackageToFs(
   pkg: FrozenPackage,
   path: string
 ): Promise<ModifiedPackage> {
-  await fsPromises.mkdir(path, { recursive: false });
+  await createOrEnsureEmptyDir(path);
   await fsPromises.mkdir(join(path, ".osc"), { recursive: false });
 
   await Promise.all([
@@ -463,6 +461,58 @@ export async function checkOutPackage(
     filesInWorkdir: files.map((f) => ({ state: FileState.Unmodified, ...f })),
     path
   };
+}
+
+/**
+ * Fetches the package `packageName` from the project `projectName` and checks
+ * it out to the file system.
+ *
+ * @param path  Directory into which the package shall be checked out. If the
+ *     directory does not exist, then it is created. If it exists, then it must
+ *     be empty.
+ */
+export async function checkOutPackage(
+  con: Connection,
+  projectName: string,
+  packageName: string,
+  path: string
+): Promise<ModifiedPackage>;
+
+/**
+ * Checks a package out to the file system.
+ *
+ * @param pkg  The package that should be written to the file system.
+ * @param path  Directory into which the package shall be checked out. If the
+ *     directory does not exist, then it is created. If it exists, then it must
+ *     be empty.
+ */
+export async function checkOutPackage(
+  pkg: FrozenPackage,
+  path: string
+): Promise<ModifiedPackage>;
+
+export async function checkOutPackage(
+  conOrFrozenPkg: Connection | FrozenPackage,
+  projectNameOrPath: string,
+  packageName?: string,
+  path?: string
+): Promise<ModifiedPackage> {
+  if (isFrozenPackage(conOrFrozenPkg)) {
+    return checkOutPackageToFs(conOrFrozenPkg, projectNameOrPath);
+  }
+
+  assert(
+    packageName !== undefined && path !== undefined,
+    `Invalid overload usage: packageName and path must both be defined when conOrFrozenPkg (${conOrFrozenPkg}) is a Connection.`
+  );
+
+  const frzPkg = await fetchPackage(
+    conOrFrozenPkg,
+    projectNameOrPath,
+    packageName,
+    { retrieveFileContents: true }
+  );
+  return checkOutPackageToFs(frzPkg, path);
 }
 
 /**

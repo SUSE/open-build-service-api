@@ -22,7 +22,7 @@ import { existsSync, promises as fsPromises, readFileSync } from "fs";
 import { join } from "path";
 import { checkOutPackage } from "../src/package";
 import { rmRf } from "../src/util";
-import { FileState, ModifiedPackage } from "../src/vcs";
+import { FileState } from "../src/vcs";
 import { vagrantSshfs, virtualizationVagrant } from "./integration/data";
 import { createTemporaryDirectory } from "./test-setup";
 
@@ -41,8 +41,8 @@ describe("Package", () => {
 
   describe("#checkOutPackage", () => {
     it("checks out vagrant-sshfs", async function () {
-      const modPkg: ModifiedPackage = await checkOutPackage(
-        vagrantSshfs,
+      const modPkg = await checkOutPackage(
+        Object.freeze(vagrantSshfs),
         this.path
       );
       const { files, ...restOfVagrantSshfs } = vagrantSshfs;
@@ -106,13 +106,13 @@ connection from the Vagrant guest back to the Vagrant host.
     it("does not write a _meta file if the project's meta has not been fetched yet", async function () {
       const { apiUrl, name, projectName, files, md5Hash } = vagrantSshfs;
       await checkOutPackage(
-        {
+        Object.freeze({
           apiUrl,
           name,
           projectName,
           md5Hash,
           files
-        },
+        }),
         this.path
       );
       existsSync(join(this.dotOscPath, "_meta")).should.be.false;
