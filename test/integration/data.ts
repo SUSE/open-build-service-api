@@ -440,7 +440,9 @@ const vagrantSshfsFileList: FrozenPackageFile[] = [
     size: 4097,
     modifiedTime: new Date("Wed, 01 Apr 2020 22:49:27 +0200")
   }
-].map((f) => ({ ...f, ...baseFile, contents: Buffer.from(f.name) }));
+].map((f) =>
+  Object.freeze({ ...f, ...baseFile, contents: Buffer.from(f.name) })
+);
 
 export const vagrantSshfs = {
   apiUrl: "https://api.opensuse.org/",

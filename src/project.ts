@@ -48,6 +48,7 @@ import { StatusReply, statusReplyFromApi } from "./error";
 import { checkOutPackage, fetchPackage, Package } from "./package";
 import { setDifference } from "./set-utils";
 import {
+  createOrEnsureEmptyDir,
   deleteUndefinedAndEmptyMembers,
   deleteUndefinedMembers,
   mapOrApply,
@@ -290,23 +291,8 @@ export async function checkOutProject(
   path: string,
   packageList?: string[]
 ): Promise<void> {
-  const pathStat = await pathExists(path);
-  if (pathStat === undefined) {
-    await fsPromises.mkdir(path, { recursive: false });
-  } else if (!pathStat.isDirectory()) {
-    throw new Error(
-      `cannot checkout project ${project} into ${path}: not a directory`
-    );
-  } else {
-    const contents = await fsPromises.readdir(path);
-    if (contents.length > 0) {
-      throw new Error(
-        `cannot checkout project ${project} into ${path}, the following files exist in the directory: ${contents.join(
-          ","
-        )}`
-      );
-    }
-  }
+  await createOrEnsureEmptyDir(path);
+
   const projectName = typeof project === "string" ? project : project.name;
   const proj = await fetchProject(con, projectName, { getPackageList: true });
 

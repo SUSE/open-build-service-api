@@ -217,7 +217,7 @@ describe("#checkOut", function () {
     await pathExists(join(dir, "aFile")).should.eventually.not.equal(undefined);
 
     await checkOutProject(con, proj, dir).should.be.rejectedWith(
-      /cannot checkout.*the following files exist in the directory.*aFile/
+      /directory.*nonEmpty.*is not empty, the following file already exist.*aFile/
     );
   });
 
@@ -226,7 +226,7 @@ describe("#checkOut", function () {
     await pathExists(dir, PathType.File).should.eventually.not.equal(undefined);
 
     await checkOutProject(con, proj, dir).should.be.rejectedWith(
-      /cannot checkout.*not a directory/i
+      /cannot create the directory.*nonEmpty\/aFile.*already exists but is not a directory/
     );
   });
 

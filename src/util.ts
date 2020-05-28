@@ -385,3 +385,29 @@ export async function pathExists(
     return undefined;
   }
 }
+
+/**
+ * Check that `path` is an empty directory or create it if it does not exist yet.
+ *
+ * @throw `Error` when `path` is not a directory or is a directory, but is not
+ *     empty.
+ */
+export async function createOrEnsureEmptyDir(path: string): Promise<void> {
+  const pathStat = await pathExists(path);
+  if (pathStat === undefined) {
+    await fsPromises.mkdir(path, { recursive: false });
+  } else if (!pathStat.isDirectory()) {
+    throw new Error(
+      `cannot create the directory ${path}: already exists but is not a directory`
+    );
+  } else {
+    const contents = await fsPromises.readdir(path);
+    if (contents.length > 0) {
+      throw new Error(
+        `directory ${path} is not empty, the following file${
+          contents.length > 1 ? "s" : ""
+        } already exist: ${contents.join(",")}`
+      );
+    }
+  }
+}
