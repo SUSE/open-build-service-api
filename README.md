@@ -1,5 +1,7 @@
 # open-build-service-api
 
+[![Build Status](https://travis-ci.org/SUSE/open-build-service-api.svg?branch=master)](https://travis-ci.org/SUSE/open-build-service-api)
+
 API wrapper for the Open Build Service implemented in Typescript.
 
 
