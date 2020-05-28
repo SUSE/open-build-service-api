@@ -98,11 +98,21 @@ describe("#MyClass", () => {
 The hooks will automatically record all HTTP requests on the first run and save
 them in the `fixtures/` subdirectory. Recording requires that you have a valid
 account for [OBS](https://build.opensuse.org) and provide the username and
-password via the environment variables `OBS_USERNAME` and `OBS_PASSWORD`.
+password via the environment variables `OBS_USERNAME` and `OBS_PASSWORD`,
+respectively.
 
 In case you want to refresh the fixtures, delete **all** json files belonging to
-that test suite (= the `describe()` block) and run the tests again.
+that test suite (= the `describe()` block** and run the tests again.
 
+**WARNING:** If you need to perform additional setup in `beforeEach`, then do
+the following and don't forget to `await` beforeEachRecord():
+```typescript
+beforeEach(async function () {
+  this.beforeEachRecord = beforeEachRecord;
+  await this.beforeEachRecord();
+  // additional setup follows here
+});
+```
 
 ### Writing read-write tests
 

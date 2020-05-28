@@ -55,9 +55,9 @@ const apiUrl = "https://api.opensuse.org/";
 describe("Commit", function () {
   this.timeout(50000);
 
-  beforeEach(function () {
+  beforeEach(async function () {
     this.beforeEachRecord = beforeEachRecord;
-    this.beforeEachRecord();
+    await this.beforeEachRecord();
     this.con = getTestConnection(ApiType.Production);
   });
 

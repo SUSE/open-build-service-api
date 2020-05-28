@@ -37,9 +37,9 @@ import {
 describe("Package", function () {
   this.timeout(5000);
 
-  beforeEach(function () {
+  beforeEach(async function () {
     this.beforeEachRecord = beforeEachRecord;
-    this.beforeEachRecord();
+    await this.beforeEachRecord();
     this.con = getTestConnection(ApiType.Production);
   });
   afterEach(afterEachRecord);
