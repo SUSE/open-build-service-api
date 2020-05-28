@@ -35,7 +35,7 @@
  */
 
 import * as assert from "assert";
-import { existsSync, promises as fsPromises } from "fs";
+import { promises as fsPromises } from "fs";
 import { join } from "path";
 import { directoryFromApi, fetchDirectory } from "./api/directory";
 import {
@@ -52,7 +52,8 @@ import {
   deleteUndefinedAndEmptyMembers,
   deleteUndefinedMembers,
   mapOrApply,
-  pathExists
+  pathExists,
+  PathType
 } from "./util";
 import { newXmlBuilder, newXmlParser } from "./xml";
 
@@ -220,7 +221,10 @@ async function writeProjectUnderscoreFiles(
   proj: Project,
   path: string
 ): Promise<void> {
-  assert(existsSync(path), `${path} must already exist`);
+  assert(
+    (await pathExists(path, PathType.Directory)) !== undefined,
+    `${path} must already exist and be a directory`
+  );
 
   const underscorePackages: UnderscorePackages = {
     project: { $: { name: proj.name } }

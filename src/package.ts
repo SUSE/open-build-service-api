@@ -342,7 +342,8 @@ export async function deletePackage(
   assert(
     typeof projNameOrPkg === "string"
       ? packageName !== undefined
-      : packageName === undefined
+      : packageName === undefined,
+    `Invalid overload usage: when projNameOrPkg (${projNameOrPkg}) is a string, then packageName (${packageName}) must be a string as well. Otherwise it must be undefined.`
   );
   const route =
     typeof projNameOrPkg === "string"
