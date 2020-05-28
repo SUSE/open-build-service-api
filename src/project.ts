@@ -45,7 +45,7 @@ import {
 } from "./api/project-meta";
 import { Connection, normalizeUrl, RequestMethod } from "./connection";
 import { StatusReply, statusReplyFromApi } from "./error";
-import { checkOutPackage, fetchPackage, Package } from "./package";
+import { checkOutPackageToFs, fetchPackage, Package } from "./package";
 import { setDifference } from "./set-utils";
 import {
   createOrEnsureEmptyDir,
@@ -327,7 +327,7 @@ export async function checkOutProject(
     )
   );
   await Promise.all(
-    pkgs.map((pkg) => checkOutPackage(pkg, join(path, pkg.name)))
+    pkgs.map((pkg) => checkOutPackageToFs(pkg, join(path, pkg.name)))
   );
 }
 

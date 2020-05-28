@@ -442,7 +442,7 @@ export async function writePackageUnderscoreFiles(
  *             from OBS' API (a so-called directory listing)
  * - the packages files at the checked out revision are saved in `${path}/.osc`
  */
-async function checkOutPackageToFs(
+export async function checkOutPackageToFs(
   pkg: FrozenPackage,
   path: string
 ): Promise<ModifiedPackage> {
