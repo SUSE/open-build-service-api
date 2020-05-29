@@ -242,7 +242,7 @@ describe("#checkOut", function () {
   it("allows to checkout a subset of the packages", async () => {
     const dir = `./${proj.name}`;
     const pkgName = "foo";
-    await checkOutProject(con, proj, dir, [pkgName]);
+    await checkOutProject(con, proj, dir, { packageList: [pkgName] });
 
     const pkgDir = join(dir, pkgName);
     await pathExists(pkgDir, PathType.Directory).should.eventually.not.equal(
@@ -257,10 +257,9 @@ describe("#checkOut", function () {
   });
 
   it("throws an error when a non-existent package has been requested", async () => {
-    await checkOutProject(con, proj, "whatever", [
-      "foo",
-      "invalidPackage"
-    ]).should.be.rejectedWith(/invalid package list provided.*invalidPackage/);
+    await checkOutProject(con, proj, "whatever", {
+      packageList: ["foo", "invalidPackage"]
+    }).should.be.rejectedWith(/invalid package list provided.*invalidPackage/);
   });
 });
 

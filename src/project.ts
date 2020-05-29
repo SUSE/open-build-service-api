@@ -53,7 +53,8 @@ import {
   deleteUndefinedMembers,
   mapOrApply,
   pathExists,
-  PathType
+  PathType,
+  zip
 } from "./util";
 import { newXmlBuilder, newXmlParser } from "./xml";
 
@@ -280,29 +281,34 @@ async function writeProjectUnderscoreFiles(
  * @param packageList  An array of package names that will be checked out (and
  *     all that are missing on this list are not checked out). If this parameter
  *     is not provided, then all packages are checked out.
+ * @param callback An optional callback function that is invoked after each
+ *     package is checked out. This function passes the same parameters to the
+ *     callback as `Array.map` would (i.e. the name of the package that was
+ *     checked out, its index in the array and the whole array).
  *
  * @throw
  *     - `Error` when `path` is not writable or the `path` already exists.
  *     - `Error` when the `packageList` parameter contains package names that do not
  *       exist in the project.
  *     - [[ApiError]] when fetching the project or package fails.
- *
- * @return nothing
  */
 export async function checkOutProject(
   con: Connection,
   project: string | Project,
   path: string,
-  packageList?: string[]
+  options?: {
+    packageList?: string[];
+    callback?: (pkgName: string, index: number, pkgNames: string[]) => void;
+  }
 ): Promise<void> {
   await createOrEnsureEmptyDir(path);
 
   const projectName = typeof project === "string" ? project : project.name;
   const proj = await fetchProject(con, projectName, { getPackageList: true });
 
-  if (packageList !== undefined) {
+  if (options?.packageList !== undefined) {
     const invalidPackages = setDifference(
-      new Set(packageList),
+      new Set(options.packageList),
       new Set(proj.packages.map((pkg) => pkg.name))
     );
     if (invalidPackages.size > 0) {
@@ -314,20 +320,25 @@ export async function checkOutProject(
     }
   }
 
-  const pkgNames = packageList ?? proj.packages.map((pkg) => pkg.name);
+  const pkgNames = options?.packageList ?? proj.packages.map((pkg) => pkg.name);
 
   await fsPromises.mkdir(join(path, ".osc"), { recursive: false });
   await writeProjectUnderscoreFiles(proj, path);
-  const pkgs = await Promise.all(
-    pkgNames.map((pkgName) =>
-      fetchPackage(con, project, pkgName, {
+
+  const indexes = pkgNames.map((_val, i) => i);
+
+  await Promise.all(
+    zip(pkgNames, indexes).map(async ([pkgName, index]) => {
+      const pkg = await fetchPackage(con, project, pkgName, {
         retrieveFileContents: true,
         expandLinks: true
-      })
-    )
-  );
-  await Promise.all(
-    pkgs.map((pkg) => checkOutPackageToFs(pkg, join(path, pkg.name)))
+      });
+      await checkOutPackageToFs(pkg, join(path, pkg.name));
+
+      if (options?.callback !== undefined) {
+        options.callback(pkgName, index, pkgNames);
+      }
+    })
   );
 }
 
