@@ -20,8 +20,8 @@
  */
 
 import { expect } from "chai";
-import { writeFileSync } from "fs";
 import { beforeEach, describe, it, xit } from "mocha";
+import { promises as fsPromises } from "fs";
 import { PackageFile } from "../../src/file";
 import {
   Commit,
@@ -632,8 +632,12 @@ describe("Commit", function () {
         projectName: "Virtualization:vagrant"
       });
 
-      const img = await drawHistoryToSvg(head!);
-      writeFileSync("./ruby2.6.svg", img);
+      expect(head).to.not.equal(undefined);
+
+      await fsPromises.writeFile(
+        "./ruby2.6.svg",
+        await drawHistoryToSvg(head!)
+      );
     });
 
     xit("fetches the history of a package with an insane number of links", async function () {
@@ -642,8 +646,12 @@ describe("Commit", function () {
         projectName: "OBS:Server:Unstable",
         name: "rubygem-rack"
       });
-      const img = await drawHistoryToSvg(head!);
-      writeFileSync("./rubygem-rack.svg", img);
+      expect(head).to.not.equal(undefined);
+
+      await fsPromises.writeFile(
+        "./rubygem-rack.svg",
+        await drawHistoryToSvg(head!)
+      );
     });
   });
 
