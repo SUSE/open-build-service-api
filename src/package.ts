@@ -91,6 +91,21 @@ export interface FetchFileListBaseOptions {
   expandLinks?: boolean;
 
   /**
+   * Flag telling OBS how links should be expanded (`false` by default).
+   *
+   * By default OBS will use the HEAD of the package to which the link points
+   * and the current revision of the package with the link file to perform the
+   * 3-way merge for link expansion. This has the disadvantage that packages
+   * with links do not have a stable history. This can be circumvented by
+   * telling OBS to use the `baserev` from the `_link` file for link expansion
+   * instead of the HEAD of the package.
+   *
+   * In most cases you **don't** want to set this to true, because it can break
+   * packages that have been branched.
+   */
+  linkedRevisionIsBase?: boolean;
+
+  /**
    * If a different revision than HEAD should be fetched, specify a valid
    * identifier for it (numeric id or md5 hash).
    */
@@ -174,13 +189,18 @@ export async function fetchFileList(
   options?: FetchFileListBaseOptions & { retrieveFileContents?: boolean }
 ): Promise<[(PackageFile | FrozenPackageFile)[], string]> {
   const expand = options?.expandLinks === undefined || options.expandLinks;
-  const directoryBaseRoute = `/source/${pkg.projectName}/${pkg.name}?expand=${
-    expand ? "1&linkrev=base" : 0
+  let route = `/source/${pkg.projectName}/${pkg.name}?expand=${
+    expand ? "1" : "0"
   }`;
-  const route =
-    options?.revision !== undefined
-      ? directoryBaseRoute.concat(`&rev=${options.revision}`)
-      : directoryBaseRoute;
+  if (
+    options?.linkedRevisionIsBase !== undefined &&
+    options.linkedRevisionIsBase
+  ) {
+    route = route.concat(`&linkrev=base`);
+  }
+  if (options?.revision !== undefined) {
+    route = route.concat(`&rev=${options.revision}`);
+  }
   const fileDir = await fetchDirectory(con, route);
 
   if (fileDir.sourceMd5 === undefined) {
@@ -199,7 +219,10 @@ export async function fetchFileList(
       files.map(async (f) => {
         f.contents = await fetchFileContents(con, f, {
           expandLinks: options?.expandLinks,
-          revision: options?.revision
+          // we need to pass the md5Hash of the package into here and **not**
+          // the one that the user provided, because they will **not** match if
+          // we used linkedRevisionIsBase = true!
+          revision: fileDir.sourceMd5
         });
       })
     );
@@ -340,9 +363,7 @@ export async function deletePackage(
   packageName: string
 ): Promise<StatusReply>;
 
-/**
- * Deletes the [[Package]] `pkg`.
- */
+/** Deletes the [[Package]] `pkg`. */
 export async function deletePackage(
   con: Connection,
   pkg: Package

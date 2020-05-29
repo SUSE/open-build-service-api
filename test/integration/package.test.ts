@@ -183,5 +183,45 @@ describe("Package", function () {
           contents: vagrantSshfsDotChangesContents
         });
     });
+
+    it("fetches the file contents of a package that has been branched", async function () {
+      this.timeout(10000);
+
+      const pkg = await fetchPackage(
+        this.con,
+        "Virtualization:vagrant",
+        "rubygem-nokogiri",
+        { retrieveFileContents: true }
+      );
+
+      expect(
+        pkg.files.find((f) => f.name === "nokogiri-1.10.9.gem")
+      ).to.deep.include({
+        name: "nokogiri-1.10.9.gem",
+        md5Hash: "2f8f00ede55dccec0cddd340d7100735",
+        size: 9251328,
+        modifiedTime: new Date("Tue, 03 Mar 2020 11:41:55 +0100")
+      });
+    });
+
+    it("fetches the file contents of a package that has been branched with linkrev=base", async function () {
+      this.timeout(10000);
+
+      const pkg = await fetchPackage(
+        this.con,
+        "Virtualization:vagrant",
+        "rubygem-nokogiri",
+        { retrieveFileContents: true, linkedRevisionIsBase: true }
+      );
+
+      expect(
+        pkg.files.find((f) => f.name === "nokogiri-1.10.4.gem")
+      ).to.deep.include({
+        name: "nokogiri-1.10.4.gem",
+        md5Hash: "be51f9f1c51148871fa02876a7919685",
+        size: 8983040,
+        modifiedTime: new Date("Mon, 12 Aug 2019 08:56:30 +0200")
+      });
+    });
   });
 });
