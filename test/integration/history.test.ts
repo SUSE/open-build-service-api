@@ -20,8 +20,8 @@
  */
 
 import { expect } from "chai";
-import { beforeEach, describe, it, xit } from "mocha";
 import { promises as fsPromises } from "fs";
+import { beforeEach, describe, it, xit } from "mocha";
 import { PackageFile } from "../../src/file";
 import {
   Commit,
@@ -650,6 +650,18 @@ describe("Commit", function () {
 
       await fsPromises.writeFile(
         "./rubygem-rack.svg",
+        await drawHistoryToSvg(head!)
+      );
+    });
+
+    xit("fetches the history of a package that was branched", async function () {
+      const head = await fetchHistoryAcrossLinks(this.con, {
+        apiUrl,
+        name: "rubygem-nokogiri",
+        projectName: "Virtualization:vagrant"
+      });
+      await fsPromises.writeFile(
+        "./rubygem-nokogiri.svg",
         await drawHistoryToSvg(head!)
       );
     });
