@@ -269,10 +269,17 @@ describe("#fetchProjectList", function () {
   before(skipIfNoMiniObsHook);
 
   const con = getTestConnection(ApiType.MiniObs);
+  const name = `home:${miniObsUsername}:for_the_search`;
+
+  afterEach(async () => {
+    try {
+      await deleteProject(con, name);
+    } catch (err) {}
+  });
 
   it("fetches the list of all projects", async () => {
     const projectsBefore = await fetchProjectList(con);
-    const name = `home:${miniObsUsername}:for_the_search`;
+
     expect(projectsBefore.find((proj) => proj.name === name)).to.equal(
       undefined
     );
@@ -288,7 +295,5 @@ describe("#fetchProjectList", function () {
       name,
       apiUrl: con.url
     });
-
-    await deleteProject(con, name);
   });
 });
