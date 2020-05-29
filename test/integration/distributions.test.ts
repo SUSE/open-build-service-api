@@ -30,7 +30,8 @@ import {
   afterEachRecord,
   ApiType,
   beforeEachRecord,
-  getTestConnection
+  getTestConnection,
+  skipIfNoMiniObs
 } from "./../test-setup";
 
 describe("Distribution", () => {
@@ -196,6 +197,14 @@ describe("Distribution", () => {
             };
           })
       );
+    });
+
+    it("fetches the empty distributions from the mini-obs", async function () {
+      skipIfNoMiniObs(this);
+
+      await fetchHostedDistributions(
+        getTestConnection(ApiType.MiniObs)
+      ).should.eventually.deep.equal([]);
     });
   });
 });

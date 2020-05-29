@@ -24,7 +24,8 @@ import { Arch } from "./api/base-types";
 import { Connection } from "./connection";
 import {
   deleteUndefinedAndEmptyMembers,
-  extractElementAsArrayIfPresent
+  extractElementAsArrayIfPresent,
+  mapOrApply
 } from "./util";
 
 /** The icon of a [[Distribution]] */
@@ -98,24 +99,28 @@ interface IconApiReply {
   $: { url: string; width?: string; height?: string };
 }
 
+interface DistributionApiReply {
+  $: { vendor: string; version: string; id: string };
+  name: string;
+  project: string;
+  repository: string;
+  reponame: string;
+  link: string;
+  architecture?: Arch[] | Arch;
+  icon?: IconApiReply[] | IconApiReply;
+}
+
 /**
  * Expected structure of the decoded data from the `/distributions` route when
  * decoded via xml2js according to the
  * [documentation](https://build.opensuse.org/apidocs/distributions.rng).
  */
-interface DistributionApiReply {
-  distributions: {
-    distribution: {
-      $: { vendor: string; version: string; id: string };
-      name: string;
-      project: string;
-      repository: string;
-      reponame: string;
-      link: string;
-      architecture?: Arch[] | Arch;
-      icon?: IconApiReply[] | IconApiReply;
-    }[];
-  };
+interface DistributionsApiReply {
+  distributions:
+    | {
+        distribution: DistributionApiReply[] | DistributionApiReply;
+      }
+    | "";
 }
 
 /**
@@ -135,12 +140,16 @@ export async function fetchHostedDistributions(
   con: Connection,
   includeRemotes: boolean = false
 ): Promise<readonly Distribution[]> {
-  const distros: DistributionApiReply = await con.makeApiCall(
+  const distros: DistributionsApiReply = await con.makeApiCall(
     !includeRemotes ? "/distributions" : "distributions/include_remotes"
   );
 
+  if (distros.distributions === "") {
+    return Object.freeze([]);
+  }
+
   return Object.freeze(
-    distros.distributions.distribution.map((distro) => {
+    mapOrApply(distros.distributions.distribution, (distro) => {
       return deleteUndefinedAndEmptyMembers({
         vendor: distro.$.vendor,
         version: distro.$.version,
