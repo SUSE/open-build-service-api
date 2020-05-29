@@ -114,9 +114,9 @@ describe("Package", function () {
           },
           {
             name: "ruby2.6.changes",
-            md5Hash: "54cb152363061b0afd93546f52929462",
-            size: 6873,
-            modifiedTime: new Date("Wed, 08 Apr 2020 16:42:56 +0200")
+            md5Hash: "7ed3d5d7e308249f68f613aa35427e0a",
+            size: 7325,
+            modifiedTime: new Date("Tue, 28 Apr 2020 19:59:06 +0200")
           },
           {
             name: "ruby2.6.macros",
@@ -126,9 +126,9 @@ describe("Package", function () {
           },
           {
             name: "ruby2.6.spec",
-            md5Hash: "c45d3c1ee83a51c3bf08c98693a50975",
-            size: 13644,
-            modifiedTime: new Date("Wed, 08 Apr 2020 01:41:15 +0200")
+            md5Hash: "06924500c59c3121c0a20ffe19fd540a",
+            size: 13780,
+            modifiedTime: new Date("Tue, 28 Apr 2020 19:59:06 +0200")
           },
           {
             name: "series",
@@ -149,7 +149,7 @@ describe("Package", function () {
         }))
       );
 
-      pkg.should.have.property("md5Hash", "655cb52f5301b85d5707730c383df2d0");
+      pkg.should.have.property("md5Hash", "8d34e047f7b4f1abfcc2d20f74e67bf5");
       pkg.projectName.should.equal("Virtualization:vagrant");
       pkg.name.should.equal("ruby2.6");
     });

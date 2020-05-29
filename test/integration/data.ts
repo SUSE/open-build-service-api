@@ -251,13 +251,20 @@ Wed Apr  1 20:38:10 UTC 2020 - Dan Čermák <dcermak@suse.com>
 
 `.concat(dotChangesRev13);
 
+const dotChangesRev17 = `-------------------------------------------------------------------
+Tue May 12 15:31:27 UTC 2020 - Dan Čermák <dcermak@suse.com>
+
+- Switch to Ruby 2.6 for Tumbleweed
+
+`.concat(dotChangesRev15);
+
 export const vagrantSshfsDotChanges: PackageFile = Object.freeze({
   name: "vagrant-sshfs.changes",
   projectName: "Virtualization:vagrant",
   packageName: "vagrant-sshfs"
 });
 
-export const vagrantSshfsDotChangesContents = Buffer.from(dotChangesRev15);
+export const vagrantSshfsDotChangesContents = Buffer.from(dotChangesRev17);
 
 export const vagrantSshfsDotChangesFileHistory: string[] = Object.freeze([
   dotChangesRev1,
@@ -275,7 +282,8 @@ export const vagrantSshfsDotChangesFileHistory: string[] = Object.freeze([
   dotChangesRev13,
   dotChangesRev13,
   dotChangesRev15,
-  dotChangesRev15
+  dotChangesRev15,
+  dotChangesRev17
 ]) as string[];
 
 export const virtualizationVagrant: Project = {
@@ -391,9 +399,9 @@ const baseFile = {
 
 export const vagrantSshfsDotChangesWithExtraFields = {
   ...vagrantSshfsDotChanges,
-  md5Hash: "5e8a27e8637502765a7aea82c81613ea",
-  size: 3365,
-  modifiedTime: new Date("Wed, 01 Apr 2020 22:49:21 +0200")
+  md5Hash: "2f8fce37f601e56d459ad30787ab9532",
+  size: 3534,
+  modifiedTime: new Date("Tue, 12 May 2020 17:31:36 +0200")
 };
 
 const vagrantSshfsFileList: FrozenPackageFile[] = [
@@ -436,9 +444,9 @@ const vagrantSshfsFileList: FrozenPackageFile[] = [
   },
   {
     name: "vagrant-sshfs.spec",
-    md5Hash: "2002203fe5e5e22daea44ba86ca98ebb",
-    size: 4097,
-    modifiedTime: new Date("Wed, 01 Apr 2020 22:49:27 +0200")
+    md5Hash: "b0eb5911e23c6c99baf22f1e85f7a620",
+    size: 4329,
+    modifiedTime: new Date("Tue, 12 May 2020 17:31:36 +0200")
   }
 ].map((f) =>
   Object.freeze({ ...f, ...baseFile, contents: Buffer.from(f.name) })
@@ -448,7 +456,7 @@ export const vagrantSshfs = {
   apiUrl: "https://api.opensuse.org/",
   name: "vagrant-sshfs",
   projectName: "Virtualization:vagrant",
-  md5Hash: "0c762c8491d7fc1d1d2f36801379c4c9",
+  md5Hash: "67206eaa7b5ce4691d09fafb0d849142",
   meta: {
     name: "vagrant-sshfs",
     project: "Virtualization:vagrant",
@@ -469,7 +477,7 @@ connection from the Vagrant guest back to the Vagrant host.
         role: LocalRole.Maintainer
       }
     ],
-    url: "https://github.com/dustymabe/%{name}"
+    url: "https://github.com/dustymabe/vagrant-sshfs"
   },
   files: vagrantSshfsFileList
 };
