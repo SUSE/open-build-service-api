@@ -21,6 +21,7 @@
 
 import { expect } from "chai";
 import { describe, it } from "mocha";
+import * as nock from "nock";
 import { URL } from "url";
 import { Connection, normalizeUrl } from "../src/connection";
 import { ApiError } from "../src/error";
@@ -234,6 +235,154 @@ describe("Connection", () => {
       await con
         .makeApiCall("foo")
         .should.be.rejectedWith(Error, /certificate has expired/);
+    });
+  });
+
+  describe("#makeApiCall timeouts", function () {
+    this.timeout(10000);
+
+    before(() => nock.disableNetConnect());
+
+    after(() => {
+      nock.cleanAll();
+      nock.enableNetConnect();
+    });
+    const url = "http://api.foo.org";
+    const con = new Connection("foo", "fooPw", { url, forceHttps: false });
+
+    it("throws an exception when the request timed out", async () => {
+      nock(url).get("/").delay(3000).reply(200, "Will never receive this");
+
+      await con
+        .makeApiCall("/", { timeoutMs: 1, maxRetries: 1 })
+        .should.be.rejectedWith(
+          /Could not make a GET request to.*api\.foo\.org.*tried unsuccessfully 1 times/
+        );
+
+      nock.abortPendingRequests();
+    });
+
+    it("retries after receiving a 503", async () => {
+      const reply = "good request";
+      const scopes = nock(url)
+        .get("/")
+        .reply(503, "BAD REQUEST!!!")
+        .get("/")
+        .reply(200, reply);
+
+      await con
+        .makeApiCall("/", { decodeResponseFromXml: false })
+        .should.eventually.deep.equal(Buffer.from(reply));
+
+      scopes.isDone().should.equal(true);
+    });
+
+    it("honors the Retry-After delay after receiving a 503", async () => {
+      const retryAfterSec = 3;
+
+      const reply = "good request";
+      const scopes = nock(url)
+        .get("/")
+        .reply(503, "BAD REQUEST!!!", { "Retry-After": `${retryAfterSec}` })
+        .get("/")
+        .reply(200, reply);
+
+      const beforeCall = new Date();
+      await con
+        .makeApiCall("/", { decodeResponseFromXml: false })
+        .should.eventually.deep.equal(Buffer.from(reply));
+      const afterCall = new Date();
+
+      expect(
+        afterCall.getTime() - beforeCall.getTime() > retryAfterSec * 1000
+      ).to.equal(true);
+      scopes.isDone().should.equal(true);
+    });
+
+    it("honors the Retry-After date after receiving a 503", async () => {
+      const reply = "good request";
+      const beforeCall = new Date();
+      const retryDate = new Date(beforeCall.getTime() + 4500);
+
+      const scopes = nock(url)
+        .get("/")
+        .reply(503, "BAD REQUEST!!!", {
+          "Retry-After": `${retryDate.toString()}`
+        })
+        .get("/")
+        .reply(200, reply);
+
+      await con
+        .makeApiCall("/", { decodeResponseFromXml: false })
+        .should.eventually.deep.equal(Buffer.from(reply));
+      const afterCall = new Date();
+
+      // FIXME: somehow makeApiCall() finishes nearly a second earlier
+      expect(afterCall.getTime() + 1000 >= retryDate.getTime()).to.equal(true);
+      scopes.isDone().should.equal(true);
+    });
+
+    it("does not die when Retry-After has an invalid value", async () => {
+      const reply = Buffer.from("good request");
+      const scopes = nock(url)
+        .get("/")
+        .reply(503, "BAD REQUEST!!!", { "Retry-After": "asdf" })
+        .get("/")
+        .reply(200, reply);
+
+      await con
+        .makeApiCall("/", { decodeResponseFromXml: false })
+        .should.eventually.deep.equal(reply);
+
+      scopes.isDone().should.equal(true);
+    });
+  });
+
+  describe("#makeApiCall redirects", () => {
+    before(() => nock.disableNetConnect());
+
+    after(() => {
+      nock.cleanAll();
+      nock.enableNetConnect();
+    });
+
+    const url = "http://api.foo.org";
+    const con = new Connection("foo", "fooPw", { url, forceHttps: false });
+
+    it("redirects when receiving a 301", async () => {
+      const reply = Buffer.from("redirect worked!");
+
+      const route = "/redirect";
+      const newUrl = `${url}${route}`;
+      nock(url)
+        .get("/")
+        .reply(301, "Will not care about the body", {
+          Location: newUrl
+        })
+        .get(route)
+        .reply(200, reply);
+
+      await con
+        .makeApiCall("/", { decodeResponseFromXml: false })
+        .should.eventually.deep.equal(reply);
+
+      nock.isDone().should.equal(true);
+    });
+
+    it("retries the request when receiving a 301 but no Location header entry", async () => {
+      const reply = Buffer.from("redirect did not work...");
+
+      nock(url)
+        .get("/")
+        .reply(301, "Will not care about the body")
+        .get("/")
+        .reply(200, reply);
+
+      await con
+        .makeApiCall("/", { decodeResponseFromXml: false })
+        .should.eventually.deep.equal(reply);
+
+      nock.isDone().should.equal(true);
     });
   });
 

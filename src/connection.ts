@@ -39,6 +39,92 @@ export function normalizeUrl(url: string): string {
   return new URL(url).toString();
 }
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+interface RetryInfo {
+  /**
+   * Status that caused the need to retry the request.
+   *
+   * This is either a HTTP status code:
+   * - 503 & 429 indicate that the server or resource is temporarily unavailable
+   *   and 301 indicates a redirect
+   * or
+   * - "timeout": indicates that the request timed out
+   */
+  readonly status: 503 | 429 | 301 | "timeout";
+
+  /**
+   * If the RetryInfo was created from a [[IncomingMessage]] with the
+   * `Retry-After` HTTP Header set and the [[statusCode]] was 429 or 503, then
+   * this field contains the required number of milliseconds that have to be
+   * waited.
+   */
+  readonly retryAfterMs?: number;
+
+  /**
+   * If the RetryInfo was created from a [[IncomingMessage]] with the `Location`
+   * HTTP header set and it was a redirect, then this field contains the URL to
+   * which we are being redirected.
+   */
+  readonly location?: URL;
+}
+
+function isRetryInfo(obj: any): obj is RetryInfo {
+  return (
+    obj.status !== undefined &&
+    (obj.status === 503 ||
+      obj.status === 429 ||
+      obj.status === 301 ||
+      obj.status === "timeout")
+  );
+}
+
+function retryInfoOnTimeout(retryAfterMs?: number): RetryInfo {
+  return { status: "timeout", retryAfterMs };
+}
+
+function retryInfoFromIncommingMessage(
+  response: http.IncomingMessage
+): RetryInfo | undefined {
+  if (
+    response.statusCode !== 503 &&
+    response.statusCode !== 429 &&
+    response.statusCode !== 301
+  ) {
+    return undefined;
+  }
+
+  let retryAfterMs: number | undefined;
+  let location: URL | undefined;
+  if (response.statusCode === 503 || response.statusCode === 429) {
+    if (response.headers["retry-after"] !== undefined) {
+      retryAfterMs = 1000 * parseInt(response.headers["retry-after"], 10);
+      if (isNaN(retryAfterMs)) {
+        const retryAfterDate = new Date(response.headers["retry-after"]);
+        retryAfterMs = retryAfterDate.getTime() - new Date().getTime();
+      }
+    }
+  } else if (
+    response.statusCode === 301 &&
+    response.headers.location !== undefined
+  ) {
+    try {
+      location = new URL(response.headers.location);
+    } catch (_err) {
+      // NOP
+    }
+  }
+
+  return {
+    status: response.statusCode,
+    retryAfterMs:
+      retryAfterMs === undefined || isNaN(retryAfterMs)
+        ? undefined
+        : retryAfterMs,
+    location
+  };
+}
+
 /**
  * The supported request methods by [[Connection.makeApiCall]].
  */
@@ -70,6 +156,17 @@ export interface ApiCallMainOptions {
    * builder obtained via [[newXmlBuilder]]
    */
   sendPayloadAsRaw?: boolean;
+
+  /**
+   * Timeout for a single HTTP request in milliseconds. Defaults to 1000.
+   */
+  timeoutMs?: number;
+
+  /**
+   * How many times will a request be retried before throwing an Error. Defaults
+   * to 10.
+   */
+  maxRetries?: number;
 }
 
 export interface ApiCallOptions extends ApiCallMainOptions {
@@ -81,6 +178,8 @@ export interface ApiCallOptions extends ApiCallMainOptions {
    */
   decodeResponseFromXml?: boolean;
 }
+
+type ApiCallInternalOptions = ApiCallOptions & { timeoutMs: number };
 
 /**
  * Class for storing the credentials to connect to an Open Build Service
@@ -207,8 +306,7 @@ export class Connection {
    *
    * @return The body of the reply, decoded from XML via xml2js'
    *     [parseString](https://github.com/Leonidas-from-XIV/node-xml2js#usage).
-   *     The reply is only decoded when the request succeeds (`200 <= statusCode
-   *     <= 299`)
+   *     The reply is only decoded when the request succeeds.
    */
   public async makeApiCall(
     route: string,
@@ -219,8 +317,7 @@ export class Connection {
    * Perform a request to the API and return the retrieved data itself as a
    * Buffer.
    *
-   * @return The raw reply as a Buffer if the response status is between 200 and
-   *     299.
+   * @return The raw reply as a `Buffer`.
    */
   public async makeApiCall(
     route: string,
@@ -228,22 +325,29 @@ export class Connection {
   ): Promise<Buffer>;
 
   /**
-   * Perform a request to the API and return the replies body (by default
+   * Perform a request to the API and return the replies' body (by default
    * decoded from XML).
    *
+   * The request is retried if it times out or if one of the following status
+   * codes is received: `301`, `429` or `503`. At most [[options.maxRetries]]
+   * retries are issued with a sleep between them that is doubled on each retry.
+   *
    * @param route  route to which the request will be sent
-   * @param options Additional options for further control. By default the
+   * @param options  Additional options for further control. By default the
    *     request is a [[GET|RequestMethod.GET]] request with no payload and the
    *     response is assumed to be XML.
    *
-   * @throw An [[ApiError]] if the API replied with a status code less than
-   *     `200` or more than `299`.
+   * @throw
+   *     - [[ApiError]] if the API replied with a status code less than
+   *       `200` or more than `299`.
+   *     - `Error` when no successful request was made after
+   *       [[options.maxRetries]] requests.
    */
   public async makeApiCall(
     route: string,
     options?: ApiCallOptions
   ): Promise<any> {
-    const url = new URL(route, this.url);
+    let url = new URL(route, this.url);
     const reqMethod =
       options?.method === undefined ? RequestMethod.GET : options.method;
     assert(
@@ -251,6 +355,54 @@ export class Connection {
       "request method in reqMethod must not be undefined"
     );
 
+    const opts = options !== undefined ? { ...options } : { timeoutMs: 1000 };
+    if (opts.timeoutMs === undefined) {
+      opts.timeoutMs = 1000;
+    }
+    assert(opts.timeoutMs !== undefined);
+
+    const maxRetries = options?.maxRetries ?? 10;
+    let waitBetweenCallsMs = 1000;
+
+    for (let i = 0; i < maxRetries; i++) {
+      const res = await this.doMakeApiCall(
+        url,
+        reqMethod,
+        // FIXME: how can we convince typescript that timeoutMs is actually
+        // never undefined?
+        opts as ApiCallInternalOptions
+      );
+      if (!isRetryInfo(res)) {
+        return res;
+      }
+      if (res.location !== undefined) {
+        url = res.location;
+      } else if (res.status === "timeout") {
+        opts.timeoutMs = 2 * opts.timeoutMs;
+      }
+
+      if (
+        res.retryAfterMs !== undefined ||
+        res.status === 503 ||
+        res.status === 429
+      ) {
+        await sleep(res.retryAfterMs ?? waitBetweenCallsMs);
+      } else {
+        await sleep(waitBetweenCallsMs);
+      }
+      waitBetweenCallsMs *= 2;
+    }
+
+    throw new Error(
+      `Could not make a ${reqMethod} request to ${url.toString()}, tried unsuccessfully ${maxRetries} times.`
+    );
+  }
+
+  private doMakeApiCall(
+    url: URL,
+    reqMethod: RequestMethod,
+    options: ApiCallInternalOptions
+  ): Promise<any | RetryInfo> {
     return new Promise((resolve, reject) => {
       const req = this.request(
         url,
@@ -258,13 +410,18 @@ export class Connection {
           auth: this.headers,
           ca: this.serverCaCertificate,
           headers: { cookie: this.cookies },
-          method: reqMethod
+          method: reqMethod,
+          timeout: options.timeoutMs
         },
         (response) => {
           const body: any[] = [];
 
           response.on("data", (chunk) => {
             body.push(chunk);
+          });
+
+          response.on("error", (err) => {
+            reject(err);
           });
 
           // handle errors in the request here, because the API returns more
@@ -280,6 +437,12 @@ export class Connection {
               if (err) {
                 reject(err);
               }
+
+              const retry = retryInfoFromIncommingMessage(response);
+              if (retry !== undefined) {
+                resolve(retry);
+              }
+
               if (response.statusCode! < 200 || response.statusCode! > 299) {
                 reject(
                   new ApiError(response.statusCode!, url, reqMethod, payload)
@@ -299,6 +462,12 @@ export class Connection {
           });
         }
       );
+
+      req.on("timeout", () => {
+        req.abort();
+        resolve(retryInfoOnTimeout(options?.timeoutMs));
+      });
+
       req.on("error", (err) => reject(err));
 
       if (options?.payload !== undefined) {
