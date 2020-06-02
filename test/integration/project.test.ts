@@ -135,21 +135,27 @@ describe("#checkOut", function () {
     }
   };
 
-  before(async () => {
+  before(async function () {
+    skipIfNoMiniObs(this);
+
     await createProject(con, projWithMeta.meta!);
     for (const pkg of proj.packages!) {
       await createPackage(con, proj, pkg.name, pkg.name);
     }
   });
-  after(async () => deleteProject(con, proj));
 
-  beforeEach(function () {
-    skipIfNoMiniObs(this);
+  after(async () => {
+    try {
+      await deleteProject(con, proj);
+    } catch (err) {}
+  });
+
+  beforeEach(() =>
     mockFs({
       dirExists: mockFs.directory({ items: {} }),
       nonEmpty: { aFile: "foo" }
-    });
-  });
+    })
+  );
   afterEach(() => mockFs.restore());
 
   it("populates the _* files in the .osc/ directory", async () => {
