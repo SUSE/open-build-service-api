@@ -90,7 +90,7 @@ export async function packageFileFromFile(
 
   const [packageName, projectName] =
     typeof packageOrPackageName === "string"
-      ? [packageOrPackageName, project!]
+      ? [packageOrPackageName, project]
       : [packageOrPackageName.name, packageOrPackageName.projectName];
 
   const [stat, contents] = await Promise.all([
