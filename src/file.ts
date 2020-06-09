@@ -213,26 +213,32 @@ export function fetchFileContents(
  *     The [[packageFile.contents]] field must not be undefined, otherwise an
  *     exception is thrown.
  *
- * @return The status as reported by OBS on success.
+ * @return nothing
  *
- * @throw An [[ApiError]] when the communication with OBS fails or an `Error` if
- *     the package's file contents are undefined.
+ * @throw  An [[ApiError]] when the communication with OBS fails or an `Error`
+ *     when an invalid reply is received from OBS.
  */
 export async function uploadFileContents(
   con: Connection,
   pkgFile: FrozenPackageFile
-): Promise<string> {
+): Promise<void> {
   const route = `/source/${pkgFile.projectName}/${pkgFile.packageName}/${pkgFile.name}?rev=repository`;
 
-  const response = await con.makeApiCall(route, {
+  // OBS always returns the following xml object back:
+  // <revision rev="repository">
+  //   <srcmd5>d41d8cd98f00b204e9800998ecf8427e</srcmd5>
+  // </revision>
+  // according to:
+  // https://github.com/openSUSE/open-build-service/issues/9706#issuecomment-641476410
+  // this is expected as that is the srcmd5 of the empty file set (= echo -n | md5sum).
+  // This is of course absolutely useless and there is no point in returning
+  // that. We check the result, but at some point this weird behavior might get
+  // changed and will only break working code.
+  await con.makeApiCall(route, {
     method: RequestMethod.PUT,
     payload: pkgFile.contents,
     sendPayloadAsRaw: true
   });
-
-  // FIXME:
-  return response.revision?.srcmd5;
-  // return statusReplyFromApi(response);
 }
 
 /**
