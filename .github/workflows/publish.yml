@@ -14,7 +14,7 @@ jobs:
     - uses: actions/setup-node@v1
       with:
         registry-url: 'https://npm.pkg.github.com'
-        node-version: 13.x
+        node-version: 14.x
         scope: '@SUSE'
     - run: yarn install
     - run: npm publish
