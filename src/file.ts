@@ -92,6 +92,7 @@ export async function packageFileFromFile(
     typeof packageOrPackageName === "string"
       ? [packageOrPackageName, project]
       : [packageOrPackageName.name, packageOrPackageName.projectName];
+  assert(projectName !== undefined);
 
   const [stat, contents] = await Promise.all([
     fsPromises.stat(path),
