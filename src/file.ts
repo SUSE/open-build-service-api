@@ -84,7 +84,7 @@ export async function packageFileFromFile(
   if (typeof packageOrPackageName === "string") {
     assert(
       project !== undefined,
-      "projectName must not be undefined when using the packageName, projectName overload"
+      "projectName must not be undefined when using the (packageName, projectName) overload"
     );
   }
 
