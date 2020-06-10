@@ -18,13 +18,12 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
 
+    - run: yarn install
+    - run: yarn run test
+
     - run: ./start-mini-obs.sh
 
-    - run: yarn install
-
-    - run: |
-        yarn run test
-        yarn run coverage
+    - run: yarn run coverage
       env:
         HAVE_MINI_OBS: 1
 
