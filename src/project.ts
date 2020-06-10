@@ -101,7 +101,9 @@ export interface Project {
 }
 
 /** A project where the package list is guaranteed to exist */
-export type ProjectWithPackages = Project & { packages: Package[] };
+export type ProjectWithPackages = Omit<Project, "packages"> & {
+  packages: Package[];
+};
 
 /**
  * Retrieves the list of packages of the given project

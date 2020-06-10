@@ -179,7 +179,9 @@ export interface ApiCallOptions extends ApiCallMainOptions {
   decodeResponseFromXml?: boolean;
 }
 
-type ApiCallInternalOptions = ApiCallOptions & { timeoutMs: number };
+type ApiCallInternalOptions = Omit<ApiCallOptions, "timeoutMs"> & {
+  timeoutMs: number;
+};
 
 /**
  * Class for storing the credentials to connect to an Open Build Service
@@ -368,8 +370,6 @@ export class Connection {
       const res = await this.doMakeApiCall(
         url,
         reqMethod,
-        // FIXME: how can we convince typescript that timeoutMs is actually
-        // never undefined?
         opts as ApiCallInternalOptions
       );
       if (!isRetryInfo(res)) {

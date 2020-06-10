@@ -75,7 +75,9 @@ export interface Package {
   files?: PackageFile[];
 }
 
-type PackageWithRequiredFiles = Package & { files: FrozenPackageFile[] };
+type PackageWithRequiredFiles = Omit<Package, "files"> & {
+  files: FrozenPackageFile[];
+};
 
 export interface FrozenPackage
   extends Readonly<Required<Omit<Package, "meta" | "files">>> {
