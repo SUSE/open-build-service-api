@@ -36,6 +36,7 @@ export {
 } from "./history";
 export {
   checkOutPackage,
+  createPackage,
   deletePackage,
   fetchPackage,
   Package
@@ -44,10 +45,10 @@ export * from "./project";
 export { Group, User } from "./user";
 export { pathExists, PathType, rmRf, runProcess } from "./util";
 export {
+  addAndDeleteFilesFromPackage,
   commit,
+  FileState,
   ModifiedPackage,
   readInModifiedPackageFromDir,
-  VcsFile,
-  FileState,
-  addAndDeleteFilesFromPackage
+  VcsFile
 } from "./vcs";
