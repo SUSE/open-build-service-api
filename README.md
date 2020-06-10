@@ -1,6 +1,8 @@
 # open-build-service-api
 
 [![Build Status](https://travis-ci.org/SUSE/open-build-service-api.svg?branch=master)](https://travis-ci.org/SUSE/open-build-service-api)
+[![CI](https://github.com/SUSE/open-build-service-api/workflows/CI/badge.svg)](https://github.com/SUSE/open-build-service-api/actions?query=workflow%3ACI)
+[![coverage](https://codecov.io/gh/SUSE/open-build-service-api/branch/master/graphs/badge.svg?branch=master)](https://codecov.io/gh/SUSE/open-build-service-api)
 
 API wrapper for the Open Build Service implemented in Typescript.
 
