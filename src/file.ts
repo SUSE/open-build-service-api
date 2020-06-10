@@ -129,7 +129,9 @@ export function packageFileFromDirectoryEntry(
 
   if (file.name !== dentry.name) {
     throw new Error(
-      `file name (${file.name}) and directory name (${dentry.name}) do not match`
+      `file name (${file.name}) and directory name (${
+        dentry.name ?? "undefined"
+      }) do not match`
     );
   }
   [
@@ -138,7 +140,9 @@ export function packageFileFromDirectoryEntry(
     [size, "size"]
   ].forEach(([value, name]) => {
     if (value === undefined) {
-      throw new Error(`Invalid directory or package: could not obtain ${name}`);
+      throw new Error(
+        `Invalid directory or package: could not obtain ${name ?? "undefined"}`
+      );
     }
   });
 
