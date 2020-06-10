@@ -23,6 +23,7 @@ import * as assert from "assert";
 import * as http from "http";
 import * as https from "https";
 import { URL } from "url";
+import { Account } from "./account";
 import { ApiError } from "./error";
 import { newXmlBuilder, newXmlParser } from "./xml";
 
@@ -209,6 +210,30 @@ export class Connection {
   private readonly serverCaCertificate?: string;
 
   private readonly request: typeof http.request | typeof https.request;
+
+  /**
+   * Convert an [[Account]] into a Connection if the password is set.
+   *
+   * @param account  The account to be converted.
+   * @param options  Additional options that are forwarded to the constructor of
+   *     the connection object.
+   *
+   * @throw Error if the password of `account` is `undefined`.
+   */
+  public static from(
+    account: Account,
+    options: { serverCaCertificate?: string; forceHttps?: boolean } = {}
+  ): Connection {
+    if (account.password === undefined) {
+      throw new Error(
+        `Cannot create a Connection from the Account for ${account.apiUrl}: password is not set`
+      );
+    }
+    return new Connection(account.username, account.password, {
+      url: account.apiUrl,
+      ...options
+    });
+  }
 
   /**
    * Construct a connection using the provided username and password

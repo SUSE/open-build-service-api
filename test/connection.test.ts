@@ -23,6 +23,7 @@ import { expect } from "chai";
 import { describe, it } from "mocha";
 import * as nock from "nock";
 import { URL } from "url";
+import { Account } from "../src/account";
 import { Connection, normalizeUrl } from "../src/connection";
 import { ApiError } from "../src/error";
 import {
@@ -418,6 +419,48 @@ describe("Connection", () => {
 
     it("rejects new invalid parameters", () => {
       expect(() => con.clone({ url: "" })).to.throw(TypeError, /invalid url/i);
+    });
+  });
+
+  describe("#from", () => {
+    it("converts an account with a password to a connection", () => {
+      const opts = {
+        username: "foo",
+        password: "bar",
+        apiUrl: normalizeUrl("https://api.foo.org")
+      };
+      const con = Connection.from(new Account(opts));
+      con.username.should.deep.equal(opts.username);
+      con.url.should.deep.equal(opts.apiUrl);
+    });
+
+    it("throws an error if the account has no password set", () => {
+      expect(() =>
+        Connection.from(
+          new Account({
+            username: "foo",
+            apiUrl: "https://api.foo.org",
+            password: undefined
+          })
+        )
+      ).to.throw(Error, /password is not set/i);
+    });
+
+    it("forwards the options to the constructor of Connection", () => {
+      const opts = {
+        username: "foo",
+        password: "bar",
+        apiUrl: normalizeUrl("http://api.foo.org")
+      };
+
+      Connection.from(new Account(opts), {
+        forceHttps: false
+      }).url.should.deep.equal(opts.apiUrl);
+
+      expect(() => Connection.from(new Account(opts))).to.throw(
+        Error,
+        /does not use https/i
+      );
     });
   });
 });
