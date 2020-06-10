@@ -44,7 +44,7 @@
     "@types/chai-things": "^0.0.34",
     "@types/mocha": "^7",
     "@types/mock-fs": "^4",
-    "@types/node": "^13",
+    "@types/node": "^14",
     "@types/xml2js": "^0.4",
     "@typescript-eslint/eslint-plugin": "^2.26",
     "@typescript-eslint/parser": "^2.26",
