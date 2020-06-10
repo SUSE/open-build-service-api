@@ -27,6 +27,10 @@ jobs:
       env:
         HAVE_MINI_OBS: 1
 
+    - uses: codecov/codecov-action@v1
+      with:
+        file: ./coverage/lcov.info
+
     - name: cleanup
       run: |
         pushd open-build-service
