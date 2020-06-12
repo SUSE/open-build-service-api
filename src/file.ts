@@ -26,7 +26,7 @@ import { DirectoryEntry } from "./api/directory";
 import { calculateHash } from "./checksum";
 import { Connection, RequestMethod } from "./connection";
 import { StatusReply, statusReplyFromApi } from "./error";
-import { Commit } from "./history";
+import { Commit, Revision, apiRevisionToRevision } from "./history";
 import { Package } from "./package";
 import { deleteUndefinedMembers, pathExists, PathType } from "./util";
 
@@ -208,6 +208,38 @@ export function fetchFileContents(
   }
 
   return con.makeApiCall(route, { decodeResponseFromXml: false });
+}
+
+/**
+ * Set the contents of the file `pkgFile` and commit them, with the optionally
+ * supplied commit message.
+ *
+ * @param con  The [[Connection]] used for the API calls.
+ * @param pkgFile  The file which' contents will be set to `pkgFile.contents`.
+ * @param commitMsg  An optional commit message that will be added to the
+ *     commit.
+ *
+ * @return The created [[Revision]] (= commit) by this operation.
+ */
+export async function setFileContentsAndCommit(
+  con: Connection,
+  pkgFile: FrozenPackageFile,
+  commitMsg?: string
+): Promise<Revision> {
+  const route = `/source/${pkgFile.projectName}/${pkgFile.packageName}/${pkgFile.name}`;
+  const revision = await con.makeApiCall(
+    commitMsg === undefined ? route : `${route}?comment=${commitMsg}`,
+    {
+      method: RequestMethod.PUT,
+      payload: pkgFile.contents,
+      sendPayloadAsRaw: true
+    }
+  );
+
+  return apiRevisionToRevision(revision.revision, {
+    projectName: pkgFile.projectName,
+    name: pkgFile.packageName
+  });
 }
 
 /**

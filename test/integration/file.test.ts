@@ -19,10 +19,90 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import { afterEach, beforeEach, describe } from "mocha";
-import { afterEachRecord, beforeEachRecord } from "./../test-setup";
+import { expect } from "chai";
+import { afterEach, before, beforeEach, describe } from "mocha";
+import { calculateHash } from "../../src/checksum";
+import { setFileContentsAndCommit } from "../../src/file";
+import { fetchHistory } from "../../src/history";
+import {
+  createPackage,
+  deletePackage,
+  fetchFileList,
+  Package
+} from "../../src/package";
+import {
+  ApiType,
+  getTestConnection,
+  miniObsUsername,
+  skipIfNoMiniObsHook
+} from "./../test-setup";
 
-describe("File", () => {
-  beforeEach(beforeEachRecord);
-  afterEach(afterEachRecord);
+describe("PackageFile", function () {
+  before(skipIfNoMiniObsHook);
+
+  this.timeout(10000);
+  const con = getTestConnection(ApiType.MiniObs);
+  let pkg: Package;
+
+  beforeEach(async () => {
+    pkg = await createPackage(
+      con,
+      `home:${miniObsUsername}`,
+      "file_upload_test_package",
+      "Package for testing the upload of files"
+    );
+  });
+
+  afterEach(async () => {
+    try {
+      await deletePackage(con, pkg);
+    } catch (err) {
+      console.error(err);
+    }
+  });
+  const getFile = () => ({
+    name: "foo.spec",
+    packageName: pkg.name,
+    projectName: pkg.projectName,
+    modifiedTime: new Date("Thu, 01 Jan 1970 01:00:00 +0100")
+  });
+
+  describe("#setFileContentsAndCommit", () => {
+    it("creates a commit without a message by default", async () => {
+      const contents = Buffer.from("this is not relevant");
+      const rev = await setFileContentsAndCommit(con, {
+        contents,
+        size: contents.length,
+        md5Hash: calculateHash(contents, "md5"),
+        ...getFile()
+      });
+
+      const hist = await fetchHistory(con, pkg);
+
+      hist.should.be.an("array").and.have.length(1);
+      hist[0].should.deep.equal(rev);
+    });
+
+    it("creates a commit with the specified commit message", async () => {
+      const contents = Buffer.from("this is irrelevant");
+      const msg = "initial version";
+      const rev = await setFileContentsAndCommit(
+        con,
+        {
+          contents,
+          size: contents.length,
+          md5Hash: calculateHash(contents, "md5"),
+          ...getFile()
+        },
+        msg
+      );
+
+      expect(rev.commitMessage).to.deep.equal(msg);
+
+      const hist = await fetchHistory(con, pkg);
+
+      hist.should.be.an("array").and.have.length(1);
+      hist[0].should.deep.equal(rev);
+    });
+  });
 });
