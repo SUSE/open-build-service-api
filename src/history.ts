@@ -153,7 +153,7 @@ const valueOrUndefined = (value: string) =>
 export function apiRevisionToRevision(
   rev: RevisionApiReply,
   pkg: { projectName: string; name: string }
-): Revision {
+): Omit<Revision, "commitMessage"> & { commitMessage: string } {
   // OBS will sometimes reply with '' as the requestid instead of simply
   // omitting the entry
   // we want to set it to undefined for consistency then
@@ -172,7 +172,10 @@ export function apiRevisionToRevision(
     versionRevision: parseInt(rev.$.vrev, 10),
     commitTime: dateFromUnixTimeStamp(rev.time),
     userId: valueOrUndefined(rev.user),
-    commitMessage: rev.comment,
+    // Ensure that a commit message is present, because OBS sometimes returns a
+    // reply where this field is missing, but then later gives you one where it
+    // is "". So we do the same...
+    commitMessage: rev.comment ?? "",
     requestId,
     projectName: pkg.projectName,
     packageName: pkg.name

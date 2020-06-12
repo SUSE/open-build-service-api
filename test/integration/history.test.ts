@@ -764,7 +764,8 @@ describe("Revision", () => {
         versionRevision: 16,
         revisionHash: "74349037c1f2d2d21a09f17d419d8906",
         version: "3.81",
-        commitTime: new Date("Tue, 19 Dec 2006 00:17:05 +0100")
+        commitTime: new Date("Tue, 19 Dec 2006 00:17:05 +0100"),
+        commitMessage: ""
       });
       hist[0].should.not.have.property("userId");
     });
