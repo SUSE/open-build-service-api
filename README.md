@@ -133,14 +133,14 @@ $ HAVE_MINI_OBS=1 yarn run coverage
 ```
 
 For writing the actual tests, use the test connection type `ApiType.MiniObs` and
-add the function `skipIfNoMiniObs` as a `before()` mocha-hook and ensure that
-the timeout is large enough:
+add the function `skipIfNoMiniObsHook` as a `before()` mocha-hook and ensure
+that the timeout is large enough:
 
 ```typescript
 describe("RwTest", function () {
   this.timeout(10000);
 
-  before(skipIfNoMiniObs);
+  before(skipIfNoMiniObsHook);
   const con = getTestConnection(ApiType.MiniObs);
 
   it("#testFunc", async () => {
