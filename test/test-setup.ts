@@ -24,6 +24,7 @@ import mockFs = require("mock-fs");
 import { expect, should, use } from "chai";
 import * as chaiAsPromised from "chai-as-promised";
 import * as chaiThings from "chai-things";
+import * as sinonChai from "sinon-chai";
 import { promises as fsPromises, readFileSync, writeFileSync } from "fs";
 import { AsyncFunc, Context, Func } from "mocha";
 import * as nock from "nock";
@@ -154,6 +155,7 @@ function makeApiCallWithNockIntercept<T>(
 }
 
 use(chaiThings);
+use(sinonChai);
 
 // must be the last one: https://github.com/domenic/chai-as-promised#node
 use(chaiAsPromised);

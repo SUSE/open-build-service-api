@@ -21,33 +21,34 @@
 
 import mockFs = require("mock-fs");
 
-import { promises as fsPromises } from "fs";
 import { expect } from "chai";
+import { promises as fsPromises } from "fs";
 import { afterEach, beforeEach, describe, it } from "mocha";
+import { dirname, join } from "path";
+import { createSandbox } from "sinon";
+import { normalizeUrl } from "../../src/connection";
+import { createPackage, readInCheckedOutPackage } from "../../src/package";
 import {
+  checkOutProject,
   createProject,
   deleteProject,
   fetchProject,
   fetchProjectList,
   Project,
-  checkOutProject,
   readInCheckedOutProject
 } from "../../src/project";
 import { LocalRole } from "../../src/user";
+import { pathExists, PathType } from "../../src/util";
+import { newXmlParser } from "../../src/xml";
 import {
   afterEachRecord,
   ApiType,
   beforeEachRecord,
   getTestConnection,
   miniObsUsername,
-  skipIfNoMiniObsHook,
-  skipIfNoMiniObs
+  skipIfNoMiniObs,
+  skipIfNoMiniObsHook
 } from "./../test-setup";
-import { createPackage, readInCheckedOutPackage } from "../../src/package";
-import { newXmlParser } from "../../src/xml";
-import { pathExists, PathType } from "../../src/util";
-import { dirname, join } from "path";
-import { normalizeUrl } from "../../src/connection";
 
 describe("#fetchProject", () => {
   beforeEach(beforeEachRecord);
@@ -150,13 +151,18 @@ describe("#checkOut", function () {
     } catch (err) {}
   });
 
-  beforeEach(() =>
+  beforeEach(function () {
     mockFs({
       dirExists: mockFs.directory({ items: {} }),
       nonEmpty: { aFile: "foo" }
-    })
-  );
-  afterEach(() => mockFs.restore());
+    });
+    this.sandbox = createSandbox();
+  });
+
+  afterEach(function () {
+    this.sandbox.restore();
+    mockFs.restore();
+  });
 
   it("populates the _* files in the .osc/ directory", async () => {
     const dir = "./someDir";
@@ -266,6 +272,62 @@ describe("#checkOut", function () {
     await checkOutProject(con, proj, "whatever", {
       packageList: ["foo", "invalidPackage"]
     }).should.be.rejectedWith(/invalid package list provided.*invalidPackage/);
+  });
+
+  it("invokes the callback after checking out each package", async function () {
+    const dir = `./${proj.name}`;
+    const callback = this.sandbox.spy();
+
+    // we *must* use the package list from OBS to check the calls of
+    // callback. The issue is that we fetch the package list in
+    // checkOutProject() and the order of the packages is not different from
+    // what we set
+    const projFromObs = await fetchProject(con, proj.name, {
+      getPackageList: true
+    });
+
+    await checkOutProject(con, proj, dir, { callback });
+
+    callback.should.have.been.calledThrice;
+
+    projFromObs.packages.forEach((pkg, index) => {
+      callback.should.have.been.calledWith(
+        pkg.name,
+        index,
+        projFromObs.packages.map((pkg) => pkg.name)
+      );
+    });
+  });
+
+  it("cancels the checkout if a cancellation has been requested", async () => {
+    const cancellationToken = { isCancellationRequested: true };
+
+    const dir = `./${proj.name}`;
+    await checkOutProject(con, proj, dir, { cancellationToken });
+
+    await fsPromises
+      .readdir(dir, { withFileTypes: true })
+      .should.eventually.be.an("array")
+      .and.have.length(0);
+  });
+
+  it("cancels the checkout if a cancellation is requested mid-checkout", async () => {
+    const cancellationToken = { isCancellationRequested: false };
+
+    const dir = `./${proj.name}`;
+    await checkOutProject(con, proj, dir, {
+      cancellationToken,
+      callback: (_pkgName, index) => {
+        if (index > 1) {
+          cancellationToken.isCancellationRequested = true;
+        }
+      }
+    });
+
+    await fsPromises
+      .readdir(dir, { withFileTypes: true })
+      .should.eventually.be.an("array")
+      .and.have.length(0);
   });
 });
 

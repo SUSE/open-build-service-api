@@ -54,7 +54,8 @@ import {
   mapOrApply,
   pathExists,
   PathType,
-  zip
+  zip,
+  rmRf
 } from "./util";
 import { newXmlBuilder, newXmlParser } from "./xml";
 
@@ -283,10 +284,17 @@ async function writeProjectUnderscoreFiles(
  * @param packageList  An array of package names that will be checked out (and
  *     all that are missing on this list are not checked out). If this parameter
  *     is not provided, then all packages are checked out.
- * @param callback An optional callback function that is invoked after each
+ * @param callback  An optional callback function that is invoked after each
  *     package is checked out. This function passes the same parameters to the
  *     callback as `Array.map` would (i.e. the name of the package that was
  *     checked out, its index in the array and the whole array).
+ * @param cancellationToken  A token that will cancel the checkout if it is set
+ *     to true. It is checked after each package is checked out to the file
+ *     system. If the cancellation is requested, then the contents of the
+ *     directory are cleaned up.
+ *
+ * @return `true` when the project was checked out successfully or `false` if it
+ *     was canceled.
  *
  * @throw
  *     - `Error` when `path` is not writable or the `path` already exists.
@@ -301,8 +309,9 @@ export async function checkOutProject(
   options?: {
     packageList?: string[];
     callback?: (pkgName: string, index: number, pkgNames: string[]) => void;
+    cancellationToken?: { isCancellationRequested: boolean };
   }
-): Promise<void> {
+): Promise<boolean> {
   await createOrEnsureEmptyDir(path);
 
   const projectName = typeof project === "string" ? project : project.name;
@@ -322,26 +331,40 @@ export async function checkOutProject(
     }
   }
 
+  const cleanup = async () => {
+    await rmRf(path);
+    await fsPromises.mkdir(path, { recursive: false });
+  };
+
   const pkgNames = options?.packageList ?? proj.packages.map((pkg) => pkg.name);
 
   await fsPromises.mkdir(join(path, ".osc"), { recursive: false });
   await writeProjectUnderscoreFiles(proj, path);
 
+  if (options?.cancellationToken?.isCancellationRequested ?? false) {
+    await cleanup();
+    return false;
+  }
+
   const indexes = pkgNames.map((_val, i) => i);
 
-  await Promise.all(
-    zip(pkgNames, indexes).map(async ([pkgName, index]) => {
-      const pkg = await fetchPackage(con, project, pkgName, {
-        retrieveFileContents: true,
-        expandLinks: true
-      });
-      await checkOutPackageToFs(pkg, join(path, pkg.name));
+  for (const [pkgName, index] of zip(pkgNames, indexes)) {
+    const pkg = await fetchPackage(con, project, pkgName, {
+      retrieveFileContents: true,
+      expandLinks: true
+    });
+    await checkOutPackageToFs(pkg, join(path, pkg.name));
 
-      if (options?.callback !== undefined) {
-        options.callback(pkgName, index, pkgNames);
-      }
-    })
-  );
+    if (options?.callback !== undefined) {
+      options.callback(pkgName, index, pkgNames);
+    }
+    if (options?.cancellationToken?.isCancellationRequested ?? false) {
+      await cleanup();
+      return false;
+    }
+  }
+
+  return true;
 }
 
 /**
