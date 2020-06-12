@@ -154,6 +154,17 @@ export function apiRevisionToRevision(
   rev: RevisionApiReply,
   pkg: { projectName: string; name: string }
 ): Revision {
+  // OBS will sometimes reply with '' as the requestid instead of simply
+  // omitting the entry
+  // we want to set it to undefined for consistency then
+  let requestId: number | undefined;
+  if (rev.requestid !== undefined) {
+    requestId = parseInt(rev.requestid, 10);
+    if (isNaN(requestId)) {
+      requestId = undefined;
+    }
+  }
+
   return deleteUndefinedMembers({
     revisionHash: rev.srcmd5,
     version: valueOrUndefined(rev.version),
@@ -162,8 +173,7 @@ export function apiRevisionToRevision(
     commitTime: dateFromUnixTimeStamp(rev.time),
     userId: valueOrUndefined(rev.user),
     commitMessage: rev.comment,
-    requestId:
-      rev.requestid === undefined ? undefined : parseInt(rev.requestid, 10),
+    requestId,
     projectName: pkg.projectName,
     packageName: pkg.name
   });
