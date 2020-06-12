@@ -27,7 +27,6 @@ import { FrozenPackageFile, PackageFile } from "./../../src/file";
 import { Revision } from "./../../src/history";
 
 const commonEntries = {
-  expanded: false,
   projectName: "Virtualization:vagrant",
   packageName: "vagrant-sshfs"
 };

@@ -76,9 +76,6 @@ interface BaseCommit {
    * of the resulting binary.
    */
   readonly versionRevision?: number;
-
-  /** Whether this commit represents the state with links expanded or not. */
-  readonly expanded: boolean;
 }
 
 interface CommitWithFiles extends BaseCommit {
@@ -88,6 +85,9 @@ interface CommitWithFiles extends BaseCommit {
    * These files have no contents as fetching these would be far too costly.
    */
   readonly files: PackageFile[];
+
+  /** Whether this commit represents the state with links expanded or not. */
+  readonly expanded?: boolean;
 }
 
 /**
@@ -149,12 +149,12 @@ interface RevisionListApiReply {
 const valueOrUndefined = (value: string) =>
   value === "unknown" ? undefined : value;
 
-const apiRevisionToRevision = (
+/** Converts a the revision as received directly from OBS to a [[Revision]] */
+export function apiRevisionToRevision(
   rev: RevisionApiReply,
-  pkg: Package,
-  expanded: boolean
-): Revision =>
-  deleteUndefinedMembers({
+  pkg: { projectName: string; name: string }
+): Revision {
+  return deleteUndefinedMembers({
     revisionHash: rev.srcmd5,
     version: valueOrUndefined(rev.version),
     revision: parseInt(rev.$.rev, 10),
@@ -165,9 +165,9 @@ const apiRevisionToRevision = (
     requestId:
       rev.requestid === undefined ? undefined : parseInt(rev.requestid, 10),
     projectName: pkg.projectName,
-    packageName: pkg.name,
-    expanded
+    packageName: pkg.name
   });
+}
 
 /**
  * Retrieve the history of the package `pkg` without including the history of
@@ -189,7 +189,7 @@ export async function fetchHistory(
   );
 
   return mapOrApply(revs.revisionlist.revision, (rev: RevisionApiReply) =>
-    apiRevisionToRevision(rev, pkg, false)
+    apiRevisionToRevision(rev, pkg)
   );
 }
 

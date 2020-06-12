@@ -738,7 +738,6 @@ describe("Revision", () => {
       });
 
       hist.should.include.a.thing.that.deep.equals({
-        expanded: false,
         packageName: "ccls",
         projectName: "devel:tools",
         revision: 2,
@@ -759,7 +758,6 @@ describe("Revision", () => {
       });
 
       hist.should.contain.a.thing.that.deep.equals({
-        expanded: false,
         packageName: "make",
         projectName: "openSUSE:Factory",
         revision: 1,
