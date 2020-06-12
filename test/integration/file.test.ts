@@ -22,7 +22,7 @@
 import { expect } from "chai";
 import { afterEach, before, beforeEach, describe } from "mocha";
 import { calculateHash } from "../../src/checksum";
-import { setFileContentsAndCommit } from "../../src/file";
+import { deleteFile, setFileContentsAndCommit } from "../../src/file";
 import { fetchHistory } from "../../src/history";
 import {
   createPackage,
@@ -103,6 +103,29 @@ describe("PackageFile", function () {
 
       hist.should.be.an("array").and.have.length(1);
       hist[0].should.deep.equal(rev);
+    });
+  });
+
+  describe("#deleteFile", () => {
+    it("deletes the specified file", async () => {
+      const contents = Buffer.from("a pristine file");
+      const rev = await setFileContentsAndCommit(con, {
+        contents,
+        size: contents.length,
+        md5Hash: calculateHash(contents, "md5"),
+        ...getFile()
+      });
+
+      await deleteFile(con, getFile());
+
+      const hist = await fetchHistory(con, pkg);
+
+      hist.should.be.an("array").and.have.length(2);
+      hist[0].should.deep.equal(rev);
+
+      const [files, hash] = await fetchFileList(con, pkg);
+      expect(files).to.be.an("array").and.have.length(0);
+      expect(hash).to.be.a("string").and.to.deep.equal(hist[1].revisionHash);
     });
   });
 });
