@@ -245,12 +245,10 @@ describe("ModifiedPackage", function () {
       castToAsyncFunc<TestFixture>(async function () {
         await createAndCheckoutPkg(this);
 
-        const fd = await fsPromises.open(
+        await fsPromises.writeFile(
           join(this.checkoutPath, "testfile.spec"),
-          "w"
+          Buffer.from("this is not really a specfile ;-)")
         );
-        await fd.write(Buffer.from("this is not really a specfile ;-)"));
-        await fd.close();
 
         const modifiedPkg = await readInModifiedPackageFromDir(
           this.checkoutPath
