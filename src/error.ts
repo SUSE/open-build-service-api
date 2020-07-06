@@ -22,7 +22,7 @@
 import * as assert from "assert";
 import { URL } from "url";
 import { RequestMethod } from "./connection";
-import { deleteUndefinedMembers } from "./util";
+import { deleteUndefinedMembers, mapOrApply } from "./util";
 
 /**
  * Status reply that is received in response to PUT requests or on failed GET
@@ -41,29 +41,50 @@ export interface StatusReply {
   details?: string;
 
   /**
-   * Additional data tag that can be processed by the client.
-   * Contains a list of target projects.
+   * Additional data tag(s) converted to a dictionary.
+   *
+   * This entry is populated from the <data> array received from OBS as follows:
+   * ```xml
+   * <data name="targetproject">home:foo</data>
+   * <data name="targetpackage">bar</data>
+   * ```
+   * becomes:
+   * ```typescript
+   * {
+   *   targetproject: "home:foo",
+   *   targetpackage: "bar"
+   * }
+   * ```
    */
-  data?: string[];
+  data?: Record<string, string>;
 }
 
 /** [[StatusReply]] as decoded via xml2js when received from the API */
 interface StatusReplyApiReply {
   status: {
     $: { code: string };
-    data?: string[];
+    data?:
+      | { $: { name: string }; _: string }[]
+      | { $: { name: string }; _: string };
     details?: string;
     summary?: string;
   };
 }
 
 /** Converts the status reply from the API into a [[StatusReply]] */
-export function statusReplyFromApi(data: StatusReplyApiReply): StatusReply {
+export function statusReplyFromApi(status: StatusReplyApiReply): StatusReply {
+  let data: any | undefined;
+  if (status.status.data !== undefined) {
+    data = {};
+    mapOrApply(status.status.data, (entry) => {
+      data[entry.$.name] = entry._;
+    });
+  }
   const reply: StatusReply = {
-    code: data.status.$.code,
-    data: data.status.data,
-    summary: data.status.summary,
-    details: data.status.details
+    code: status.status.$.code,
+    data,
+    summary: status.status.summary,
+    details: status.status.details
   };
   return deleteUndefinedMembers(reply);
 }
