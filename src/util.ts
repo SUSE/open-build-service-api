@@ -66,6 +66,17 @@ export function mapOrApply<T, U>(
   }
 }
 
+/** Returns an array starting at zero and ending at `end - 1` */
+export function range(end: number): number[];
+/** Returns an array starting at `start` and ending at `end - 1` */
+export function range(start: number, end: number): number[];
+
+export function range(startOrEnd: number, end?: number): number[] {
+  return end === undefined
+    ? [...Array(startOrEnd).keys()]
+    : [...Array(end - startOrEnd).keys()].map((i) => i + startOrEnd);
+}
+
 /** Convert a Unix time stamp to a Date */
 export function dateFromUnixTimeStamp(unixTime: string | number): Date {
   return new Date(

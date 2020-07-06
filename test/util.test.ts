@@ -285,3 +285,13 @@ describe("#pathExists", () => {
     expect(!(await util.pathExists("nonExistent"))).to.equal(true);
   });
 });
+
+describe("#range", () => {
+  it("creates an array starting at zero when only the end is given", () => {
+    expect(util.range(5)).to.deep.equal([0, 1, 2, 3, 4]);
+  });
+
+  it("creates an array starting at the given start when provided", () => {
+    expect(util.range(1, 5)).to.deep.equal([1, 2, 3, 4]);
+  });
+});
