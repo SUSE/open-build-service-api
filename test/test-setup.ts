@@ -24,12 +24,12 @@ import mockFs = require("mock-fs");
 import { expect, should, use } from "chai";
 import * as chaiAsPromised from "chai-as-promised";
 import * as chaiThings from "chai-things";
-import * as sinonChai from "sinon-chai";
-import { AsyncFunc, Context, Func } from "mocha";
 import { promises as fsPromises } from "fs";
+import { AsyncFunc, Context, Func, HookFunction } from "mocha";
 import * as nock from "nock";
 import { tmpdir } from "os";
 import { join, sep } from "path";
+import * as sinonChai from "sinon-chai";
 import { directoryToApi } from "../src/api/directory";
 import { Connection } from "../src/connection";
 import { fileListToDirectory, FrozenPackage } from "../src/package";
@@ -321,14 +321,25 @@ export async function checkApiCallFails<T>(
   }
 }
 
+export const haveMiniObs: () => boolean = () =>
+  process.env.HAVE_MINI_OBS === "1";
+
 export function skipIfNoMiniObs(ctx: Context): void {
-  if (process.env.HAVE_MINI_OBS === undefined) {
+  if (!haveMiniObs()) {
     ctx.skip();
   }
 }
 
 export function skipIfNoMiniObsHook(this: Context): void {
   skipIfNoMiniObs(this);
+}
+
+export function miniObsOnlyHook(hook: HookFunction): HookFunction {
+  if (haveMiniObs()) {
+    return hook;
+  } else {
+    return () => {};
+  }
 }
 
 export const castToFuncT = <FC, FT>(func: (this: FC) => void): FT =>

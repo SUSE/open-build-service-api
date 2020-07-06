@@ -34,7 +34,9 @@ import {
   ApiType,
   getTestConnection,
   miniObsUsername,
-  skipIfNoMiniObsHook
+  skipIfNoMiniObsHook,
+  miniObsOnlyHook,
+  swallowException
 } from "./../test-setup";
 
 describe("PackageFile", function () {
@@ -53,13 +55,8 @@ describe("PackageFile", function () {
     );
   });
 
-  afterEach(async () => {
-    try {
-      await deletePackage(con, pkg);
-    } catch (err) {
-      console.error(err);
-    }
-  });
+  afterEach(miniObsOnlyHook(() => swallowException(deletePackage, con, pkg)));
+
   const getFile = () => ({
     name: "foo.spec",
     packageName: pkg.name,

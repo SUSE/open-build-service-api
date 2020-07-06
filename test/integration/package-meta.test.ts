@@ -35,7 +35,9 @@ import {
   beforeEachRecord,
   getTestConnection,
   miniObsUsername,
-  skipIfNoMiniObsHook
+  skipIfNoMiniObsHook,
+  miniObsOnlyHook,
+  swallowException
 } from "./../test-setup";
 
 describe("#getPackageMeta", () => {
@@ -99,15 +101,26 @@ describe("#setPackageMeta", () => {
     summary: "Ok"
   };
   const project = `home:${miniObsUsername}`;
+  const pkgName = "testPkg";
+  const complexPkgName = "complexPkg";
+
+  after(
+    miniObsOnlyHook(
+      async () =>
+        await Promise.all([
+          swallowException(deletePackage, con, project, pkgName),
+          swallowException(deletePackage, con, project, complexPkgName)
+        ])
+    )
+  );
 
   it("creates a new package", async function () {
     this.timeout(5000);
 
-    const name = "testPkg";
     const newPkg: PackageMeta = {
       description: `This is a package that has been created to test obs.ts
 It should be gone soon-ish.`,
-      name,
+      name: pkgName,
       project,
       title: "Testpackage, please ignore me"
     };
@@ -115,29 +128,24 @@ It should be gone soon-ish.`,
     await setPackageMeta(
       con,
       project,
-      name,
+      pkgName,
       newPkg
     ).should.eventually.deep.equal(statusOk);
 
-    await getPackageMeta(con, project, name).should.eventually.deep.equal(
+    await getPackageMeta(con, project, pkgName).should.eventually.deep.equal(
       newPkg
-    );
-
-    await deletePackage(con, project, name).should.eventually.deep.equal(
-      statusOk
     );
   });
 
   it("creates a complicated package", async function () {
     this.timeout(5000);
 
-    const name = "complexPkg";
     const newPkg: PackageMeta = {
       description: `This is a package that has been created to test whether obs.ts can set a lot of values for packages.
 
 It will be deleted when everything works out.
 `,
-      name,
+      name: complexPkgName,
       project,
       title: "Testpackage, please ignore me or not, your choice",
       url: "https://build.opensuse.org",
@@ -148,19 +156,23 @@ It will be deleted when everything works out.
     await setPackageMeta(
       con,
       project,
-      name,
+      complexPkgName,
       newPkg
     ).should.eventually.deep.equal(statusOk);
 
-    await getPackageMeta(con, project, name).should.eventually.deep.equal(
-      newPkg
-    );
+    await getPackageMeta(
+      con,
+      project,
+      complexPkgName
+    ).should.eventually.deep.equal(newPkg);
 
-    await deletePackage(con, project, name).should.eventually.deep.equal(
-      statusOk
-    );
+    await deletePackage(
+      con,
+      project,
+      complexPkgName
+    ).should.eventually.deep.equal(statusOk);
 
-    await getPackageMeta(con, project, name).should.be.rejectedWith(
+    await getPackageMeta(con, project, complexPkgName).should.be.rejectedWith(
       ApiError,
       "unknown_package"
     );

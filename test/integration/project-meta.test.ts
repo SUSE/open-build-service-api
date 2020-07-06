@@ -45,7 +45,9 @@ import {
   beforeEachRecord,
   getTestConnection,
   miniObsUsername,
-  skipIfNoMiniObsHook
+  skipIfNoMiniObsHook,
+  miniObsOnlyHook,
+  swallowException
 } from "./../test-setup";
 
 const findRepoByNameBuilder = (proj: ProjectMeta) => (repoName: string) =>
@@ -295,10 +297,23 @@ describe("#modifyOrCreateProject", function () {
   const con = getTestConnection(ApiType.MiniObs);
 
   before(skipIfNoMiniObsHook);
+  after(
+    miniObsOnlyHook(() =>
+      Promise.all(
+        projNames.map((name) => swallowException(deleteProject, con, name))
+      )
+    )
+  );
+
+  const projNames = [
+    `home:${miniObsUsername}:obs_ts_test`,
+    `home:${miniObsUsername}:set_as_many_properties_as_we_can`
+  ];
+
   this.timeout(10000);
 
   it("creates a new project", async function () {
-    const name = `home:${miniObsUsername}:obs_ts_test`;
+    const name = projNames[0];
     const newProj: ProjectMeta = {
       description: `This is a project that has been created to test obs.ts
 It should be gone soon.`,
@@ -329,13 +344,7 @@ It should be gone soon.`,
 
   it("creates a new complicated project", async function () {
     this.timeout(10000);
-    const name = `home:${miniObsUsername}:set_as_many_properties_as_we_can`;
-
-    try {
-      await deleteProject(con, name);
-    } catch {
-      // we just want to make sure it is gone
-    }
+    const name = projNames[1];
 
     const newProj: ProjectMeta = {
       description: `This is a project that has been created to test obs.ts
