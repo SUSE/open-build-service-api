@@ -20,13 +20,19 @@
  */
 
 import { expect } from "chai";
-import { afterEach, beforeEach, describe, it } from "mocha";
-import { fetchPackage } from "../../src/package";
+import { after, afterEach, before, beforeEach, describe, it } from "mocha";
+import { calculateHash } from "../../src/checksum";
+import { setFileContentsAndCommit } from "../../src/file";
+import { branchPackage, createPackage, fetchPackage } from "../../src/package";
+import { createProject, deleteProject } from "../../src/project";
 import {
   afterEachRecord,
   ApiType,
   beforeEachRecord,
-  getTestConnection
+  getTestConnection,
+  miniObsOnlyHook,
+  skipIfNoMiniObs,
+  swallowException
 } from "./../test-setup";
 import {
   vagrantSshfs,
@@ -222,6 +228,118 @@ describe("Package", function () {
         size: 8983040,
         modifiedTime: new Date("Mon, 12 Aug 2019 08:56:30 +0200")
       });
+    });
+  });
+});
+
+describe("Package mutable tests", function () {
+  this.timeout(10000);
+  const con = getTestConnection(ApiType.MiniObs);
+
+  const packageName = "ccls";
+  const projectName = `home:${con.username}:testForBranch`;
+  const ccls = {
+    apiUrl: con.url,
+    name: packageName,
+    projectName
+  };
+  const contents = Buffer.from("contents or stuff");
+
+  before(async function () {
+    skipIfNoMiniObs(this);
+    await createProject(con, {
+      name: projectName,
+      description: "Test project for branches",
+      title: "Test for Branching"
+    });
+    await createPackage(con, projectName, packageName, "ccls");
+    await setFileContentsAndCommit(con, {
+      packageName,
+      projectName,
+      name: "ccls.spec",
+      contents,
+      modifiedTime: new Date(),
+      md5Hash: calculateHash(contents, "md5"),
+      size: contents.length
+    });
+  });
+
+  const branchInHome = `home:${con.username}:branches:${projectName}`;
+  const otherBranchInHome = `home:${con.username}:cclsBranch`;
+
+  afterEach(
+    miniObsOnlyHook(async () => {
+      await Promise.all([
+        swallowException(deleteProject, con, branchInHome),
+        swallowException(deleteProject, con, otherBranchInHome)
+      ]);
+    })
+  );
+
+  after(() => swallowException(deleteProject, con, projectName));
+
+  describe("#branchPackage", () => {
+    it("branches ccls into the home project", async () => {
+      const branchedPackage = await branchPackage(con, ccls);
+
+      branchedPackage.should.deep.include({
+        name: packageName,
+        projectName: branchInHome,
+        apiUrl: con.url
+      });
+      expect(branchedPackage.md5Hash).to.be.a("string");
+      expect(branchedPackage.files).to.be.an("array").and.have.length(1);
+
+      await fetchPackage(
+        con,
+        branchInHome,
+        packageName
+      ).should.eventually.deep.equal(branchedPackage);
+    });
+
+    it("branches ccls as cclz into the home project", async () => {
+      const branchedPackage = await branchPackage(con, ccls, {
+        targetPackage: "cclz"
+      });
+
+      branchedPackage.name.should.equals("cclz");
+
+      await fetchPackage(
+        con,
+        branchInHome,
+        "cclz"
+      ).should.eventually.deep.equal(branchedPackage);
+    });
+
+    it(`branches ccls into the project ${otherBranchInHome}`, async () => {
+      const branchedPackage = await branchPackage(con, ccls, {
+        targetProject: otherBranchInHome
+      });
+
+      branchedPackage.name.should.equals(ccls.name);
+      branchedPackage.projectName.should.equals(otherBranchInHome);
+
+      await fetchPackage(
+        con,
+        otherBranchInHome,
+        ccls.name
+      ).should.eventually.deep.equal(branchedPackage);
+    });
+
+    it(`branches ccls as ccl into the project ${otherBranchInHome}`, async () => {
+      const branchedPackage = await branchPackage(con, ccls, {
+        targetProject: otherBranchInHome,
+        targetPackage: "ccl"
+      });
+
+      branchedPackage.name.should.equals("ccl");
+      branchedPackage.projectName.should.equals(otherBranchInHome);
+
+      await fetchPackage(
+        con,
+        otherBranchInHome,
+        "ccl"
+      ).should.eventually.deep.equal(branchedPackage);
     });
   });
 });

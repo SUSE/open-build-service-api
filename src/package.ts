@@ -36,17 +36,17 @@ import {
   setPackageMeta
 } from "./api/package-meta";
 import { calculateHash } from "./checksum";
-import { Connection, RequestMethod } from "./connection";
+import { Connection, normalizeUrl, RequestMethod } from "./connection";
 import { StatusReply, statusReplyFromApi } from "./error";
 import {
   fetchFileContents,
   FrozenPackageFile,
+  isFrozenPackageFile,
   PackageFile,
-  packageFileFromDirectoryEntry,
-  isFrozenPackageFile
+  packageFileFromDirectoryEntry
 } from "./file";
 import { Project } from "./project";
-import { unixTimeStampFromDate, zip, createOrEnsureEmptyDir } from "./util";
+import { createOrEnsureEmptyDir, unixTimeStampFromDate, zip } from "./util";
 import { FileState, ModifiedPackage } from "./vcs";
 import { newXmlBuilder, newXmlParser } from "./xml";
 
@@ -628,4 +628,156 @@ export async function readInCheckedOutPackage(
   );
 
   return { files, ...pkg };
+}
+
+/** Options for customizing the branching of a [[Package]]. */
+export interface BranchOptions {
+  /**
+   * Specify the project into which the package will be branched.
+   * Defaults to `home:$USERNAME:branches:$PROJECTNAME`.
+   */
+  targetProject?: string;
+
+  /**
+   * Specify the name of the package as which the package will be branched.
+   * Defaults to the original packages' name.
+   */
+  targetPackage?: string;
+}
+
+/** internal function to branch a package */
+async function _branchPackage(
+  con: Connection,
+  pkg: Package,
+  branchOptions?: BranchOptions
+): Promise<PackageWithMeta> {
+  if (normalizeUrl(con.url) !== normalizeUrl(pkg.apiUrl)) {
+    throw new Error(
+      `The package ${pkg.projectName}/${pkg.name} belongs to the API ${pkg.apiUrl} but the connection is only valid for ${con.url}`
+    );
+  }
+
+  let route = `/source/${pkg.projectName}/${pkg.name}?cmd=branch`;
+
+  const targetProject =
+    branchOptions?.targetProject ??
+    `home:${con.username}:branches:${pkg.projectName}`;
+  const targetPackage = branchOptions?.targetPackage ?? pkg.name;
+
+  if (
+    branchOptions?.targetPackage !== undefined ||
+    branchOptions?.targetProject !== undefined
+  ) {
+    const params = ["&"];
+    if (branchOptions.targetPackage !== undefined) {
+      params.push(`target_package=${branchOptions.targetPackage}`);
+    }
+    if (branchOptions.targetProject !== undefined) {
+      params.push(
+        `${params.length > 1 ? "&" : ""}target_project=${
+          branchOptions.targetProject
+        }`
+      );
+    }
+    assert(params.length === 2 || params.length === 3);
+    route = route.concat(...params);
+  }
+
+  const status = statusReplyFromApi(
+    await con.makeApiCall(route, {
+      method: RequestMethod.POST
+    })
+  );
+
+  if (status.data !== undefined) {
+    if (
+      status.data["targetproject"] !== undefined &&
+      status.data["targetproject"] !== targetProject
+    ) {
+      throw new Error(
+        `branch resulted in an invalid target project, got ${status.data["targetproject"]} but expected ${targetProject}`
+      );
+    }
+    if (
+      status.data["targetpackage"] !== undefined &&
+      status.data["targetpackage"] !== targetPackage
+    ) {
+      throw new Error(
+        `branch resulted in an invalid target package, got ${status.data["targetpackage"]} but expected ${targetPackage}`
+      );
+    }
+    if (
+      status.data["sourcepackage"] !== undefined &&
+      status.data["sourcepackage"] !== pkg.name
+    ) {
+      throw new Error(
+        `branch was run with an invalid source package, got ${status.data["sourcepackage"]} but expected ${pkg.name}`
+      );
+    }
+    if (
+      status.data["sourceproject"] !== undefined &&
+      status.data["sourceproject"] !== pkg.projectName
+    ) {
+      throw new Error(
+        `branch was run with an invalid source project, got ${status.data["sourceproject"]} but expected ${pkg.projectName}`
+      );
+    }
+  }
+
+  return fetchPackage(con, targetProject, targetPackage, {
+    expandLinks: true,
+    retrieveFileContents: false
+  });
+}
+
+/**
+ * Branch the package `${projectName}/${packageName}` using the [[Connection]]
+ * `con` and the supplied options `branchOptions`.
+ *
+ * A branch operation in the Open Build Service creates something like a copy of
+ * the package: a new package is created in your home project (by default), but
+ * it is "linked" to the original. This is achieved via a `_link` file (that
+ * you'll never see in most cases) which keeps your branched package up to date.
+ */
+export async function branchPackage(
+  con: Connection,
+  projectName: string,
+  packageName: string,
+  branchOptions?: BranchOptions
+): Promise<PackageWithMeta>;
+
+/**
+ * Branch the package `pkg` using the [[Connection]] `con` and the supplied
+ * options `branchOptions`.
+ */
+export async function branchPackage(
+  con: Connection,
+  pkg: Package,
+  branchOptions?: BranchOptions
+): Promise<PackageWithMeta>;
+
+export function branchPackage(
+  con: Connection,
+  pkgOrProjectName: Package | string,
+  packageNameOrOptions?: string | BranchOptions,
+  branchOptions?: BranchOptions
+): Promise<PackageWithMeta> {
+  if (typeof pkgOrProjectName === "string") {
+    assert(
+      packageNameOrOptions !== undefined &&
+        typeof packageNameOrOptions === "string"
+    );
+    return _branchPackage(
+      con,
+      {
+        apiUrl: con.url,
+        projectName: pkgOrProjectName,
+        name: packageNameOrOptions
+      },
+      branchOptions
+    );
+  } else {
+    assert(typeof packageNameOrOptions !== "string");
+    return _branchPackage(con, pkgOrProjectName, packageNameOrOptions);
+  }
 }
