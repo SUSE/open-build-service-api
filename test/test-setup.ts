@@ -339,3 +339,14 @@ export const castToAsyncFunc = <FC>(func: (this: FC) => void): AsyncFunc =>
 
 export const castToFunc = <FC>(func: (this: FC) => void): Func =>
   castToFuncT<FC, Func>(func);
+
+export async function swallowException(
+  func: (...args: any[]) => any,
+  ...args: any[]
+): Promise<void> {
+  try {
+    await func.apply(undefined, args);
+  } catch (err) {
+    console.error(err.toString());
+  }
+}
