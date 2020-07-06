@@ -219,6 +219,12 @@ export class Connection {
   private readonly request: typeof http.request | typeof https.request;
 
   /**
+   * `true` when https is enforced or `false` when http is permitted as
+   *  well.
+   */
+  private readonly forceHttps: boolean;
+
+  /**
    * Convert an [[Account]] into a Connection if the password is set.
    *
    * @param account  The account to be converted.
@@ -282,7 +288,8 @@ export class Connection {
     this.url = normalizeUrl(options.url ?? "https://api.opensuse.org");
 
     const protocol = new URL(this.url).protocol;
-    if (options.forceHttps === undefined || options.forceHttps) {
+    this.forceHttps = options.forceHttps ?? true;
+    if (this.forceHttps) {
       if (protocol !== "https:") {
         throw new Error(
           `${this.url} does not use https, got ${protocol} instead`
@@ -330,7 +337,7 @@ export class Connection {
     return new Connection(username ?? this.username, this.password, {
       url: url ?? this.url,
       serverCaCertificate: serverCaCertificate ?? this.serverCaCertificate,
-      forceHttps
+      forceHttps: forceHttps ?? this.forceHttps,
     });
   }
 
