@@ -209,7 +209,7 @@ export async function beforeEachRecord(this: Context): Promise<void> {
       .join("_") + ".json"
   );
 
-  // see: https://github.com/nock/nock/blob/master/lib/back.js#L180
+  // see: https://github.com/nock/nock/blob/3b24821a05c32a6e9a70f69fdb29fdcd68d65076/lib/back.js#L133
   nock.restore();
   nock.recorder.clear();
   nock.cleanAll();
@@ -239,6 +239,10 @@ export async function beforeEachRecord(this: Context): Promise<void> {
 }
 
 export async function afterEachRecord(this: Context) {
+  nock.enableNetConnect();
+  nock.cleanAll();
+  nock.abortPendingRequests();
+
   if (this.scopes === undefined) {
     const nockCallObjects = nock.recorder.play();
 
@@ -259,7 +263,6 @@ export async function afterEachRecord(this: Context) {
       JSON.stringify(nockCallObjects, undefined, 4)
     );
   }
-  nock.enableNetConnect();
 }
 
 export async function checkApiCallSucceeds<T>(
