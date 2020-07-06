@@ -19,11 +19,14 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+// ignore these rules as config-ini-parser has no type annotations
+/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment */
+
 import { promises as fsPromises } from "fs";
 import { homedir } from "os";
 import { normalizeUrl } from "./connection";
 
-// tslint:disable-next-line: no-var-requires
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const ConfigIniParser = require("config-ini-parser").ConfigIniParser;
 
 export class Account {
@@ -161,8 +164,11 @@ export async function addAccountToOscrc(
     { prop: "realname" }
   ];
   props.forEach(({ prop, propName }) => {
-    if (account[prop] !== undefined) {
-      oscrc += `${propName !== undefined ? propName : prop} = ${account[prop]}
+    const accountProp = account[prop];
+    if (accountProp !== undefined) {
+      oscrc += `${propName !== undefined ? propName : prop} = ${
+        typeof accountProp === "string" ? accountProp : accountProp.join(", ")
+      }
 `;
     }
   });
