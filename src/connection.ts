@@ -206,6 +206,19 @@ export class Connection {
   /** URL to the API of this buildservice instance */
   public readonly url: string;
 
+  /**
+   * Maximum number of concurrent API calls that can be performed by this
+   * Connection.
+   *
+   * Negative numbers indicate that there is no limit.
+   *
+   * **Note:** This value should be kept relatively small (ideally keep it at
+   * the default), as OBS has only a limited number of worker threads that can
+   * reply and with enough concurrent requests, you can essentially DOS OBS by
+   * asynchronously checking out Factory.
+   */
+  public readonly maxConcurrentConnections: number = 6;
+
   /** the user's password */
   private readonly password: string;
 
@@ -217,6 +230,8 @@ export class Connection {
   private readonly serverCaCertificate?: string;
 
   private readonly request: typeof http.request | typeof https.request;
+
+  private currentConnectionCount: number = 0;
 
   /**
    * `true` when https is enforced or `false` when http is permitted as
@@ -277,6 +292,7 @@ export class Connection {
       url?: string;
       serverCaCertificate?: string;
       forceHttps?: boolean;
+      maxConcurrentConnections?: number;
     } = {}
   ) {
     this.password = password;
@@ -286,6 +302,10 @@ export class Connection {
     this.serverCaCertificate = options.serverCaCertificate;
 
     this.url = normalizeUrl(options.url ?? "https://api.opensuse.org");
+
+    if (options.maxConcurrentConnections !== undefined) {
+      this.maxConcurrentConnections = options.maxConcurrentConnections;
+    }
 
     const protocol = new URL(this.url).protocol;
     this.forceHttps = options.forceHttps ?? true;
@@ -327,17 +347,21 @@ export class Connection {
     username,
     url,
     serverCaCertificate,
-    forceHttps
+    forceHttps,
+    maxConcurrentConnections
   }: {
     username?: string;
     url?: string;
     serverCaCertificate?: string;
     forceHttps?: boolean;
+    maxConcurrentConnections?: number;
   } = {}): Connection {
     return new Connection(username ?? this.username, this.password, {
       url: url ?? this.url,
       serverCaCertificate: serverCaCertificate ?? this.serverCaCertificate,
       forceHttps: forceHttps ?? this.forceHttps,
+      maxConcurrentConnections:
+        maxConcurrentConnections ?? this.maxConcurrentConnections
     });
   }
 
@@ -409,40 +433,68 @@ export class Connection {
       reqMethod === RequestMethod.GET ? options?.maxRetries ?? 10 : 1;
     let waitBetweenCallsMs = 1000;
 
-    for (let i = 0; i < maxRetries; i++) {
-      const res = await this.doMakeApiCall(
-        url,
-        reqMethod,
-        opts as ApiCallInternalOptions
-      );
-      if (!isRetryInfo(res)) {
-        return res;
-      }
-      if (res.location !== undefined) {
-        url = res.location;
-      } else if (res.status === "timeout") {
-        opts.timeoutMs = 2 * opts.timeoutMs;
-      }
-
-      if (i !== maxRetries - 1) {
-        if (
-          res.retryAfterMs !== undefined ||
-          res.status === 503 ||
-          res.status === 429
-        ) {
-          await sleep(res.retryAfterMs ?? waitBetweenCallsMs);
-        } else {
-          await sleep(waitBetweenCallsMs);
+    try {
+      // do we have to limit the number of concurrent connections?
+      // yes => wait until we can bump the counter
+      if (this.maxConcurrentConnections > 0) {
+        let haveLock = false;
+        while (!haveLock) {
+          if (this.currentConnectionCount < this.maxConcurrentConnections) {
+            this.currentConnectionCount++;
+            haveLock = true;
+          } else {
+            await sleep(1000);
+          }
         }
+        assert(
+          this.currentConnectionCount > 0 &&
+            this.currentConnectionCount <= this.maxConcurrentConnections
+        );
       }
-      waitBetweenCallsMs *= 2;
-    }
 
-    throw new Error(
-      `Could not make a ${reqMethod} request to ${url.toString()}, tried unsuccessfully ${maxRetries} time${
-        maxRetries > 1 ? "s" : ""
-      }.`
-    );
+      for (let i = 0; i < maxRetries; i++) {
+        const res = await this.doMakeApiCall(
+          url,
+          reqMethod,
+          opts as ApiCallInternalOptions
+        );
+        if (!isRetryInfo(res)) {
+          return res;
+        }
+        if (res.location !== undefined) {
+          url = res.location;
+        } else if (res.status === "timeout") {
+          opts.timeoutMs = 2 * opts.timeoutMs;
+        }
+
+        if (i !== maxRetries - 1) {
+          if (
+            res.retryAfterMs !== undefined ||
+            res.status === 503 ||
+            res.status === 429
+          ) {
+            await sleep(res.retryAfterMs ?? waitBetweenCallsMs);
+          } else {
+            await sleep(waitBetweenCallsMs);
+          }
+        }
+        waitBetweenCallsMs *= 2;
+      }
+
+      throw new Error(
+        `Could not make a ${reqMethod} request to ${url.toString()}, tried unsuccessfully ${maxRetries} time${
+          maxRetries > 1 ? "s" : ""
+        }.`
+      );
+    } finally {
+      if (this.maxConcurrentConnections > 0) {
+        assert(
+          this.currentConnectionCount > 0 &&
+            this.currentConnectionCount <= this.maxConcurrentConnections
+        );
+        this.currentConnectionCount--;
+      }
+    }
   }
 
   private doMakeApiCall(
