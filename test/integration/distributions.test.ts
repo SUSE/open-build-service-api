@@ -30,8 +30,7 @@ import {
   afterEachRecord,
   ApiType,
   beforeEachRecord,
-  getTestConnection,
-  skipIfNoMiniObs
+  getTestConnection
 } from "./../test-setup";
 
 describe("Distribution", () => {
@@ -199,9 +198,7 @@ describe("Distribution", () => {
       );
     });
 
-    it("fetches the empty distributions from the mini-obs", async function () {
-      skipIfNoMiniObs(this);
-
+    it("fetches the empty distributions from mini-obs", async () => {
       await fetchHostedDistributions(
         getTestConnection(ApiType.MiniObs)
       ).should.eventually.deep.equal([]);
