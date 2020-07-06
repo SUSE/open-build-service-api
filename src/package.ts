@@ -88,6 +88,11 @@ export interface FrozenPackage
   meta?: PackageMeta;
 }
 
+/** Package populated metadata */
+export type PackageWithMeta = Omit<FrozenPackage, "files"> & {
+  files: PackageFile[];
+};
+
 export interface FetchFileListBaseOptions {
   /** Defines if package links should be expanded, defaults to true */
   expandLinks?: boolean;
@@ -291,7 +296,7 @@ export async function fetchPackage(
   options?: Omit<FetchFileListBaseOptions, "revision"> & {
     retrieveFileContents?: boolean;
   }
-): Promise<Package>;
+): Promise<PackageWithMeta>;
 
 /**
  * Fetch the information about package from OBS and populate a [[Package]]
@@ -314,20 +319,18 @@ export async function fetchPackage(
   options?: Omit<FetchFileListBaseOptions, "revision"> & {
     retrieveFileContents?: boolean;
   }
-): Promise<Package | FrozenPackage> {
+): Promise<PackageWithMeta | FrozenPackage> {
   const projName: string = typeof project === "string" ? project : project.name;
 
-  const pkg: Package = {
+  const basePkg = {
     apiUrl: con.url,
     name: packageName,
-    projectName: projName,
-    files: []
+    projectName: projName
   };
-
-  const [filesAndHash, pkgMeta] = await Promise.all([
+  const [filesAndHash, meta] = await Promise.all([
     fetchFileList(
       con,
-      pkg,
+      basePkg,
       // HACK: the cast here is required as typescript is for some reason not
       // able to figure out that undefined|false and true are equal to
       // undefined|boolean...
@@ -338,11 +341,12 @@ export async function fetchPackage(
     getPackageMeta(con, projName, packageName)
   ]);
 
-  [pkg.files, pkg.md5Hash, pkg.meta] = [
-    filesAndHash[0],
-    filesAndHash[1],
-    pkgMeta
-  ];
+  const pkg = {
+    ...basePkg,
+    files: filesAndHash[0],
+    md5Hash: filesAndHash[1],
+    meta
+  };
 
   if (options?.retrieveFileContents) {
     Object.freeze(pkg);
