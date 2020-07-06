@@ -25,8 +25,8 @@ import { expect, should, use } from "chai";
 import * as chaiAsPromised from "chai-as-promised";
 import * as chaiThings from "chai-things";
 import * as sinonChai from "sinon-chai";
-import { promises as fsPromises, readFileSync, writeFileSync } from "fs";
 import { AsyncFunc, Context, Func } from "mocha";
+import { promises as fsPromises } from "fs";
 import * as nock from "nock";
 import { tmpdir } from "os";
 import { join, sep } from "path";
@@ -217,7 +217,9 @@ export async function beforeEachRecord(this: Context): Promise<void> {
 
   if ((await pathExists(this.recordJsonPath, PathType.File)) !== undefined) {
     const nockDefs = nock.loadDefs(this.recordJsonPath);
-    const rawData = JSON.parse(readFileSync(this.recordJsonPath).toString());
+    const rawData = JSON.parse(
+      await fsPromises.readFile(this.recordJsonPath, "utf8")
+    );
     const extractedScopes = nock.define(nockDefs);
 
     this.scopes = extractedScopes.map((scopeElem: nock.Scope, i: number) => ({
@@ -236,7 +238,7 @@ export async function beforeEachRecord(this: Context): Promise<void> {
   }
 }
 
-export function afterEachRecord(this: Context) {
+export async function afterEachRecord(this: Context) {
   if (this.scopes === undefined) {
     const nockCallObjects = nock.recorder.play();
 
@@ -252,7 +254,7 @@ export function afterEachRecord(this: Context) {
       }
     }
 
-    writeFileSync(
+    await fsPromises.writeFile(
       this.recordJsonPath,
       JSON.stringify(nockCallObjects, undefined, 4)
     );
