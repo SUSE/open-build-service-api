@@ -34,25 +34,25 @@ import {
 import { setupPackageFileMock } from "./test-setup";
 
 describe("ModifiedPackage", () => {
+  const pkgBase = {
+    apiUrl: "https://api.foobar.org",
+    name: "fooPkg",
+    projectName: "fooProj",
+    md5Hash: "somethingSomethingButNotAHash"
+  };
+
+  const files: FrozenPackageFile[] = ["foo", "bar"].map((name) => ({
+    name,
+    packageName: pkgBase.name,
+    projectName: pkgBase.projectName,
+    md5Hash: calculateHash(Buffer.from(name), "md5"),
+    modifiedTime: new Date(),
+    contents: Buffer.from(name),
+    size: 3
+  }));
+
   describe("#readInModifiedPackageFromDir", () => {
     afterEach(() => mockFs.restore());
-
-    const pkgBase = {
-      apiUrl: "https://api.foobar.org",
-      name: "fooPkg",
-      projectName: "fooProj",
-      md5Hash: "somethingSomethingButNotAHash"
-    };
-
-    const files: FrozenPackageFile[] = ["foo", "bar"].map((name) => ({
-      name,
-      packageName: pkgBase.name,
-      projectName: pkgBase.projectName,
-      md5Hash: calculateHash(Buffer.from(name), "md5"),
-      modifiedTime: new Date(),
-      contents: Buffer.from(name),
-      size: 3
-    }));
 
     it("reads in the files from .osc/_to_be_added", async () => {
       setupPackageFileMock(
