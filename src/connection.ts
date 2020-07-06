@@ -42,6 +42,8 @@ export function normalizeUrl(url: string): string {
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+const DEFAULT_TIMEOUT_MS = 10000;
+
 interface RetryInfo {
   /**
    * Status that caused the need to retry the request.
@@ -159,13 +161,18 @@ export interface ApiCallMainOptions {
   sendPayloadAsRaw?: boolean;
 
   /**
-   * Timeout for a single HTTP request in milliseconds. Defaults to 1000.
+   * Timeout for a single HTTP request in milliseconds. Defaults to 10000.
    */
   timeoutMs?: number;
 
   /**
-   * How many times will a request be retried before throwing an Error. Defaults
-   * to 10.
+   * How many times will a `GET` request be retried before throwing an
+   * Error. Defaults to 10.
+   *
+   * **CAUTION:** only `GET` requests will be retried if they should time out!
+   * All other requests types will ignore this setting and will throw an
+   * exception on the first timeout (this is especially important for `POST`
+   * requests, as these are not idempotent)
    */
   maxRetries?: number;
 }
@@ -382,13 +389,17 @@ export class Connection {
       "request method in reqMethod must not be undefined"
     );
 
-    const opts = options !== undefined ? { ...options } : { timeoutMs: 1000 };
+    const opts =
+      options !== undefined
+        ? { ...options }
+        : { timeoutMs: DEFAULT_TIMEOUT_MS };
     if (opts.timeoutMs === undefined) {
-      opts.timeoutMs = 1000;
+      opts.timeoutMs = DEFAULT_TIMEOUT_MS;
     }
     assert(opts.timeoutMs !== undefined);
 
-    const maxRetries = options?.maxRetries ?? 10;
+    const maxRetries =
+      reqMethod === RequestMethod.GET ? options?.maxRetries ?? 10 : 1;
     let waitBetweenCallsMs = 1000;
 
     for (let i = 0; i < maxRetries; i++) {
@@ -406,20 +417,24 @@ export class Connection {
         opts.timeoutMs = 2 * opts.timeoutMs;
       }
 
-      if (
-        res.retryAfterMs !== undefined ||
-        res.status === 503 ||
-        res.status === 429
-      ) {
-        await sleep(res.retryAfterMs ?? waitBetweenCallsMs);
-      } else {
-        await sleep(waitBetweenCallsMs);
+      if (i !== maxRetries - 1) {
+        if (
+          res.retryAfterMs !== undefined ||
+          res.status === 503 ||
+          res.status === 429
+        ) {
+          await sleep(res.retryAfterMs ?? waitBetweenCallsMs);
+        } else {
+          await sleep(waitBetweenCallsMs);
+        }
       }
       waitBetweenCallsMs *= 2;
     }
 
     throw new Error(
-      `Could not make a ${reqMethod} request to ${url.toString()}, tried unsuccessfully ${maxRetries} times.`
+      `Could not make a ${reqMethod} request to ${url.toString()}, tried unsuccessfully ${maxRetries} time${
+        maxRetries > 1 ? "s" : ""
+      }.`
     );
   }
 

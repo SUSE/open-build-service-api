@@ -24,7 +24,7 @@ import { describe, it } from "mocha";
 import * as nock from "nock";
 import { URL } from "url";
 import { Account } from "../src/account";
-import { Connection, normalizeUrl } from "../src/connection";
+import { Connection, normalizeUrl, RequestMethod } from "../src/connection";
 import { ApiError } from "../src/error";
 import {
   afterEachRecord,
@@ -252,12 +252,18 @@ describe("Connection", () => {
     const con = new Connection("foo", "fooPw", { url, forceHttps: false });
 
     it("throws an exception when the request timed out", async () => {
-      nock(url).get("/").delay(3000).reply(200, "Will never receive this");
+      nock(url)
+        .get("/")
+        .delay(3000)
+        .reply(200, "Will never receive this")
+        .get("/")
+        .delay(3000)
+        .reply(200, "and neither this");
 
       await con
-        .makeApiCall("/", { timeoutMs: 1, maxRetries: 1 })
+        .makeApiCall("/", { timeoutMs: 1, maxRetries: 2 })
         .should.be.rejectedWith(
-          /Could not make a GET request to.*api\.foo\.org.*tried unsuccessfully 1 times/
+          /Could not make a GET request to.*api\.foo\.org.*tried unsuccessfully 2 times/
         );
 
       nock.abortPendingRequests();
@@ -334,6 +340,27 @@ describe("Connection", () => {
       await con
         .makeApiCall("/", { decodeResponseFromXml: false })
         .should.eventually.deep.equal(reply);
+
+      scopes.isDone().should.equal(true);
+    });
+
+    it("does not retry POST requests", async () => {
+      const scopes = nock(url)
+        .post("/")
+        .delay(3000)
+        .reply(200, "Will never receive this");
+
+      await con
+        .makeApiCall("/", {
+          method: RequestMethod.POST,
+          decodeResponseFromXml: false,
+          timeoutMs: 500,
+          // this gets ignored:
+          maxRetries: 100
+        })
+        .should.be.rejectedWith(
+          /Could not make a POST request.*tried unsuccessfully 1 time/
+        );
 
       scopes.isDone().should.equal(true);
     });
