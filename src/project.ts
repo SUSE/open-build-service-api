@@ -139,21 +139,21 @@ async function fetchPackageList(
 export async function fetchProject(
   con: Connection,
   projectName: string,
-  options: { getPackageList: true }
+  options: { fetchPackageList: true }
 ): Promise<ProjectWithPackages>;
 
 export async function fetchProject(
   con: Connection,
   projectName: string,
-  options?: { getPackageList?: boolean }
 ): Promise<Project>;
+  options?: { fetchPackageList?: boolean }
 
 /**
  * Get a [[Project]] structure from the build service instance.
  *
  * @param con  The [[Connection]] that will be used to make the API calls.
  * @param projectName  Full name of the project
- * @param getPackageList  Flag whether the [[Project.packages]] attribute should
+ * @param fetchPackageList  Flag whether the [[Project.packages]] attribute should
  *     be filled too. This results in another API call and might result in a lot
  *     of network traffic for **huge** projects (think of `openSUSE:Factory` on
  *     build.opensuse.org).
@@ -169,7 +169,7 @@ export async function fetchProject(
     name: projectName,
     meta
   };
-  if (options?.getPackageList === undefined || options.getPackageList) {
+  if (options?.fetchPackageList === undefined || options.fetchPackageList) {
     return deleteUndefinedMembers({
       ...proj,
       packages: await fetchPackageList(con, proj)
@@ -315,7 +315,7 @@ export async function checkOutProject(
   await createOrEnsureEmptyDir(path);
 
   const projectName = typeof project === "string" ? project : project.name;
-  const proj = await fetchProject(con, projectName, { getPackageList: true });
+  const proj = await fetchProject(con, projectName, { fetchPackageList: true });
 
   if (options?.packageList !== undefined) {
     const invalidPackages = setDifference(

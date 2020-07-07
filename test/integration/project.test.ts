@@ -59,7 +59,7 @@ describe("#fetchProject", () => {
   it("fetches the Project of Virtualization:vagrant", async () => {
     const projectName = "Virtualization:vagrant";
     const virtualizationVagrant = await fetchProject(con, projectName, {
-      getPackageList: false
+      fetchPackageList: false
     });
 
     expect(virtualizationVagrant).to.have.property("apiUrl", con.url);
@@ -283,7 +283,7 @@ describe("#checkOut", function () {
     // checkOutProject() and the order of the packages is not different from
     // what we set
     const projFromObs = await fetchProject(con, proj.name, {
-      getPackageList: true
+      fetchPackageList: true
     });
 
     await checkOutProject(con, proj, dir, { callback });
