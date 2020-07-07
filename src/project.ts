@@ -101,8 +101,13 @@ export interface Project {
   meta?: ProjectMeta;
 }
 
-/** A project where the package list is guaranteed to exist */
-export type ProjectWithPackages = Omit<Project, "packages"> & {
+/** A project where the metadata are guaranteed set */
+export type ProjectWithMeta = Omit<Project, "meta"> & { meta: ProjectMeta };
+
+/**
+ * A project where the package list and the metadata are guaranteed to be set
+ */
+export type ProjectWithPackages = Omit<ProjectWithMeta, "packages"> & {
   packages: Package[];
 };
 
@@ -145,8 +150,8 @@ export async function fetchProject(
 export async function fetchProject(
   con: Connection,
   projectName: string,
-): Promise<Project>;
   options?: { fetchPackageList?: boolean }
+): Promise<ProjectWithMeta>;
 
 /**
  * Get a [[Project]] structure from the build service instance.
@@ -161,8 +166,8 @@ export async function fetchProject(
 export async function fetchProject(
   con: Connection,
   projectName: string,
-  options?: { getPackageList?: boolean }
-): Promise<Project> {
+  options?: { fetchPackageList?: boolean }
+): Promise<ProjectWithMeta | ProjectWithPackages> {
   const meta = await fetchProjectMeta(con, projectName);
   const proj = {
     apiUrl: con.url,
