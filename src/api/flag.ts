@@ -345,8 +345,8 @@ export function repositorySettingToFlag(
 
 /** A boolean flag (see: https://build.opensuse.org/apidocs/obs.rng) */
 export interface SimpleFlagApiReply {
-  enable?: {};
-  disable?: {};
+  enable?: unknown;
+  disable?: unknown;
 }
 
 /**
