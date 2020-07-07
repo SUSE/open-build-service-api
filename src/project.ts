@@ -37,14 +37,18 @@
 import * as assert from "assert";
 import { promises as fsPromises } from "fs";
 import { join } from "path";
-import { directoryFromApi, fetchDirectory } from "./api/directory";
+import {
+  directoryFromApi,
+  fetchDirectory,
+  DirectoryApiReply
+} from "./api/directory";
 import {
   fetchProjectMeta,
   modifyProjectMeta,
   ProjectMeta
 } from "./api/project-meta";
 import { Connection, normalizeUrl, RequestMethod } from "./connection";
-import { StatusReply, statusReplyFromApi } from "./error";
+import { StatusReply, statusReplyFromApi, StatusReplyApiReply } from "./error";
 import { checkOutPackageToFs, fetchPackage, Package } from "./package";
 import { setDifference } from "./set-utils";
 import {
@@ -489,10 +493,11 @@ export async function deleteProject(
     typeof project === "string"
       ? `/source/${project}`
       : `/source/${project.name}`;
-  const resp = await con.makeApiCall(route, {
-    method: RequestMethod.DELETE
-  });
-  return statusReplyFromApi(resp);
+  return statusReplyFromApi(
+    await con.makeApiCall<StatusReplyApiReply>(route, {
+      method: RequestMethod.DELETE
+    })
+  );
 }
 
 /**
@@ -502,7 +507,9 @@ export async function deleteProject(
 export async function fetchProjectList(
   con: Connection
 ): Promise<readonly Project[]> {
-  const projectsDir = directoryFromApi(await con.makeApiCall("/source"));
+  const projectsDir = directoryFromApi(
+    await con.makeApiCall<DirectoryApiReply>("/source")
+  );
   if (
     projectsDir.directoryEntries === undefined ||
     !Array.isArray(projectsDir.directoryEntries)

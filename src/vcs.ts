@@ -26,7 +26,8 @@ import {
   Directory,
   DirectoryEntry,
   directoryFromApi,
-  directoryToApi
+  directoryToApi,
+  DirectoryApiReply
 } from "./api/directory";
 import { calculateFileHash, calculateHash } from "./checksum";
 import { Connection, RequestMethod } from "./connection";
@@ -360,7 +361,7 @@ export async function commit(
     commitMessage === undefined
       ? baseRoute
       : baseRoute.concat(`&comment=${commitMessage}`);
-  const newDirectoryApiReply = await con.makeApiCall(route, {
+  const newDirectoryApiReply = await con.makeApiCall<DirectoryApiReply>(route, {
     method: RequestMethod.POST,
     payload: directoryToApi(directoryFromModifiedPackage(pkg))
   });

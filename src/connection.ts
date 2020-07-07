@@ -373,10 +373,10 @@ export class Connection {
    *     [parseString](https://github.com/Leonidas-from-XIV/node-xml2js#usage).
    *     The reply is only decoded when the request succeeds.
    */
-  public async makeApiCall(
+  public async makeApiCall<T>(
     route: string,
     options?: ApiCallMainOptions & { decodeResponseFromXml?: true }
-  ): Promise<any>;
+  ): Promise<T>;
 
   /**
    * Perform a request to the API and return the retrieved data itself as a

@@ -26,7 +26,7 @@
 
 import * as assert from "assert";
 import { Connection, RequestMethod } from "../connection";
-import { StatusReply, statusReplyFromApi } from "../error";
+import { StatusReply, statusReplyFromApi, StatusReplyApiReply } from "../error";
 import {
   deleteUndefinedAndEmptyMembers,
   deleteUndefinedMembers
@@ -133,8 +133,11 @@ export async function getPackageMeta(
   projectName: string,
   packageName: string
 ): Promise<PackageMeta> {
-  const res = await con.makeApiCall(metaRoute(projectName, packageName));
-  return packageMetaFromApi(res);
+  return packageMetaFromApi(
+    await con.makeApiCall<PackageMetaApiReply>(
+      metaRoute(projectName, packageName)
+    )
+  );
 }
 
 /**
@@ -161,13 +164,20 @@ export async function setPackageMeta(
     packageMeta.project !== undefined && packageMeta.name !== undefined
       ? packageMeta.project === projectName && packageMeta.name === packageName
       : true,
-    `Assertion failed: package name and project name from the packageMeta (${packageMeta.name} and ${packageMeta.project}) do not match the parameters packageName (${packageName}) and projectName (${projectName})`
+    `Assertion failed: package name and project name from the packageMeta (${
+      packageMeta.name ?? "undefined"
+    } and ${
+      packageMeta.project ?? "undefined"
+    }) do not match the parameters packageName (${packageName}) and projectName (${projectName})`
   );
 
-  const res = await con.makeApiCall(metaRoute(projectName, packageName), {
-    payload: packageMetaToApi(packageMeta),
-    method: RequestMethod.PUT
-  });
-
-  return statusReplyFromApi(res);
+  return statusReplyFromApi(
+    await con.makeApiCall<StatusReplyApiReply>(
+      metaRoute(projectName, packageName),
+      {
+        payload: packageMetaToApi(packageMeta),
+        method: RequestMethod.PUT
+      }
+    )
+  );
 }

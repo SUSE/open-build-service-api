@@ -21,7 +21,7 @@
 
 import * as assert from "assert";
 import { Connection, RequestMethod } from "../connection";
-import { StatusReply, statusReplyFromApi } from "../error";
+import { StatusReply, statusReplyFromApi, StatusReplyApiReply } from "../error";
 import {
   deleteUndefinedAndEmptyMembers,
   deleteUndefinedMembers,
@@ -188,7 +188,7 @@ export async function fetchProjectMeta(
   con: Connection,
   projName: string
 ): Promise<ProjectMeta> {
-  const res = await con.makeApiCall(metaRoute(projName));
+  const res = await con.makeApiCall<ProjectMetaApiReply>(metaRoute(projName));
   assert(
     res.project.$.name === projName,
     "Expected the received project name and the sent project name to be equal"
@@ -200,9 +200,13 @@ export async function modifyProjectMeta(
   con: Connection,
   proj: ProjectMeta
 ): Promise<StatusReply> {
-  const resp = await con.makeApiCall("/source/".concat(proj.name, "/_meta"), {
-    method: RequestMethod.PUT,
-    payload: projectMetaToApi(proj)
-  });
-  return statusReplyFromApi(resp);
+  return statusReplyFromApi(
+    await con.makeApiCall<StatusReplyApiReply>(
+      "/source/".concat(proj.name, "/_meta"),
+      {
+        method: RequestMethod.PUT,
+        payload: projectMetaToApi(proj)
+      }
+    )
+  );
 }

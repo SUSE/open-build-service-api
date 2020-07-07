@@ -140,7 +140,7 @@ export async function fetchHostedDistributions(
   con: Connection,
   includeRemotes: boolean = false
 ): Promise<readonly Distribution[]> {
-  const distros: DistributionsApiReply = await con.makeApiCall(
+  const distros = await con.makeApiCall<DistributionsApiReply>(
     !includeRemotes ? "/distributions" : "distributions/include_remotes"
   );
 

@@ -25,8 +25,13 @@ import { basename } from "path";
 import { DirectoryEntry } from "./api/directory";
 import { calculateHash } from "./checksum";
 import { Connection, RequestMethod } from "./connection";
-import { StatusReply, statusReplyFromApi } from "./error";
-import { Commit, Revision, apiRevisionToRevision } from "./history";
+import { StatusReply, statusReplyFromApi, StatusReplyApiReply } from "./error";
+import {
+  apiRevisionToRevision,
+  Commit,
+  Revision,
+  RevisionApiReply
+} from "./history";
 import { Package } from "./package";
 import { deleteUndefinedMembers, pathExists, PathType } from "./util";
 
@@ -227,16 +232,15 @@ export async function setFileContentsAndCommit(
   commitMsg?: string
 ): Promise<Revision> {
   const route = `/source/${pkgFile.projectName}/${pkgFile.packageName}/${pkgFile.name}`;
-  const revision = await con.makeApiCall(
-    commitMsg === undefined ? route : `${route}?comment=${commitMsg}`,
-    {
-      method: RequestMethod.PUT,
-      payload: pkgFile.contents,
-      sendPayloadAsRaw: true
-    }
-  );
+  const revisionApiReply = await con.makeApiCall<{
+    revision: RevisionApiReply;
+  }>(commitMsg === undefined ? route : `${route}?comment=${commitMsg}`, {
+    method: RequestMethod.PUT,
+    payload: pkgFile.contents,
+    sendPayloadAsRaw: true
+  });
 
-  return apiRevisionToRevision(revision.revision, {
+  return apiRevisionToRevision(revisionApiReply.revision, {
     projectName: pkgFile.projectName,
     name: pkgFile.packageName
   });
@@ -292,6 +296,8 @@ export async function deleteFile(
   const route = `/source/${pkgFile.projectName}/${pkgFile.packageName}/${pkgFile.name}`;
 
   return statusReplyFromApi(
-    await con.makeApiCall(route, { method: RequestMethod.DELETE })
+    await con.makeApiCall<StatusReplyApiReply>(route, {
+      method: RequestMethod.DELETE
+    })
   );
 }

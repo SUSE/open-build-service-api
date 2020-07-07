@@ -113,7 +113,7 @@ export interface Commit extends CommitWithFiles {
 export type Revision = BaseCommit;
 
 /** The representation of a revision as received from OBS API */
-interface RevisionApiReply {
+export interface RevisionApiReply {
   $: {
     rev: string;
     vrev: string;
@@ -197,7 +197,7 @@ export async function fetchHistory(
   con: Connection,
   pkg: Package
 ): Promise<readonly Revision[]> {
-  const revs: RevisionListApiReply = await con.makeApiCall(
+  const revs = await con.makeApiCall<RevisionListApiReply>(
     `/source/${pkg.projectName}/${pkg.name}/_history`
   );
 
@@ -425,6 +425,8 @@ async function cachedFetchHistoryAcrossLinks(
     reversedExpandedPackageContents
   } = await fetchExpandedRevisions(con, pkg);
 
+  // console.log(reversedExpandedPackageContents);
+
   insertCommitsIntoAllCaches(pkg, headCommit, commitCache, pkgHistoryCache);
 
   if (headCommit === undefined) {
@@ -489,6 +491,11 @@ async function cachedFetchHistoryAcrossLinks(
         if (linkedHistory === undefined) {
           useBaseRev = true;
         } else {
+          // console.log("linkedHistory:");
+          // console.log(linkedHistory);
+          // console.log("------------");
+          // console.log(validLink);
+
           // at this point the linkedHistory must be one of the two:
           // 1. we have a validLink.revision and obtained the commit from the
           //    commitCache => the revisions must now match, otherwise our hash

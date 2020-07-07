@@ -37,7 +37,7 @@ import {
 } from "./api/package-meta";
 import { calculateHash } from "./checksum";
 import { Connection, normalizeUrl, RequestMethod } from "./connection";
-import { StatusReply, statusReplyFromApi } from "./error";
+import { StatusReply, statusReplyFromApi, StatusReplyApiReply } from "./error";
 import {
   fetchFileContents,
   FrozenPackageFile,
@@ -390,10 +390,11 @@ export async function deletePackage(
     typeof projNameOrPkg === "string"
       ? `/source/${projNameOrPkg}/${packageName}`
       : `/source/${projNameOrPkg.projectName}/${projNameOrPkg.name}`;
-  const response = await con.makeApiCall(route, {
-    method: RequestMethod.DELETE
-  });
-  return statusReplyFromApi(response);
+  return statusReplyFromApi(
+    await con.makeApiCall<StatusReplyApiReply>(route, {
+      method: RequestMethod.DELETE
+    })
+  );
 }
 
 async function writePackageFiles(
@@ -684,7 +685,7 @@ async function _branchPackage(
   }
 
   const status = statusReplyFromApi(
-    await con.makeApiCall(route, {
+    await con.makeApiCall<StatusReplyApiReply>(route, {
       method: RequestMethod.POST
     })
   );

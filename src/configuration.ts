@@ -213,7 +213,7 @@ const constructUrlOpt = {
 export async function fetchConfiguration(
   con: Connection
 ): Promise<Configuration> {
-  const confReply: ConfigurationApiReply = await con.makeApiCall(
+  const confReply = await con.makeApiCall<ConfigurationApiReply>(
     "/configuration.xml"
   );
 

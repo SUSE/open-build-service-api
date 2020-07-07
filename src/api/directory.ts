@@ -168,7 +168,7 @@ function serviceInfoFromApi(serviceInfo: ServiceInfoApiReply): ServiceInfo {
   return serviceInfo.$ ?? {};
 }
 
-interface DirectoryApiReply {
+export interface DirectoryApiReply {
   /**  Directory listing */
   directory: {
     $?: {
@@ -257,5 +257,5 @@ export async function fetchDirectory(
   con: Connection,
   route: string
 ): Promise<Directory> {
-  return directoryFromApi(await con.makeApiCall(route));
+  return directoryFromApi(await con.makeApiCall<DirectoryApiReply>(route));
 }

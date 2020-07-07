@@ -60,7 +60,7 @@ export interface StatusReply {
 }
 
 /** [[StatusReply]] as decoded via xml2js when received from the API */
-interface StatusReplyApiReply {
+export interface StatusReplyApiReply {
   status: {
     $: { code: string };
     data?:
