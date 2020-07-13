@@ -112,6 +112,33 @@ async function readFileListFromDir(
 `);
 }
 
+async function writeFileListToDir(
+  pkg: ModifiedPackage,
+  fileListType: FileListType
+): Promise<void> {
+  const targetFile = join(pkg.path, ".osc", fileListType);
+
+  const fileNames = pkg.filesInWorkdir.filter(
+    (f) =>
+      f.state ===
+      (fileListType == FileListType.ToBeAdded
+        ? FileState.ToBeAdded
+        : FileState.ToBeDeleted)
+  );
+
+  if (fileNames.length > 0) {
+    await fsPromises.writeFile(
+      targetFile,
+      fileNames.join(`
+`)
+    );
+  } else {
+    if (await pathExists(targetFile, PathType.File)) {
+      await fsPromises.unlink(targetFile);
+    }
+  }
+}
+
 export async function addAndDeleteFilesFromPackage(
   pkg: ModifiedPackage,
   filesToDelete: string[],
@@ -216,6 +243,57 @@ export async function addAndDeleteFilesFromPackage(
   );
 
   return { filesInWorkdir: newFiles, ...restOfPkg };
+}
+
+/** Removes the provided files from the list of tracked files.
+ *
+ * This function sets the state of all files in the array `filesToUntrack` from
+ * [[FileState.ToBeAdded]] to [[FileState.Untracked]] and modifies the files in
+ * the `.osc` directory so that `osc` knows of this change as well.
+ *
+ * @param pkg  The package whose files should be untracked. This object is
+ *     **not** modified, the modified version is returned by this function.
+ *     The data in this object are assumed to be up to date and are not re-read
+ *     from disk again.
+ * @param `filesToUntrack`  Filenames that whose corresponding file state will be
+ *     changed from [[FileState.ToBeAdded]] to [[FileState.Untracked]].
+ *
+ *
+ * @throw `Error` when a file in `filesToUntrack` does not exist or is not to be
+ *     added.
+ *
+ * @return A copy of `pkg` with the [[ModifiedPackage.filesInWorkdir]] property
+ *     adjusted accordingly.
+ */
+export async function untrackFiles(
+  pkg: ModifiedPackage,
+  filesToUntrack: string[]
+): Promise<ModifiedPackage> {
+  filesToUntrack.forEach((fileToUntrack) => {
+    if (
+      pkg.filesInWorkdir.find(
+        (f) => f.name === fileToUntrack && f.state === FileState.ToBeAdded
+      ) === undefined
+    ) {
+      throw new Error(`Cannot untrack file ${fileToUntrack}: not to be added`);
+    }
+  });
+
+  const newFilesInWorkdir = pkg.filesInWorkdir.map((vcsFile) => {
+    if (filesToUntrack.find((f) => f === vcsFile.name) !== undefined) {
+      assert(vcsFile.state === FileState.ToBeAdded);
+      const { state, ...rest } = vcsFile;
+      return { state: FileState.Untracked, ...rest };
+    } else {
+      return vcsFile;
+    }
+  });
+
+  const { filesInWorkdir, ...rest } = pkg;
+  const newPkg = { filesInWorkdir: newFilesInWorkdir, ...rest };
+
+  await writeFileListToDir(newPkg, FileListType.ToBeAdded);
+  return newPkg;
 }
 
 export async function readInModifiedPackageFromDir(

@@ -29,7 +29,8 @@ import {
   FileState,
   ModifiedPackage,
   readInModifiedPackageFromDir,
-  VcsFile
+  VcsFile,
+  untrackFiles
 } from "../src/vcs";
 import { setupPackageFileMock } from "./test-setup";
 
@@ -333,6 +334,61 @@ bar
         ["untrackedFile"],
         []
       ).should.be.rejectedWith(/untrackedFile.*not tracked/);
+    });
+  });
+
+  describe("#untrackFiles", () => {
+    beforeEach(async function () {
+      setupPackageFileMock(
+        { ...pkgBase, files: [files[0]] },
+        { additionalFiles: { bar: files[1].contents, baz: "buzzy bee" } }
+      );
+      this.modPkg = await readInModifiedPackageFromDir(".");
+      expect(this.modPkg.files).to.be.an("array").and.have.length(1);
+      expect(this.modPkg.filesInWorkdir).to.be.an("array").and.have.length(3);
+    });
+
+    it("changes the state of files to be added", async function () {
+      const pkgName = "bar";
+      const pkgWithBarTracked = await addAndDeleteFilesFromPackage(
+        this.modPkg,
+        [],
+        [pkgName]
+      );
+      expect(
+        pkgWithBarTracked.filesInWorkdir.find((p) => p.name === pkgName)
+      ).to.deep.include({ name: pkgName, state: FileState.ToBeAdded });
+
+      const pkgWithBarUntracked = await untrackFiles(pkgWithBarTracked, [
+        pkgName
+      ]);
+      expect(
+        pkgWithBarUntracked.filesInWorkdir.find((p) => p.name === pkgName)
+      ).to.deep.include({ name: pkgName, state: FileState.Untracked });
+    });
+
+    it("throws an exception when a non-existent file is to be untracked", async function () {
+      await untrackFiles(this.modPkg, ["not existent"]).should.be.rejectedWith(
+        /cannot untrack.*not existent.*not to be added/i
+      );
+    });
+
+    it("throws an exception when a file that is not to be added is to be untracked", async function () {
+      await untrackFiles(this.modPkg, ["foo"]).should.be.rejectedWith(
+        /cannot untrack.*foo.*not to be added/i
+      );
+    });
+
+    it("correctly registers the new file state in .osc", async function () {
+      const pkgName = "bar";
+      const pkgWithBarTracked = await addAndDeleteFilesFromPackage(
+        this.modPkg,
+        [],
+        [pkgName]
+      );
+
+      const pkg = await untrackFiles(pkgWithBarTracked, [pkgName]);
+      await readInModifiedPackageFromDir(".").should.eventually.deep.equal(pkg);
     });
   });
 });

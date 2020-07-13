@@ -50,5 +50,6 @@ export {
   FileState,
   ModifiedPackage,
   readInModifiedPackageFromDir,
+  untrackFiles,
   VcsFile
 } from "./vcs";
