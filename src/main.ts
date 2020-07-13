@@ -35,6 +35,7 @@ export {
   Revision
 } from "./history";
 export {
+  branchPackage,
   checkOutPackage,
   createPackage,
   deletePackage,
