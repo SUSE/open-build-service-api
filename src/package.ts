@@ -50,6 +50,7 @@ import { createOrEnsureEmptyDir, unixTimeStampFromDate, zip } from "./util";
 import { FileState, ModifiedPackage } from "./vcs";
 import { newXmlBuilder, newXmlParser } from "./xml";
 
+/** This interface describes a package in the Open Build Service. */
 export interface Package {
   /** Url to the API from which this package was retrieved */
   readonly apiUrl: string;
@@ -74,6 +75,9 @@ export interface Package {
    */
   files?: PackageFile[];
 }
+
+/** Package type containing only the guaranteed fields */
+export type BasePackage = Omit<Package, "files" | "meta" | "md5Hash">;
 
 type PackageWithRequiredFiles = Omit<Package, "files"> & {
   files: FrozenPackageFile[];

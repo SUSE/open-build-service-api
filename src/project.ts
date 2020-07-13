@@ -38,9 +38,9 @@ import * as assert from "assert";
 import { promises as fsPromises } from "fs";
 import { join } from "path";
 import {
+  DirectoryApiReply,
   directoryFromApi,
-  fetchDirectory,
-  DirectoryApiReply
+  fetchDirectory
 } from "./api/directory";
 import {
   fetchProjectMeta,
@@ -48,8 +48,13 @@ import {
   ProjectMeta
 } from "./api/project-meta";
 import { Connection, normalizeUrl, RequestMethod } from "./connection";
-import { StatusReply, statusReplyFromApi, StatusReplyApiReply } from "./error";
-import { checkOutPackageToFs, fetchPackage, Package } from "./package";
+import { StatusReply, StatusReplyApiReply, statusReplyFromApi } from "./error";
+import {
+  BasePackage,
+  checkOutPackageToFs,
+  fetchPackage,
+  Package
+} from "./package";
 import { setDifference } from "./set-utils";
 import {
   createOrEnsureEmptyDir,
@@ -58,8 +63,8 @@ import {
   mapOrApply,
   pathExists,
   PathType,
-  zip,
-  rmRf
+  rmRf,
+  zip
 } from "./util";
 import { newXmlBuilder, newXmlParser } from "./xml";
 
@@ -124,13 +129,13 @@ export type ProjectWithPackages = Omit<ProjectWithMeta, "packages"> & {
 async function fetchPackageList(
   con: Connection,
   project: Project
-): Promise<Package[]> {
+): Promise<BasePackage[]> {
   const dir = await fetchDirectory(con, `/source/${project.name}`);
 
   if (dir.directoryEntries === undefined || dir.directoryEntries.length === 0) {
     return [];
   } else {
-    const packages: Package[] = [];
+    const packages: BasePackage[] = [];
     dir.directoryEntries.forEach((dentry) => {
       if (dentry.name !== undefined) {
         packages.push({
