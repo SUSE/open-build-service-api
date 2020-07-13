@@ -24,10 +24,10 @@ import { promises as fsPromises } from "fs";
 import { join } from "path";
 import {
   Directory,
+  DirectoryApiReply,
   DirectoryEntry,
   directoryFromApi,
-  directoryToApi,
-  DirectoryApiReply
+  directoryToApi
 } from "./api/directory";
 import { calculateFileHash, calculateHash } from "./checksum";
 import { Connection, RequestMethod } from "./connection";
@@ -219,30 +219,18 @@ export async function addAndDeleteFilesFromPackage(
     newFiles.push({ state, ...restOfFile });
   }
 
-  await Promise.all(
-    [
-      {
-        fileList: newFiles.filter((f) => f.state === FileState.ToBeDeleted),
-        dest: FileListType.ToBeDeleted
-      },
-      {
-        fileList: newFiles.filter((f) => f.state === FileState.ToBeAdded),
-        dest: FileListType.ToBeAdded
-      }
-    ].map(async ({ fileList, dest }) =>
-      fsPromises.writeFile(
-        join(pkg.path, ".osc", dest),
-        fileList.map((f) => f.name).join(`
-`)
-      )
-    )
-  );
+  const newPkg = { filesInWorkdir: newFiles, ...restOfPkg };
+
+  await Promise.all([
+    writeFileListToDir(newPkg, FileListType.ToBeAdded),
+    writeFileListToDir(newPkg, FileListType.ToBeDeleted)
+  ]);
 
   await Promise.all(
     filesToDelete.map((fname) => fsPromises.unlink(join(pkg.path, fname)))
   );
 
-  return { filesInWorkdir: newFiles, ...restOfPkg };
+  return newPkg;
 }
 
 /** Removes the provided files from the list of tracked files.
@@ -484,6 +472,14 @@ export async function commit(
     ...restOfPkg
   };
 
-  await writePackageUnderscoreFiles(newPkg, newPkg.path);
+  await Promise.all([
+    writePackageUnderscoreFiles(newPkg, newPkg.path),
+    ...[FileListType.ToBeAdded, FileListType.ToBeDeleted].map(async (fname) => {
+      const path = join(pkg.path, ".osc", fname);
+      if (await pathExists(path, PathType.File)) {
+        await fsPromises.unlink(path);
+      }
+    })
+  ]);
   return newPkg;
 }

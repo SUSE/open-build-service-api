@@ -33,6 +33,9 @@ import {
   untrackFiles
 } from "../src/vcs";
 import { setupPackageFileMock } from "./test-setup";
+import { pathExists, PathType } from "../src/util";
+import { promises as fsPromises } from "fs";
+import { join } from "path";
 
 describe("ModifiedPackage", () => {
   const pkgBase = {
@@ -334,6 +337,27 @@ bar
         ["untrackedFile"],
         []
       ).should.be.rejectedWith(/untrackedFile.*not tracked/);
+    });
+
+    it("deletes _to_be_added if no files are to be added", async () => {
+      setupPackageFileMock(
+        { ...pkgBase, files: [files[1]] },
+        { additionalFiles: { foo: files[0].contents } }
+      );
+      let pkg = await readInModifiedPackageFromDir(".");
+
+      await fsPromises.writeFile(join(".osc", "_to_be_added"), "baz", "utf8");
+
+      pkg = await addAndDeleteFilesFromPackage(pkg, ["bar"], []);
+
+      await pathExists(
+        ".osc/_to_be_deleted",
+        PathType.File
+      ).should.eventually.not.equal(undefined);
+      await pathExists(
+        ".osc/_to_be_added",
+        PathType.File
+      ).should.eventually.equal(undefined);
     });
   });
 

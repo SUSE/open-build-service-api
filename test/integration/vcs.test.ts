@@ -241,12 +241,13 @@ describe("ModifiedPackage", function () {
     );
 
     it(
-      "clears up .osc/_to_be_added after a commit",
+      "cleans up .osc/_to_be_added and .osc/_to_be_deleted after a commit",
       castToAsyncFunc<TestFixture>(async function () {
         await createAndCheckoutPkg(this);
+        const spec = "testfile.spec";
 
         await fsPromises.writeFile(
-          join(this.checkoutPath, "testfile.spec"),
+          join(this.checkoutPath, spec),
           Buffer.from("this is not really a specfile ;-)")
         );
 
@@ -257,19 +258,32 @@ describe("ModifiedPackage", function () {
         const pkgWithAddedFiles = await addAndDeleteFilesFromPackage(
           modifiedPkg,
           [],
-          ["testfile.spec"]
+          [spec]
         );
         const modifiedPkgAfterCommit = await commit(
           con,
           pkgWithAddedFiles,
-          "Add testfile.spec"
+          `Add ${spec}`
         );
 
-        const readInFromPath = await readInModifiedPackageFromDir(
+        await readInModifiedPackageFromDir(
           this.checkoutPath
+        ).should.eventually.deep.equal(modifiedPkgAfterCommit);
+
+        const pkgWithDeletedSpec = await addAndDeleteFilesFromPackage(
+          modifiedPkgAfterCommit,
+          [spec],
+          []
         );
 
-        readInFromPath.should.deep.equal(modifiedPkgAfterCommit);
+        const afterDeleteCommit = await commit(
+          con,
+          pkgWithDeletedSpec,
+          `Delete ${spec}`
+        );
+        await readInModifiedPackageFromDir(
+          this.checkoutPath
+        ).should.eventually.deep.equal(afterDeleteCommit);
       })
     );
   });
