@@ -29,7 +29,7 @@ import { calculateHash } from "../../src/checksum";
 import { fetchHistory } from "../../src/history";
 import { checkOutPackage, FrozenPackage } from "../../src/package";
 import { createProject, deleteProject } from "../../src/project";
-import { pathExists, rmRf } from "../../src/util";
+import { pathExists, PathType, rmRf } from "../../src/util";
 import {
   addAndDeleteFilesFromPackage,
   commit,
@@ -284,6 +284,46 @@ describe("ModifiedPackage", function () {
         await readInModifiedPackageFromDir(
           this.checkoutPath
         ).should.eventually.deep.equal(afterDeleteCommit);
+      })
+    );
+
+    it(
+      "deletes files that are to be deleted but were not removed correctly prior to commiting",
+      castToAsyncFunc<TestFixture>(async function () {
+        await createAndCheckoutPkg(this);
+        const spec = "testfile.spec";
+
+        await fsPromises.writeFile(
+          join(this.checkoutPath, spec),
+          Buffer.from("whatever")
+        );
+
+        let pkg = await readInModifiedPackageFromDir(this.checkoutPath);
+
+        pkg = await addAndDeleteFilesFromPackage(pkg, [], [spec]);
+        await commit(con, pkg, `Add ${spec}`);
+
+        await fsPromises.writeFile(
+          join(this.checkoutPath, ".osc", "_to_be_deleted"),
+          spec
+        );
+        pkg = await readInModifiedPackageFromDir(this.checkoutPath);
+        expect(pkg.filesInWorkdir).to.have.length(1);
+        expect(pkg.filesInWorkdir[0]).to.deep.include({
+          name: spec,
+          state: FileState.ToBeDeleted
+        });
+
+        pkg = await commit(con, pkg, `Delete ${spec}`);
+
+        await readInModifiedPackageFromDir(
+          this.checkoutPath
+        ).should.eventually.deep.equal(pkg);
+
+        await pathExists(
+          join(this.checkoutPath, spec),
+          PathType.File
+        ).should.eventually.equal(undefined);
       })
     );
   });

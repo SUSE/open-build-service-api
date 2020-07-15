@@ -21,21 +21,21 @@
 import mockFs = require("mock-fs");
 
 import { expect } from "chai";
+import { promises as fsPromises } from "fs";
 import { describe, it } from "mocha";
+import { join } from "path";
 import { calculateHash } from "../src/checksum";
 import { FrozenPackageFile } from "../src/file";
+import { pathExists, PathType } from "../src/util";
 import {
   addAndDeleteFilesFromPackage,
   FileState,
   ModifiedPackage,
   readInModifiedPackageFromDir,
-  VcsFile,
-  untrackFiles
+  untrackFiles,
+  VcsFile
 } from "../src/vcs";
 import { setupPackageFileMock } from "./test-setup";
-import { pathExists, PathType } from "../src/util";
-import { promises as fsPromises } from "fs";
-import { join } from "path";
 
 describe("ModifiedPackage", () => {
   const pkgBase = {
@@ -239,7 +239,7 @@ here
       );
     });
 
-    xit("it handles deleted files that still exist sanely", async () => {
+    it("it handles deleted files that still exist sanely", async () => {
       setupPackageFileMock(
         {
           ...pkgBase,
@@ -249,15 +249,15 @@ here
           additionalFiles: {
             ".osc/_to_be_deleted": `foo
 bar
-`
+`,
+            foo: "something foo, or maybe bar?"
           },
-          addFilesToCwd: true
+          addFilesToCwd: false
         }
       );
 
-      const modifiedPkg: ModifiedPackage = await readInModifiedPackageFromDir(
-        "."
-      ).should.eventually.deep.include({
+      const modifiedPkg = await readInModifiedPackageFromDir(".");
+      modifiedPkg.should.deep.include({
         ...pkgBase,
         path: "."
       });
@@ -267,12 +267,15 @@ bar
         .that.is.an("array")
         .and.has.length(2);
 
-      // FIXME: which state *do* we actually expect here?
       const filesInWorkdir = modifiedPkg.filesInWorkdir;
       filesInWorkdir.forEach((f) =>
         f.state.should.equal(FileState.ToBeDeleted)
       );
-      expect(filesInWorkdir.map((f) => f.name)).to.deep.equal(["foo", "bar"]);
+      ["foo", "bar"].forEach((deletedFileName) =>
+        expect(
+          filesInWorkdir.map((f) => f.name)
+        ).to.include.a.thing.that.deep.equals(deletedFileName)
+      );
     });
   });
 

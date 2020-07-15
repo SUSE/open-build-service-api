@@ -79,6 +79,7 @@ export type ModifiedPackage = Package & {
   /**
    * Files that are or were in the directory where the package has been checked
    * out.
+   * This includes untracked as well as tracked and deleted files.
    */
   readonly filesInWorkdir: VcsFile[];
 
@@ -308,7 +309,7 @@ export async function readInModifiedPackageFromDir(
 
   const filesAtHead = pkg.files;
   const filesInWorkdir: VcsFile[] = [];
-  let notSeenFiles = filesAtHead.map((f) => f.name);
+  const notSeenFiles = filesAtHead.map((f) => f.name);
 
   const dentries = await fsPromises.readdir(dir, { withFileTypes: true });
 
@@ -339,14 +340,28 @@ export async function readInModifiedPackageFromDir(
           });
         } else {
           // file is tracked => drop it from the list of seen files
-          notSeenFiles = notSeenFiles.filter((fname) => fname !== dentry.name);
+          notSeenFiles.splice(
+            notSeenFiles.findIndex((fname) => fname === dentry.name),
+            1
+          );
 
           assert(matchingPkgFile.md5Hash !== undefined);
 
-          const state =
-            curFileMd5Hash !== matchingPkgFile.md5Hash
-              ? FileState.Modified
-              : FileState.Unmodified;
+          // file is marked as deleted but still there => mark it as ToBeDeleted
+          // otherwise: check the md5 hashes if the file is modified or not
+          let state: FileState;
+          const toBeDeletedIndex = toBeDeleted.findIndex(
+            (fname) => fname === dentry.name
+          );
+
+          if (toBeDeletedIndex === -1) {
+            state =
+              curFileMd5Hash !== matchingPkgFile.md5Hash
+                ? FileState.Modified
+                : FileState.Unmodified;
+          } else {
+            state = FileState.ToBeDeleted;
+          }
 
           const { contents, md5Hash, ...rest } = matchingPkgFile;
           filesInWorkdir.push({
@@ -381,8 +396,13 @@ export async function readInModifiedPackageFromDir(
     });
 
   toBeDeleted.forEach((fname) => {
+    // only add files that are not already in the filesInWorkdir array
+    // this could happen when a file is to be deleted, but still exists in the
+    // working directory
     const fileToDelete = filesAtHead.find((f) => f.name === fname);
-    if (fileToDelete !== undefined) {
+    const toDeleteInWorkdir = filesInWorkdir.find((f) => f.name === fname);
+
+    if (fileToDelete !== undefined && toDeleteInWorkdir === undefined) {
       filesInWorkdir.push({ ...fileToDelete, state: FileState.ToBeDeleted });
     }
   });
@@ -423,6 +443,11 @@ export async function commit(
     pkg.filesInWorkdir.map(async (f) => {
       if (f.state === FileState.Modified || f.state === FileState.ToBeAdded) {
         await uploadFileContents(con, f);
+      } else if (f.state === FileState.ToBeDeleted) {
+        const fpath = join(pkg.path, f.name);
+        if (await pathExists(fpath, PathType.File)) {
+          await fsPromises.unlink(fpath);
+        }
       }
     })
   );
