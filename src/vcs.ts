@@ -108,8 +108,13 @@ async function readFileListFromDir(
     return [];
   }
 
-  return (await fsPromises.readFile(targetFile)).toString().split(`
-`);
+  return (await fsPromises.readFile(targetFile))
+    .toString()
+    .split(
+      `
+`
+    )
+    .filter((fname) => fname !== "");
 }
 
 async function writeFileListToDir(
