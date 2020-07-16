@@ -135,7 +135,7 @@ async function writeFileListToDir(
   if (fileNames.length > 0) {
     await fsPromises.writeFile(
       targetFile,
-      fileNames.join(`
+      fileNames.map((f) => f.name).join(`
 `)
     );
   } else {
