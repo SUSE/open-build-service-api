@@ -34,6 +34,7 @@ import {
   extractElementIfPresent
 } from "../util";
 import { Arch } from "./base-types";
+import { inspect } from "util";
 
 /** Representation of a FlagSwitch as extracted from OBS' API */
 export type FlagSwitchApiReply =
@@ -357,7 +358,7 @@ export function simpleFlagToBoolean(data: SimpleFlagApiReply): boolean {
     (data.enable !== undefined && data.disable !== undefined) ||
     (data.enable === undefined && data.disable === undefined)
   ) {
-    throw new Error(`Invalid simple-flag-element received: ${data}`);
+    throw new Error(`Invalid simple-flag-element received: ${inspect(data)}`);
   }
   return data.enable !== undefined;
 }
