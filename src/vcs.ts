@@ -20,6 +20,7 @@
  */
 
 import * as assert from "assert";
+import { COPYFILE_EXCL } from "constants";
 import { promises as fsPromises } from "fs";
 import { join } from "path";
 import {
@@ -287,6 +288,79 @@ export async function untrackFiles(
   const newPkg = { filesInWorkdir: newFilesInWorkdir, ...rest };
 
   await writeFileListToDir(newPkg, FileListType.ToBeAdded);
+  return newPkg;
+}
+
+/**
+ * Restore deleted files from a checked out package.
+ *
+ * @param pkg  The package which files' deletion should be reverted.
+ *     This data structure is **not** modified.
+ * @param filesToUndelete  An array of file names that are deleted or missing
+ *     and that should be reverted back to their unmodified state.
+ *     The filenames in this array **must** exist and must correspond to files
+ *     that are missing or deleted, otherwise an exception is thrown.
+ *
+ * @return The [[ModifiedPackage]] with the [[ModifiedPackage.filesInWorkdir]]
+ *     property adjusted to the new state. Note that this is a copy of `pkg`,
+ *     the object `pkg` is not modified.
+ */
+export async function undoFileDeletion(
+  pkg: ModifiedPackage,
+  filesToUndelete: string[]
+): Promise<ModifiedPackage> {
+  if (filesToUndelete.length === 0) {
+    return pkg;
+  }
+
+  filesToUndelete.forEach((fileToUndelete) => {
+    if (
+      pkg.filesInWorkdir.find(
+        (f) =>
+          f.name === fileToUndelete &&
+          (f.state === FileState.ToBeDeleted || f.state === FileState.Missing)
+      ) === undefined
+    ) {
+      throw new Error(
+        `Cannot undelete file ${fileToUndelete}: not to be deleted or not missing or doesn't exist`
+      );
+    }
+  });
+
+  const newFilesInWorkdir = await Promise.all(
+    pkg.filesInWorkdir.map(async (vcsFile) => {
+      if (filesToUndelete.find((f) => f === vcsFile.name) !== undefined) {
+        assert(
+          vcsFile.state === FileState.ToBeDeleted ||
+            vcsFile.state === FileState.Missing
+        );
+        const { state, ...rest } = vcsFile;
+
+        const origFile = join(pkg.path, ".osc", vcsFile.name);
+        if (!(await pathExists(origFile, PathType.File))) {
+          throw new Error(
+            `cannot undelete missing file ${vcsFile.name}: original file ${origFile} is not present`
+          );
+        }
+        const fname = join(pkg.path, vcsFile.name);
+        await fsPromises.copyFile(origFile, fname, COPYFILE_EXCL);
+        await fsPromises.utimes(
+          fname,
+          vcsFile.modifiedTime,
+          vcsFile.modifiedTime
+        );
+
+        return { state: FileState.Unmodified, ...rest };
+      } else {
+        return vcsFile;
+      }
+    })
+  );
+
+  const { filesInWorkdir, ...rest } = pkg;
+  const newPkg = { filesInWorkdir: newFilesInWorkdir, ...rest };
+
+  await writeFileListToDir(newPkg, FileListType.ToBeDeleted);
   return newPkg;
 }
 

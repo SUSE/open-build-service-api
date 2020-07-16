@@ -407,3 +407,10 @@ export async function createOrEnsureEmptyDir(path: string): Promise<void> {
     }
   }
 }
+/**
+ * Remove the property with the given `key` from `obj` and return the result.
+ */
+export function dropProperty<T, K extends keyof T>(obj: T, key: K): Omit<T, K> {
+  const { [key]: drop, ...rest } = obj;
+  return rest;
+}

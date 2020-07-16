@@ -32,6 +32,7 @@ import {
   FileState,
   ModifiedPackage,
   readInModifiedPackageFromDir,
+  undoFileDeletion,
   untrackFiles,
   VcsFile
 } from "../src/vcs";
@@ -50,7 +51,11 @@ describe("ModifiedPackage", () => {
     packageName: pkgBase.name,
     projectName: pkgBase.projectName,
     md5Hash: calculateHash(Buffer.from(name), "md5"),
-    modifiedTime: new Date(),
+    modifiedTime: (() => {
+      const d = new Date();
+      d.setMilliseconds(0);
+      return d;
+    })(),
     contents: Buffer.from(name),
     size: 3
   }));
@@ -416,6 +421,88 @@ bar
 
       const pkg = await untrackFiles(pkgWithBarTracked, [pkgName]);
       await readInModifiedPackageFromDir(".").should.eventually.deep.equal(pkg);
+    });
+  });
+
+  describe("#undoFileDeletion", () => {
+    beforeEach(async function () {
+      setupPackageFileMock(
+        { ...pkgBase, files },
+        {
+          additionalFiles: {
+            ".osc/_to_be_deleted": `${files[1].name}`,
+            baz: "buzzy bee"
+          },
+          addFilesToCwd: false
+        }
+      );
+      const pkg = await readInModifiedPackageFromDir(".");
+
+      expect(pkg.files).to.be.an("array").and.have.length(2);
+      expect(pkg.filesInWorkdir).to.be.an("array").and.have.length(3);
+      expect(
+        pkg.filesInWorkdir.find((f: VcsFile) => f.name === files[0].name)
+      ).to.deep.include({ name: files[0].name, state: FileState.Missing });
+      expect(
+        pkg.filesInWorkdir.find((f: VcsFile) => f.name === files[1].name)
+      ).to.deep.include({ name: files[1].name, state: FileState.ToBeDeleted });
+
+      this.pkg = pkg;
+    });
+
+    it("restores a missing file", async function () {
+      const pkg = await undoFileDeletion(this.pkg, [files[0].name]);
+
+      const readInPkg = await readInModifiedPackageFromDir(".");
+
+      const { filesInWorkdir: files1, ...restOfPkg } = pkg;
+      const { filesInWorkdir: files2, ...restOfReadInPkg } = readInPkg;
+      restOfPkg.should.deep.equal(restOfReadInPkg);
+
+      expect(files1).to.have.length(files2.length);
+
+      files1.forEach((f) => files2.should.include.a.thing.that.deep.equals(f));
+
+      expect(
+        pkg.filesInWorkdir.find((pkg) => pkg.name === files[0].name)
+      ).to.deep.include({ ...files[0], state: FileState.Unmodified });
+    });
+
+    it("restores a deleted file", async function () {
+      const pkg = await undoFileDeletion(this.pkg, [files[1].name]);
+
+      const readInPkg = await readInModifiedPackageFromDir(".");
+
+      const { filesInWorkdir: files1, ...restOfPkg } = pkg;
+      const { filesInWorkdir: files2, ...restOfReadInPkg } = readInPkg;
+      restOfPkg.should.deep.equal(restOfReadInPkg);
+
+      expect(files1).to.have.length(files2.length);
+
+      files1.forEach((f) => files2.should.include.a.thing.that.deep.equals(f));
+
+      expect(
+        pkg.filesInWorkdir.find((pkg) => pkg.name === files[1].name)
+      ).to.deep.include({ ...files[1], state: FileState.Unmodified });
+    });
+
+    it("does nothing when filesToUndelete is empty", async function () {
+      await undoFileDeletion(this.pkg, []).should.eventually.deep.equal(
+        this.pkg
+      );
+    });
+
+    it("throws an exception when a file that does not exist is to be reverted", async function () {
+      await undoFileDeletion(this.pkg, ["baz"]).should.be.rejectedWith(
+        /cannot undelete.*baz/i
+      );
+    });
+
+    it("throws an exception when a file that is not deleted should be reverted", async function () {
+      const pkg = await undoFileDeletion(this.pkg, ["bar"]);
+      await undoFileDeletion(pkg, ["bar"]).should.be.rejectedWith(
+        /cannot undelete.*bar/i
+      );
     });
   });
 });
