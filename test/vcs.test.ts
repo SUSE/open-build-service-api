@@ -60,9 +60,9 @@ describe("ModifiedPackage", () => {
     size: 3
   }));
 
-  describe("#readInModifiedPackageFromDir", () => {
-    afterEach(() => mockFs.restore());
+  afterEach(() => mockFs.restore());
 
+  describe("#readInModifiedPackageFromDir", () => {
     it("reads in the files from .osc/_to_be_added", async () => {
       setupPackageFileMock(
         { ...pkgBase, files: [] },
