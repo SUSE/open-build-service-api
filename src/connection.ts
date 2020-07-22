@@ -229,8 +229,6 @@ export class Connection {
 
   private readonly serverCaCertificate?: string;
 
-  private readonly request: typeof http.request | typeof https.request;
-
   private currentConnectionCount: number = 0;
 
   /**
@@ -322,7 +320,6 @@ export class Connection {
         );
       }
     }
-    this.request = protocol === "https:" ? https.request : http.request;
   }
 
   /**
@@ -502,8 +499,16 @@ export class Connection {
     reqMethod: RequestMethod,
     options: ApiCallInternalOptions
   ): Promise<any | RetryInfo> {
+    assert(
+      url.protocol === "https:" || url.protocol === "http:",
+      `Invalid url protocol: ${url.protocol}`
+    );
+    // don't cache the request variable somewhere else as this causes issues
+    // with nock's recorder, see:
+    // https://stackoverflow.com/questions/62022286/nockback-fails-to-record-any-fixtures/63029672#63029672
+    const request = url.protocol === "https:" ? https.request : http.request;
     return new Promise((resolve, reject) => {
-      const req = this.request(
+      const req = request(
         url,
         {
           auth: this.headers,
