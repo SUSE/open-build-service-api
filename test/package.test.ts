@@ -18,10 +18,10 @@
  * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-import { existsSync, promises as fsPromises, readFileSync } from "fs";
+import { promises as fsPromises } from "fs";
 import { join } from "path";
 import { checkOutPackage } from "../src/package";
-import { rmRf } from "../src/util";
+import { pathExists, PathType, rmRf } from "../src/util";
 import { FileState } from "../src/vcs";
 import { vagrantSshfs, virtualizationVagrant } from "./integration/data";
 import { createTemporaryDirectory } from "./test-setup";
@@ -56,12 +56,16 @@ describe("Package", () => {
         }))
       });
 
-      existsSync(join(this.dotOscPath)).should.equal(true);
+      await pathExists(
+        join(this.dotOscPath),
+        PathType.Directory
+      ).should.eventually.not.equal(undefined);
 
-      readFileSync(join(this.dotOscPath, "_apiurl"))
+      (await fsPromises.readFile(join(this.dotOscPath, "_apiurl")))
         .toString()
         .should.deep.equal(virtualizationVagrant.apiUrl);
-      readFileSync(join(this.dotOscPath, "_files")).toString().should.deep
+      (await fsPromises.readFile(join(this.dotOscPath, "_files"))).toString()
+        .should.deep
         .equal(`<directory name="vagrant-sshfs" srcmd5="67206eaa7b5ce4691d09fafb0d849142">
   <entry name="0001-Use-var-run-run-symlink-for-tests.patch" size="1774" md5="aa67a02848aa376bcfe4b592e68fcfa7" mtime="1585774158"/>
   <entry name="0002-Use-opensuse-Tumbleweed.-uname-m-box-instead-of-Fedo.patch" size="836" md5="cb8759e4f95d2e9976b3cc45439d75ab" mtime="1585774160"/>
@@ -72,16 +76,17 @@ describe("Package", () => {
   <entry name="vagrant-sshfs.keyring" size="32547" md5="f868df2487146cd0b2a716014e62f4a0" mtime="1580292453"/>
   <entry name="vagrant-sshfs.spec" size="4329" md5="b0eb5911e23c6c99baf22f1e85f7a620" mtime="1589297496"/>
 </directory>`);
-      readFileSync(join(this.dotOscPath, "_project"))
+      (await fsPromises.readFile(join(this.dotOscPath, "_project")))
         .toString()
         .should.equal(vagrantSshfs.projectName);
-      readFileSync(join(this.dotOscPath, "_package"))
+      (await fsPromises.readFile(join(this.dotOscPath, "_package")))
         .toString()
         .should.equal(vagrantSshfs.name);
-      readFileSync(join(this.dotOscPath, "_osclib_version"))
+      (await fsPromises.readFile(join(this.dotOscPath, "_osclib_version")))
         .toString()
         .should.equal("1.0");
-      readFileSync(join(this.dotOscPath, "_meta")).toString().should
+      (await fsPromises.readFile(join(this.dotOscPath, "_meta"))).toString()
+        .should
         .equal(`<package name="vagrant-sshfs" project="Virtualization:vagrant">
   <title>SSHFS synced folder implementation for Vagrant</title>
   <description>This Vagrant plugin adds synced folder support for mounting folders from the
@@ -95,12 +100,16 @@ connection from the Vagrant guest back to the Vagrant host.
   <person userid="dancermak" role="maintainer"/>
 </package>`);
 
-      vagrantSshfs.files.forEach((f) => {
-        readFileSync(join(this.dotOscPath, f.name))
-          .toString()
-          .should.equal(f.name);
-        readFileSync(join(this.path, f.name)).toString().should.equal(f.name);
-      });
+      await Promise.all(
+        vagrantSshfs.files.map(async (f) => {
+          (await fsPromises.readFile(join(this.dotOscPath, f.name)))
+            .toString()
+            .should.equal(f.name);
+          (await fsPromises.readFile(join(this.path, f.name)))
+            .toString()
+            .should.equal(f.name);
+        })
+      );
     });
 
     it("does not write a _meta file if the project's meta has not been fetched yet", async function () {
@@ -115,7 +124,9 @@ connection from the Vagrant guest back to the Vagrant host.
         }),
         this.path
       );
-      existsSync(join(this.dotOscPath, "_meta")).should.be.false;
+      await pathExists(join(this.dotOscPath, "_meta")).should.eventually.equal(
+        undefined
+      );
     });
   });
 });
