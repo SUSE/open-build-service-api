@@ -21,12 +21,13 @@
 
 import mockFs = require("mock-fs");
 
-import { expect, should, use } from "chai";
+import * as nock from "nock";
+
+import { should, use } from "chai";
 import * as chaiAsPromised from "chai-as-promised";
 import * as chaiThings from "chai-things";
 import { promises as fsPromises } from "fs";
 import { AsyncFunc, Context, Func, HookFunction } from "mocha";
-import * as nock from "nock";
 import { tmpdir } from "os";
 import { join, sep } from "path";
 import * as sinonChai from "sinon-chai";
@@ -84,76 +85,6 @@ export function setupPackageFileMock(
   });
 }
 
-/** Payload that has been extracted from the nock and received from the API call */
-interface InterceptedApiCall<T> {
-  /** body of the request */
-  body?: any;
-  /** headers of the request */
-  headers?: any;
-  /**
-   * Return value of the called function.
-   * This value is only set if the function actually returned something and
-   * didn't throw an exception.
-   */
-  result?: T;
-  /**
-   * An error that has been thrown by the API calling function.
-   *
-   * If this value is set, then result **must** be undefined.
-   */
-  error?: Error;
-}
-
-/**
- * Performs an API call via a the function `apiCallFunc` with the setup `scope`.
- *
- * The function configures the nock before calling `apiCallFunc` and awaiting
- * its result. If awaiting the function succeeds, then the result is saved in
- * the field [[InterceptedApiCall.result]]. If an `Error` is thrown, then the
- * error is saved in the returned object.
- *
- * @param timeoutMs  Timeout in milliseconds for the scope to be accessed before
- *     the promise is rejected.
- */
-function makeApiCallWithNockIntercept<T>(
-  apiCallFunc: () => Promise<T>,
-  scope: nock.Scope,
-  timeoutMs: number = 2000
-): Promise<InterceptedApiCall<T>> {
-  // more or less stolen from chai-nock's promisfyNockInterceptor
-  return new Promise(async (resolve, reject) => {
-    let body: any;
-    let headers: any;
-    let resultPromise: Promise<T>;
-
-    const timeout = setTimeout(() => {
-      reject(new Error("The request has not been recieved by Nock"));
-    }, timeoutMs);
-
-    scope.once("request", ({ headers: requestHeaders }, _, reqBody) => {
-      headers = requestHeaders;
-      body = reqBody;
-    });
-
-    scope.once("replied", async () => {
-      clearTimeout(timeout);
-      try {
-        const result = await resultPromise;
-        resolve({ body, headers, result });
-      } catch (error) {
-        resolve({ body, headers, error });
-      }
-    });
-
-    scope.on("error", (err) => {
-      clearTimeout(timeout);
-      reject(err);
-    });
-
-    resultPromise = apiCallFunc();
-  });
-}
-
 use(chaiThings);
 use(sinonChai);
 
@@ -191,11 +122,6 @@ export function getTestConnection(apiType: ApiType): Connection {
 
 export const createTemporaryDirectory = (): Promise<string> =>
   fsPromises.mkdtemp(`${tmpdir()}${sep}obs-api-wrapper`);
-
-interface IScope {
-  scope: nock.Scope;
-  body: string;
-}
 
 const SET_COOKIE = "Set-Cookie";
 
@@ -239,10 +165,6 @@ export async function beforeEachRecord(this: Context): Promise<void> {
 }
 
 export async function afterEachRecord(this: Context) {
-  nock.enableNetConnect();
-  nock.cleanAll();
-  nock.abortPendingRequests();
-
   if (this.scopes === undefined) {
     const nockCallObjects = nock.recorder.play();
 
@@ -263,65 +185,9 @@ export async function afterEachRecord(this: Context) {
       JSON.stringify(nockCallObjects, undefined, 4)
     );
   }
-}
-
-export async function checkApiCallSucceeds<T>(
-  nockScope: IScope | undefined,
-  apiCallFunc: () => Promise<T>,
-  timeoutMs: number = 2000
-): Promise<T> {
-  let res: T | undefined;
-
-  if (nockScope !== undefined) {
-    const intercepted = await makeApiCallWithNockIntercept(
-      apiCallFunc,
-      nockScope.scope,
-      timeoutMs
-    );
-
-    expect(intercepted.body).to.deep.equal(nockScope.body);
-
-    res = intercepted.result;
-  } else {
-    res = await apiCallFunc();
-  }
-
-  // FIXME: what should we do if apiCallFunc() returns Promise<void>?
-  return res!;
-}
-
-export async function checkApiCallFails<T>(
-  nockScope: IScope | undefined,
-  apiCallFunc: () => Promise<T>,
-  timeoutMs: number = 2000
-): Promise<Error> {
-  if (nockScope !== undefined) {
-    const intercepted = await makeApiCallWithNockIntercept(
-      apiCallFunc,
-      nockScope.scope,
-      timeoutMs
-    );
-
-    expect(intercepted.result).to.be.undefined;
-    expect(intercepted.error).to.not.be.undefined;
-
-    return intercepted.error!;
-  } else {
-    let failed = true;
-    try {
-      await apiCallFunc();
-      failed = false;
-    } catch (err) {
-      return err;
-    }
-
-    // if we reach this, then call to apiCallFunc() was successful, but it
-    // shouldn't have been, so this always triggers an assertion and never
-    // actually returns anything
-    return expect(failed).to.be.true(
-      "calling apiCallFunc() should have failed"
-    ) as never;
-  }
+  nock.enableNetConnect();
+  nock.cleanAll();
+  nock.abortPendingRequests();
 }
 
 export const haveMiniObs: () => boolean = () =>
