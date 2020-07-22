@@ -23,7 +23,7 @@ import { URL } from "url";
 import { Arch } from "./api/base-types";
 import { ChoiceOption, choiceToBoolean } from "./api/choice";
 import { Connection } from "./connection";
-import { deleteUndefinedMembers, extractElementIfPresent } from "./util";
+import { withoutUndefinedMembers, extractElementIfPresent } from "./util";
 
 /**
  * Publicly readable configuration of this OBS instance.
@@ -218,7 +218,7 @@ export async function fetchConfiguration(
   );
 
   return Object.freeze(
-    deleteUndefinedMembers({
+    withoutUndefinedMembers({
       title: confReply.configuration.title,
       description: confReply.configuration.description,
       anonymous: choiceToBoolean(confReply.configuration.anonymous),

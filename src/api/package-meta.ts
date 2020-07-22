@@ -29,7 +29,7 @@ import { Connection, RequestMethod } from "../connection";
 import { StatusReply, statusReplyFromApi, StatusReplyApiReply } from "../error";
 import {
   deleteUndefinedAndEmptyMembers,
-  deleteUndefinedMembers
+  withoutUndefinedMembers
 } from "../util";
 import {
   CommonMeta,
@@ -102,7 +102,7 @@ export function packageMetaToApi(
 ): PackageMetaApiReply {
   const res: PackageMetaApiReply = {
     package: deleteUndefinedAndEmptyMembers({
-      $: deleteUndefinedMembers({
+      $: withoutUndefinedMembers({
         name: packageMeta.name,
         project: packageMeta.project
       }),

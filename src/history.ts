@@ -27,7 +27,7 @@ import { PackageFile } from "./file";
 import { fetchFileList, fileListFromDirectory, Package } from "./package";
 import {
   dateFromUnixTimeStamp,
-  deleteUndefinedMembers,
+  withoutUndefinedMembers,
   mapOrApply,
   runProcess
 } from "./util";
@@ -165,7 +165,7 @@ export function apiRevisionToRevision(
     }
   }
 
-  return deleteUndefinedMembers({
+  return withoutUndefinedMembers({
     revisionHash: rev.srcmd5,
     version: valueOrUndefined(rev.version),
     revision: parseInt(rev.$.rev, 10),

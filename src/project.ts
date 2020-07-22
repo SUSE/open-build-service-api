@@ -59,7 +59,7 @@ import { setDifference } from "./set-utils";
 import {
   createOrEnsureEmptyDir,
   deleteUndefinedAndEmptyMembers,
-  deleteUndefinedMembers,
+  withoutUndefinedMembers,
   mapOrApply,
   pathExists,
   PathType,
@@ -184,7 +184,7 @@ export async function fetchProject(
     meta
   };
   if (options?.fetchPackageList === undefined || options.fetchPackageList) {
-    return deleteUndefinedMembers({
+    return withoutUndefinedMembers({
       ...proj,
       packages: await fetchPackageList(con, proj)
     });

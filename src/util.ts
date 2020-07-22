@@ -123,7 +123,7 @@ function makeConstruct<T>(
  * Returns a new object that contains only the elements of `obj` that are not
  * undefined.
  */
-export function deleteUndefinedMembers<T>(obj: T): T {
+export function withoutUndefinedMembers<T>(obj: T): T {
   const res: any = {};
 
   Object.keys(obj).forEach((key) => {

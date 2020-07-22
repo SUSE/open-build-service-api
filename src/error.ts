@@ -22,7 +22,7 @@
 import * as assert from "assert";
 import { URL } from "url";
 import { RequestMethod } from "./connection";
-import { deleteUndefinedMembers, mapOrApply } from "./util";
+import { withoutUndefinedMembers, mapOrApply } from "./util";
 
 /**
  * Status reply that is received in response to PUT requests or on failed GET
@@ -86,7 +86,7 @@ export function statusReplyFromApi(status: StatusReplyApiReply): StatusReply {
     summary: status.status.summary,
     details: status.status.details
   };
-  return deleteUndefinedMembers(reply);
+  return withoutUndefinedMembers(reply);
 }
 
 /** Typeguard for the custom [[ApiError]] type */

@@ -24,7 +24,7 @@ import { Connection, RequestMethod } from "../connection";
 import { StatusReply, statusReplyFromApi, StatusReplyApiReply } from "../error";
 import {
   deleteUndefinedAndEmptyMembers,
-  deleteUndefinedMembers,
+  withoutUndefinedMembers,
   extractElementAsArray,
   extractElementIfPresent
 } from "../util";
@@ -76,8 +76,8 @@ function baseRepositoryFromApi(
 function baseRepositoryToApi(
   repo: baseTypes.BaseRepository
 ): BaseRepositoryApiReply {
-  return deleteUndefinedMembers({
-    $: deleteUndefinedMembers({
+  return withoutUndefinedMembers({
+    $: withoutUndefinedMembers({
       block: repo.block,
       linkedbuild: repo.linkedbuild,
       name: repo.name,
@@ -168,7 +168,7 @@ export function projectMetaFromApi(data: ProjectMetaApiReply): ProjectMeta {
  */
 export function projectMetaToApi(proj: ProjectMeta): ProjectMetaApiReply {
   const projApi: ProjectMetaApiReply = {
-    project: deleteUndefinedMembers({
+    project: withoutUndefinedMembers({
       $: deleteUndefinedAndEmptyMembers({ name: proj.name, kind: proj.kind }),
       ...baseTypes.commonMetaToApi(proj),
       access: flag.booleanToSimpleFlag(proj.access),

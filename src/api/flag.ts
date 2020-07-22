@@ -29,7 +29,7 @@
 
 import * as assert from "assert";
 import {
-  deleteUndefinedMembers,
+  withoutUndefinedMembers,
   extractElementAsArray,
   extractElementIfPresent
 } from "../util";
@@ -55,7 +55,7 @@ export interface FlagSwitch {
 function flagSwitchFromApi(data: FlagSwitchApiReply): FlagSwitch | undefined {
   return data === ""
     ? undefined
-    : deleteUndefinedMembers({
+    : withoutUndefinedMembers({
         arch: extractElementIfPresent<Arch>(data.$, "arch"),
         repository: extractElementIfPresent<string>(data.$, "repository")
       });

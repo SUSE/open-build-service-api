@@ -33,7 +33,7 @@ import {
   RevisionApiReply
 } from "./history";
 import { Package } from "./package";
-import { deleteUndefinedMembers, pathExists, PathType } from "./util";
+import { withoutUndefinedMembers, pathExists, PathType } from "./util";
 
 export interface PackageFile {
   readonly name: string;
@@ -152,7 +152,7 @@ export function packageFileFromDirectoryEntry(
     }
   });
 
-  return deleteUndefinedMembers({
+  return withoutUndefinedMembers({
     name: dentry.name,
     packageName: file.packageName,
     projectName: file.projectName,

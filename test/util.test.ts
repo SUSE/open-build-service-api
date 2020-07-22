@@ -113,10 +113,10 @@ describe("#extractElementOrDefault", () => {
   });
 });
 
-describe("#deleteUndefinedMembers", () => {
+describe("#withoutUndefinedMembers", () => {
   it("should drop undefined members", () => {
     const someObj = { foo: 1, bar: 2, baz: undefined };
-    expect(util.deleteUndefinedMembers(someObj)).to.deep.equal({
+    expect(util.withoutUndefinedMembers(someObj)).to.deep.equal({
       foo: 1,
       bar: 2
     });
@@ -126,7 +126,7 @@ describe("#deleteUndefinedMembers", () => {
 
   it("should not modify the actual object", () => {
     const someObj = { Foo: "a", bar: ["foo"], Baz: undefined };
-    util.deleteUndefinedMembers(someObj);
+    util.withoutUndefinedMembers(someObj);
 
     expect(someObj).to.deep.equal({ Foo: "a", bar: ["foo"], Baz: undefined });
   });
