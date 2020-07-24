@@ -72,10 +72,10 @@ import { newXmlBuilder, newXmlParser } from "./xml";
  * The files in the `.osc` subdirectory where the information about each project
  * are stored.
  */
-const projectUnderscoreFiles = ["_apiurl", "_project", "_packages"];
+const PROJECT_UNDERSCORE_FILES = ["_apiurl", "_project", "_packages"];
 
 /** The files that are stored in the [[dotOscPluginSubdir]] subdirectory. */
-const obsTsProjectUnderscoreFiles = ["_project_meta.json"];
+const OBS_TS_PROJECT_UNDERSCORE_FILES = ["_project_meta.json"];
 
 /**
  * The subdirectory into which we put additional files that are related to the
@@ -83,7 +83,7 @@ const obsTsProjectUnderscoreFiles = ["_project_meta.json"];
  * `osc` does not handle additional files in `.osc/` and thus we store them in
  * this directory instead to avoid compatibility issues.
  */
-const dotOscPluginSubdir = ".osc_obs_ts";
+const DOT_OSC_PLUGIN_SUBDIR = ".osc_obs_ts";
 
 /** Container to store the information about a Project on OBS */
 export interface Project {
@@ -258,7 +258,9 @@ async function writeProjectUnderscoreFiles(
 
   if (proj.meta !== undefined) {
     // it's ok to use recursive here as path is guaranteed to exist
-    await fsPromises.mkdir(join(path, dotOscPluginSubdir), { recursive: true });
+    await fsPromises.mkdir(join(path, DOT_OSC_PLUGIN_SUBDIR), {
+      recursive: true
+    });
   }
   const projMetaApiJson =
     proj.meta !== undefined ? JSON.stringify(proj.meta) : undefined;
@@ -272,7 +274,7 @@ async function writeProjectUnderscoreFiles(
         contents: underscorePackagesContents
       },
       {
-        fname: join(path, dotOscPluginSubdir, "_project_meta.json"),
+        fname: join(path, DOT_OSC_PLUGIN_SUBDIR, "_project_meta.json"),
         contents: projMetaApiJson
       }
     ].map(({ fname, contents }) => {
@@ -399,23 +401,21 @@ export async function readInCheckedOutProject(path: string): Promise<Project> {
     underscorePackagesContents,
     projMetaContents
   ] = await Promise.all(
-    projectUnderscoreFiles
-      .map(async (fname) =>
-        (await fsPromises.readFile(join(path, ".osc", fname))).toString().trim()
-      )
-      .concat(
-        obsTsProjectUnderscoreFiles.map(async (fname) => {
-          try {
-            return (
-              await fsPromises.readFile(join(path, dotOscPluginSubdir, fname))
-            )
-              .toString()
-              .trim();
-          } catch {
-            return "";
-          }
-        })
-      )
+    PROJECT_UNDERSCORE_FILES.map(async (fname) =>
+      (await fsPromises.readFile(join(path, ".osc", fname))).toString().trim()
+    ).concat(
+      OBS_TS_PROJECT_UNDERSCORE_FILES.map(async (fname) => {
+        try {
+          return (
+            await fsPromises.readFile(join(path, DOT_OSC_PLUGIN_SUBDIR, fname))
+          )
+            .toString()
+            .trim();
+        } catch {
+          return "";
+        }
+      })
+    )
   );
 
   const meta =
