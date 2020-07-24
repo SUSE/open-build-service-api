@@ -449,3 +449,14 @@ export function dropProperty<T, K extends keyof T>(obj: T, key: K): Omit<T, K> {
   const { [key]: drop, ...rest } = obj;
   return rest;
 }
+
+/**
+ * Returns undefined if obj is undefined, otherwise the result of `fn(obj)` is
+ * returned.
+ */
+export function undefinedIfNoInput<T, U>(
+  obj: T | undefined,
+  fn: (o: T) => U
+): U | undefined {
+  return obj === undefined ? undefined : fn(obj);
+}
