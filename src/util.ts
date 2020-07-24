@@ -67,6 +67,25 @@ export function mapOrApply<T, U>(
   }
 }
 
+/**
+ * Call `callbackFn` on `arrayOrObj` the same way `map` does, but just calls
+ * `callbackFn(arrayOrObj)` in the case that `arrayOrObj` is not an array. If
+ * `arrayOrObj` is undefined, then an empty array is returned.
+ *
+ * @param arrayOrObj  An arbitrary array of objects or a single object or
+ *     undefined.
+ * @param callbackFn  A call back function that can be passed to
+ *     `Array.prototype.map`.
+ */
+export function mapOrApplyOptional<T, U>(
+  arrayOrObjOrUndefined: T | T[] | undefined,
+  callbackFn: (value: T, index: number, array: T[]) => U
+): U[] {
+  return arrayOrObjOrUndefined === undefined
+    ? []
+    : mapOrApply(arrayOrObjOrUndefined, callbackFn);
+}
+
 /** Returns an array starting at zero and ending at `end - 1` */
 export function range(end: number): number[];
 /** Returns an array starting at `start` and ending at `end - 1` */
