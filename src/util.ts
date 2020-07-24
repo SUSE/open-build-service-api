@@ -49,21 +49,21 @@ export function zip<T, U>(
 }
 
 /**
- * Call `callbackfn` on `arrayOrObj` the same way `map` does, but just calls
- * `callbackfn(arrayOrObj)` in the case that `arrayOrObj` is not an array.
+ * Call `callbackFn` on `arrayOrObj` the same way `map` does, but just calls
+ * `callbackFn(arrayOrObj)` in the case that `arrayOrObj` is not an array.
  *
  * @param arrayOrObj  An arbitrary array of objects or a single object.
- * @param callbackfn A call back function that can be passed to
+ * @param callbackFn A call back function that can be passed to
  *     `Array.prototype.map`.
  */
 export function mapOrApply<T, U>(
   arrayOrObj: T | T[],
-  callbackfn: (value: T, index: number, array: T[]) => U
+  callbackFn: (value: T, index: number, array: T[]) => U
 ): U[] {
   if (Array.isArray(arrayOrObj)) {
-    return arrayOrObj.map(callbackfn);
+    return arrayOrObj.map(callbackFn);
   } else {
-    return [callbackfn(arrayOrObj, 0, [arrayOrObj])];
+    return [callbackFn(arrayOrObj, 0, [arrayOrObj])];
   }
 }
 
