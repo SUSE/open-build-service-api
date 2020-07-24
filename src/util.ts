@@ -28,6 +28,7 @@ import * as assert from "assert";
 import { spawn } from "child_process";
 import { promises as fsPromises, Stats } from "fs";
 import { join } from "path";
+import { TypesEqual } from "./types";
 
 /**
  * Convert two arrays into an array of Tuples.
@@ -119,11 +120,26 @@ function makeConstruct<T>(
   }
 }
 
+const isEmptyObj = (obj: any): boolean =>
+  Object.keys(obj).length === 0 && obj.constructor === Object;
+
+/** Return type of [[withoutUndefinedMembers]] */
+export type RetT<T> = TypesEqual<T, Partial<T>> extends true
+  ? T | undefined
+  : T;
+
 /**
  * Returns a new object that contains only the elements of `obj` that are not
- * undefined.
+ * undefined. If all members of `obj` are `undefined`, then `undefined` is
+ * returned.
+ *
+ * The return type is:
+ * - `T | undefined` if all members of `T` are optional and thus `undefined`
+ *   could be returned.
+ * - `T` if `T` has at least one non-optional member (note that members of type
+ *   `U|undefined` do not count as option!).
  */
-export function withoutUndefinedMembers<T>(obj: T): T {
+export function withoutUndefinedMembers<T>(obj: T): RetT<T> {
   const res: any = {};
 
   Object.keys(obj).forEach((key) => {
@@ -131,7 +147,7 @@ export function withoutUndefinedMembers<T>(obj: T): T {
       res[key] = obj[key as keyof T];
     }
   });
-  return res as T;
+  return (isEmptyObj(res) ? undefined : (res as T)) as RetT<T>;
 }
 
 /**

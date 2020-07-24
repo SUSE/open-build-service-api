@@ -25,6 +25,8 @@ import { expect } from "chai";
 import { existsSync } from "fs";
 import { describe, it } from "mocha";
 import * as util from "../src/util";
+import { RetT } from "../src/util";
+import { TypesEqual, assertType } from "../src/types";
 
 class TestClass {
   constructor(readonly value: string) {}
@@ -114,6 +116,20 @@ describe("#extractElementOrDefault", () => {
 });
 
 describe("#withoutUndefinedMembers", () => {
+  type AllOptional = { a?: string; b?: number };
+  type SomeOptional = { a?: number; b: boolean };
+
+  assertType<TypesEqual<AllOptional, Partial<AllOptional>>>();
+
+  assertType<TypesEqual<RetT<AllOptional>, AllOptional | undefined>>();
+  assertType<TypesEqual<RetT<SomeOptional>, SomeOptional>>();
+
+  it("returns undefined when all members of the object are undefined", () => {
+    expect(
+      util.withoutUndefinedMembers({ a: undefined, b: undefined })
+    ).to.equal(undefined);
+  });
+
   it("should drop undefined members", () => {
     const someObj = { foo: 1, bar: 2, baz: undefined };
     expect(util.withoutUndefinedMembers(someObj)).to.deep.equal({
