@@ -43,7 +43,7 @@ export {
   Package
 } from "./package";
 export * from "./project";
-export { Group, User } from "./user";
+export { Group, GroupWithRole, User, UserWithRole } from "./user";
 export { pathExists, PathType, rmRf, runProcess } from "./util";
 export {
   addAndDeleteFilesFromPackage,

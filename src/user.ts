@@ -19,6 +19,8 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import { withoutUndefinedMembers, undefinedIfNoInput } from "./util";
+
 /** roles of a Person or a Group belonging to a project */
 export enum LocalRole {
   /** This person or group maintains the project and has all rights */
@@ -37,54 +39,109 @@ export enum LocalRole {
 
 /** The information about a [[User]] as received from OBS */
 export interface UserApiReply {
-  $: { userid: string; role: LocalRole };
+  $: { userid: string; role?: LocalRole };
 }
+export type UserWithRoleApiReply = Required<UserApiReply>;
 
 /** The information about a [[Group]] as received from OBS */
 export interface GroupApiReply {
-  $: { groupid: string; role: LocalRole };
+  $: { groupid: string; role?: LocalRole };
 }
+export type GroupWithRoleApiReply = Required<GroupApiReply>;
 
-/** Representation of a user belonging to a [[Project]] */
+/** A user with an optional role. */
 export interface User {
+  /** The user's id (= their username) */
   readonly userId: string;
-  readonly role: LocalRole;
+  /** An optional user role, if applicable in this context. */
+  readonly role?: LocalRole;
 }
 
+/** A user with a specified role */
+export type UserWithRole = Required<User>;
+
+export function userFromApi(data: undefined): undefined;
+export function userFromApi(data: UserApiReply): User;
+export function userFromApi(data: UserWithRoleApiReply): UserWithRole;
+export function userFromApi(data?: UserApiReply): User | undefined;
 /**
  * Converts the data about a user as received from the API to a [[User]]
  * interface.
  */
-export function userFromApi(data: UserApiReply): User {
-  return {
-    role: data.$.role,
-    userId: data.$.userid
-  };
+export function userFromApi(
+  data?: UserApiReply | UserWithRoleApiReply
+): UserWithRole | User | undefined {
+  return data === undefined
+    ? undefined
+    : Object.freeze(
+        withoutUndefinedMembers({
+          role: data.$.role,
+          userId: data.$.userid
+        })
+      );
 }
 
+export function userToApi(user: undefined): undefined;
+export function userToApi(user: UserWithRole): UserWithRoleApiReply;
+export function userToApi(user: User): UserApiReply;
+export function userToApi(user?: User): UserApiReply | undefined;
+export function userToApi(
+  user?: UserWithRole
+): UserWithRoleApiReply | undefined;
+
 /** Convert a [[User]] interface back to the form that OBS' API expects */
-export function userToApi(user: User): UserApiReply {
-  return { $: { userid: user.userId, role: user.role } };
+export function userToApi(
+  user?: UserWithRole | User
+): UserApiReply | UserWithRoleApiReply | undefined {
+  return undefinedIfNoInput(user, (u) => ({
+    $: withoutUndefinedMembers({ userid: u.userId, role: u.role })
+  }));
+}
+
+/** A group of users in the Open Build Service */
+export interface Group {
+  readonly groupId: string;
+  readonly role?: LocalRole;
 }
 
 /** Representation of a group of users belonging to a [[Project]] */
-export interface Group {
-  readonly groupId: string;
-  readonly role: LocalRole;
-}
+export type GroupWithRole = Required<Group>;
+
+export function groupFromApi(data: undefined): undefined;
+export function groupFromApi(data: GroupApiReply): Group;
+export function groupFromApi(data: GroupWithRoleApiReply): GroupWithRole;
+export function groupFromApi(data?: GroupApiReply): Group | undefined;
 
 /**
  * Converts the data about a user as received from the API to a [[Group]]
  * interface.
  */
-export function groupFromApi(data: GroupApiReply): Group {
-  return {
-    groupId: data.$.groupid,
-    role: data.$.role
-  };
+export function groupFromApi(
+  data?: GroupApiReply | GroupWithRoleApiReply
+): Group | GroupWithRole | undefined {
+  return undefinedIfNoInput(data, (g) =>
+    Object.freeze(
+      withoutUndefinedMembers({
+        groupId: g.$.groupid,
+        role: g.$.role
+      })
+    )
+  );
 }
 
+export function groupToApi(group: undefined): undefined;
+export function groupToApi(group: Group): GroupApiReply;
+export function groupToApi(group: GroupWithRole): GroupWithRoleApiReply;
+export function groupToApi(group?: Group): GroupApiReply | undefined;
+export function groupToApi(
+  group?: GroupWithRole
+): GroupWithRoleApiReply | undefined;
+
 /** Convert a [[Group]] interface back to the form that OBS' API expects */
-export function groupToApi(group: Group): GroupApiReply {
-  return { $: { groupid: group.groupId, role: group.role } };
+export function groupToApi(
+  group?: Group | GroupWithRole
+): GroupApiReply | GroupWithRoleApiReply | undefined {
+  return undefinedIfNoInput(group, (g) => ({
+    $: withoutUndefinedMembers({ groupid: g.groupId, role: g.role })
+  }));
 }

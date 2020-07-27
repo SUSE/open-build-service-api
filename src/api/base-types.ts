@@ -24,14 +24,14 @@
  */
 
 import {
-  Group,
   GroupApiReply,
   groupFromApi,
   groupToApi,
-  User,
+  GroupWithRole,
   UserApiReply,
   userFromApi,
-  userToApi
+  userToApi,
+  UserWithRole
 } from "../user";
 import {
   deleteUndefinedAndEmptyMembers,
@@ -302,10 +302,10 @@ export interface BaseMeta {
   title: string;
 
   /** list of users and their roles */
-  person?: User[];
+  person?: UserWithRole[];
 
   /** list of groups and their roles */
-  group?: Group[];
+  group?: GroupWithRole[];
 
   /** Is this project/package locked from rebuilding (used for maintenance project) */
   lock?: boolean;
@@ -399,13 +399,21 @@ export function commonMetaFromApi(
     url,
     build: flagFromApi(build),
     debugInfo: flagFromApi(debuginfo),
-    group: extractElementAsArrayIfPresent<Group>(commonMetaApiReply, "group", {
-      construct: groupFromApi
-    }),
+    group: extractElementAsArrayIfPresent<GroupWithRole>(
+      commonMetaApiReply,
+      "group",
+      {
+        construct: groupFromApi
+      }
+    ),
     lock: lock === undefined ? undefined : simpleFlagToBoolean(lock),
-    person: extractElementAsArrayIfPresent<User>(commonMetaApiReply, "person", {
-      construct: userFromApi
-    }),
+    person: extractElementAsArrayIfPresent<UserWithRole>(
+      commonMetaApiReply,
+      "person",
+      {
+        construct: userFromApi
+      }
+    ),
     publish: flagFromApi(publish),
     sourceAccess:
       sourceaccess === undefined
