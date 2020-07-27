@@ -43,6 +43,12 @@ export {
   Package
 } from "./package";
 export * from "./project";
+export {
+  fetchRequest,
+  fetchRequestDiff,
+  requestDeletion,
+  submitPackage
+} from "./request";
 export { Group, GroupWithRole, User, UserWithRole } from "./user";
 export { pathExists, PathType, rmRf, runProcess } from "./util";
 export {

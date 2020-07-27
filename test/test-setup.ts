@@ -36,6 +36,7 @@ import { Connection } from "../src/connection";
 import { fileListToDirectory, FrozenPackage } from "../src/package";
 import { pathExists, PathType } from "../src/util";
 import { newXmlBuilder } from "../src/xml";
+import { fetchProjectMeta, modifyProjectMeta } from "../src/api/project-meta";
 
 /**
  * Create a checked out package using mock-fs in the current working directory.
@@ -106,6 +107,11 @@ export const enum ApiType {
 
 export const miniObsUsername = "obsTestUser";
 export const miniObsPassword = "nots3cr3t";
+
+export const miniObsAdminCon = new Connection("Admin", "opensuse", {
+  url: ApiType.MiniObs,
+  forceHttps: false
+});
 
 export function getTestConnection(apiType: ApiType): Connection {
   return apiType === ApiType.MiniObs
@@ -229,4 +235,14 @@ export async function swallowException(
   } catch (err) {
     console.error(err.toString());
   }
+}
+
+/** Removes all repositories from the project's meta */
+export async function removeProjectRepositories(
+  con: Connection,
+  projectName: string
+): Promise<void> {
+  const meta = await fetchProjectMeta(con, projectName);
+  const { repository, ...rest } = meta;
+  await modifyProjectMeta(con, { ...rest, repository: [] });
 }
