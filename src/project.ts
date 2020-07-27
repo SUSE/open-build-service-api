@@ -39,7 +39,7 @@ import { promises as fsPromises } from "fs";
 import { join } from "path";
 import {
   DirectoryApiReply,
-  directoryFromApi,
+  directoryWithEntriesWithNameFromApi,
   fetchDirectory
 } from "./api/directory";
 import {
@@ -512,21 +512,13 @@ export async function deleteProject(
 export async function fetchProjectList(
   con: Connection
 ): Promise<readonly Project[]> {
-  const projectsDir = directoryFromApi(
+  const projectsDir = directoryWithEntriesWithNameFromApi(
     await con.makeApiCall<DirectoryApiReply>("/source")
   );
-  if (
-    projectsDir.directoryEntries === undefined ||
-    !Array.isArray(projectsDir.directoryEntries)
-  ) {
-    throw new Error(
-      `Invalid response received from OBS, expected an array of directory entries, but got '${projectsDir.directoryEntries}' instead`
-    );
-  }
   return Object.freeze(
     projectsDir.directoryEntries.map((dentry) => ({
       apiUrl: con.url,
-      name: dentry.name!
+      name: dentry.name
     }))
   );
 }

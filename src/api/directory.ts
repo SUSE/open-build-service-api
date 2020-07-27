@@ -196,6 +196,10 @@ export interface Directory {
   readonly serviceInfos?: ServiceInfo[];
 }
 
+export type DirectoryEntryWithName = Omit<DirectoryEntry, "name"> & {
+  readonly name: string;
+};
+
 export function directoryFromApi(
   directoryApiReply: DirectoryApiReply
 ): Directory {
@@ -225,6 +229,31 @@ export function directoryFromApi(
   };
 
   return deleteUndefinedAndEmptyMembers(dir);
+}
+
+export function directoryWithEntriesWithNameFromApi(
+  directoryApiReply: DirectoryApiReply
+): Omit<Directory, "directoryEntries"> & {
+  readonly directoryEntries: DirectoryEntryWithName[];
+} {
+  const dir = directoryFromApi(directoryApiReply);
+
+  const { directoryEntries, ...rest } = dir;
+
+  if (directoryEntries === undefined) {
+    return { directoryEntries: [], ...rest };
+  }
+
+  directoryEntries.forEach((dentry) => {
+    if (dentry.name === undefined) {
+      throw new Error("directory entry property 'name' is undefined.");
+    }
+  });
+
+  return {
+    directoryEntries: directoryEntries as DirectoryEntryWithName[],
+    ...rest
+  };
 }
 
 export function directoryToApi(directory: Directory): DirectoryApiReply {
