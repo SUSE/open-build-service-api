@@ -156,8 +156,7 @@ describe("Project", () => {
     afterEach(() => mockFs.restore());
 
     it("correctly reads in a test project", async () => {
-      const testProj = await readInCheckedOutProject("test").should.be
-        .fulfilled;
+      const testProj = await readInCheckedOutProject("test");
 
       expect(testProj).to.deep.equal({
         apiUrl: "https://api.example.org/",
@@ -166,8 +165,7 @@ describe("Project", () => {
     });
 
     it("correctly reads in an Virtualization:Appliances:Images:openSUSE-Tumbleweed", async () => {
-      const VirtAppImgTw = await readInCheckedOutProject(targetDir).should.be
-        .fulfilled;
+      const VirtAppImgTw = await readInCheckedOutProject(targetDir);
 
       expect(VirtAppImgTw).to.deep.equal(VirtApplImgOpenSUSETWProj);
       // no _project_meta.json file => no meta property
@@ -176,8 +174,7 @@ describe("Project", () => {
 
     it("correctly reads in an Virtualization:Appliances:Images:openSUSE-Tumbleweed with a _project_meta.json", async () => {
       const projDir = `${targetDir}_with_meta`;
-      const VirtAppImgTw = await readInCheckedOutProject(projDir).should.be
-        .fulfilled;
+      const VirtAppImgTw = await readInCheckedOutProject(projDir);
 
       expect(VirtAppImgTw).to.deep.equal({
         meta: VirtApplImgOpenSUSETWProjMeta,
@@ -261,8 +258,7 @@ describe("Project", () => {
 
       expect(await pathExists(`${targetDir}/.osc_obs_ts`)).to.equal(undefined);
 
-      await updateCheckedOutProject(fullVirtApplImgOTWProj, targetDir).should.be
-        .fulfilled;
+      await updateCheckedOutProject(fullVirtApplImgOTWProj, targetDir);
 
       expect(
         await pathExists(`${targetDir}/.osc_obs_ts`, PathType.Directory)
@@ -302,8 +298,7 @@ describe("Project", () => {
         meta: VirtApplImgOpenSUSETWProjMeta
       });
 
-      await updateCheckedOutProject(newProj, `${targetDir}_with_meta`).should.be
-        .fulfilled;
+      await updateCheckedOutProject(newProj, `${targetDir}_with_meta`);
 
       await readInCheckedOutProject(
         `${targetDir}_with_meta`

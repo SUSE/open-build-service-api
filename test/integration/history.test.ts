@@ -65,13 +65,16 @@ describe("Commit", function () {
 
   describe("#fetchHistoryAcrossLinks", () => {
     it("fetches the history of a package without a link", async function () {
-      const head: Commit = await fetchHistoryAcrossLinks(this.con, {
+      const headCommit = await fetchHistoryAcrossLinks(this.con, {
         apiUrl,
         name: "vagrant-scp",
         projectName: "Virtualization:vagrant"
-      }).should.be.fulfilled;
+      });
 
-      head.should.deep.include({
+      expect(headCommit).to.not.equal(undefined);
+      const head = headCommit!;
+
+      expect(head).to.deep.include({
         revisionHash: "3e0e3566753dca94980d3acd23b82efd",
         commitMessage: "Bump patched dependency on bundler to 2.1",
         requestId: 788130,
@@ -245,11 +248,13 @@ describe("Commit", function () {
     });
 
     it("fetches the history of a package with a link to Factory", async function () {
-      const head: Commit = await fetchHistoryAcrossLinks(this.con, {
+      const headCommit = await fetchHistoryAcrossLinks(this.con, {
         apiUrl,
         name: "vagrant-sshfs",
         projectName: "Virtualization:vagrant"
-      }).should.be.fulfilled;
+      });
+      expect(headCommit).to.not.equal(undefined);
+      const head = headCommit!;
 
       const obsAutocommitCommon = {
         commitMessage: "baserev update by copy to link target",

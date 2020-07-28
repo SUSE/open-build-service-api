@@ -76,8 +76,7 @@ pass = you
 
   describe("read accounts", () => {
     it("parses a valid .oscrc correctly", async () => {
-      const accounts = await readAccountsFromOscrc(".oscrc").should.be
-        .fulfilled;
+      const accounts = await readAccountsFromOscrc(".oscrc");
 
       expect(accounts).to.be.a("array").and.have.length(3);
 

@@ -115,6 +115,13 @@ describe("#checkOut", function () {
 
   const projectName = `home:${miniObsUsername}:testProjectWithPackages`;
   const apiUrl = normalizeUrl(ApiType.MiniObs);
+  const meta = {
+    description: "a test project with a _meta",
+    title: projectName.toLocaleUpperCase(),
+    name: projectName,
+    person: [{ role: LocalRole.Maintainer, userId: miniObsUsername }],
+    repository: [{ name: "foo" }]
+  };
   const proj: Project = {
     apiUrl,
     name: projectName,
@@ -127,13 +134,7 @@ describe("#checkOut", function () {
 
   const projWithMeta: Project = {
     ...proj,
-    meta: {
-      description: "a test project with a _meta",
-      title: proj.name.toLocaleUpperCase(),
-      name: proj.name,
-      person: [{ role: LocalRole.Maintainer, userId: miniObsUsername }],
-      repository: [{ name: "foo" }]
-    }
+    meta
   };
 
   before(async function () {
@@ -213,7 +214,7 @@ describe("#checkOut", function () {
     const dir = "./dirExists";
     await pathExists(dir).should.eventually.not.equal(undefined);
 
-    await checkOutProject(con, proj, dir).should.be.fulfilled;
+    await checkOutProject(con, proj, dir);
 
     const readInProj = await readInCheckedOutProject(dir);
     const { packages: ignore, ...rest } = readInProj;
