@@ -59,11 +59,11 @@ import { setDifference } from "./set-utils";
 import {
   createOrEnsureEmptyDir,
   deleteUndefinedAndEmptyMembers,
-  withoutUndefinedMembers,
   mapOrApply,
   pathExists,
   PathType,
   rmRf,
+  withoutUndefinedMembers,
   zip
 } from "./util";
 import { newXmlBuilder, newXmlParser } from "./xml";
@@ -85,14 +85,20 @@ const OBS_TS_PROJECT_UNDERSCORE_FILES = ["_project_meta.json"];
  */
 const DOT_OSC_PLUGIN_SUBDIR = ".osc_obs_ts";
 
-/** Container to store the information about a Project on OBS */
-export interface Project {
+/**
+ * Simplest representation of a project in the Open Build Service: it only
+ * contains the absolutely necessary fields to uniquely identify a project.
+ */
+export interface BaseProject {
   /** Url to the API from which this project was retrieved */
   readonly apiUrl: string;
 
   /** Full name of this project */
-  name: string;
+  readonly name: string;
+}
 
+/** Container to store the information about a Project on OBS */
+export interface Project extends BaseProject {
   /**
    * Array of packages that belong to this project.
    *
@@ -320,7 +326,7 @@ async function writeProjectUnderscoreFiles(
  */
 export async function checkOutProject(
   con: Connection,
-  project: string | Project,
+  project: string | BaseProject,
   path: string,
   options?: {
     packageList?: string[];
@@ -492,7 +498,7 @@ export async function createProject(
  */
 export async function deleteProject(
   con: Connection,
-  project: string | Project
+  project: string | BaseProject
 ): Promise<StatusReply> {
   const route =
     typeof project === "string"
@@ -511,7 +517,7 @@ export async function deleteProject(
  */
 export async function fetchProjectList(
   con: Connection
-): Promise<readonly Project[]> {
+): Promise<readonly BaseProject[]> {
   const projectsDir = directoryWithEntriesWithNameFromApi(
     await con.makeApiCall<DirectoryApiReply>("/source")
   );

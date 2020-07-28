@@ -45,13 +45,13 @@ import {
   PackageFile,
   packageFileFromDirectoryEntry
 } from "./file";
-import { Project } from "./project";
+import { Project, BaseProject } from "./project";
 import { createOrEnsureEmptyDir, unixTimeStampFromDate, zip } from "./util";
 import { FileState, ModifiedPackage } from "./vcs";
 import { newXmlBuilder, newXmlParser } from "./xml";
 
-/** This interface describes a package in the Open Build Service. */
-export interface Package {
+/** Interface uniquely identifying a Package in the Open Build Service */
+export interface BasePackage {
   /** Url to the API from which this package was retrieved */
   readonly apiUrl: string;
 
@@ -60,7 +60,10 @@ export interface Package {
 
   /** The name of the project to which this package belongs */
   readonly projectName: string;
+}
 
+/** A package in the Open Build Service with optional additional fields */
+export interface Package extends BasePackage {
   /** md5 hash of the package contents */
   md5Hash?: string;
 
@@ -75,9 +78,6 @@ export interface Package {
    */
   files?: PackageFile[];
 }
-
-/** Package type containing only the guaranteed fields */
-export type BasePackage = Omit<Package, "files" | "meta" | "md5Hash">;
 
 type PackageWithRequiredFiles = Omit<Package, "files"> & {
   files: FrozenPackageFile[];
@@ -286,7 +286,7 @@ export async function createPackage(
 
 export async function fetchPackage(
   con: Connection,
-  project: Project | string,
+  project: BaseProject | string,
   packageName: string,
   options: Omit<FetchFileListBaseOptions, "revision"> & {
     retrieveFileContents: true;
@@ -295,7 +295,7 @@ export async function fetchPackage(
 
 export async function fetchPackage(
   con: Connection,
-  project: Project | string,
+  project: BaseProject | string,
   packageName: string,
   options?: Omit<FetchFileListBaseOptions, "revision"> & {
     retrieveFileContents?: boolean;
@@ -318,7 +318,7 @@ export async function fetchPackage(
  */
 export async function fetchPackage(
   con: Connection,
-  project: Project | string,
+  project: BaseProject | string,
   packageName: string,
   options?: Omit<FetchFileListBaseOptions, "revision"> & {
     retrieveFileContents?: boolean;
