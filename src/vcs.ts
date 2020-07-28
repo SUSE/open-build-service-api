@@ -277,14 +277,14 @@ export async function untrackFiles(
   const newFilesInWorkdir = pkg.filesInWorkdir.map((vcsFile) => {
     if (filesToUntrack.find((f) => f === vcsFile.name) !== undefined) {
       assert(vcsFile.state === FileState.ToBeAdded);
-      const { state, ...rest } = vcsFile;
+      const { state: _ignore, ...rest } = vcsFile;
       return { state: FileState.Untracked, ...rest };
     } else {
       return vcsFile;
     }
   });
 
-  const { filesInWorkdir, ...rest } = pkg;
+  const { filesInWorkdir: _ignore, ...rest } = pkg;
   const newPkg = { filesInWorkdir: newFilesInWorkdir, ...rest };
 
   await writeFileListToDir(newPkg, FileListType.ToBeAdded);
@@ -334,7 +334,7 @@ export async function undoFileDeletion(
           vcsFile.state === FileState.ToBeDeleted ||
             vcsFile.state === FileState.Missing
         );
-        const { state, ...rest } = vcsFile;
+        const { state: _ignore, ...rest } = vcsFile;
 
         const origFile = join(pkg.path, ".osc", vcsFile.name);
         if (!(await pathExists(origFile, PathType.File))) {
@@ -357,7 +357,7 @@ export async function undoFileDeletion(
     })
   );
 
-  const { filesInWorkdir, ...rest } = pkg;
+  const { filesInWorkdir: _ignore, ...rest } = pkg;
   const newPkg = { filesInWorkdir: newFilesInWorkdir, ...rest };
 
   await writeFileListToDir(newPkg, FileListType.ToBeDeleted);
@@ -437,7 +437,7 @@ export async function readInModifiedPackageFromDir(
             state = FileState.ToBeDeleted;
           }
 
-          const { contents, md5Hash, ...rest } = matchingPkgFile;
+          const { contents, md5Hash: _ignore, ...rest } = matchingPkgFile;
           filesInWorkdir.push({
             state,
             contents:
@@ -481,7 +481,7 @@ export async function readInModifiedPackageFromDir(
     }
   });
 
-  const { files: ignored, ...restOfPkg } = pkg;
+  const { files: _ignored, ...restOfPkg } = pkg;
 
   return {
     ...restOfPkg,
@@ -542,7 +542,12 @@ export async function commit(
     `Invalid reply received from OBS: replied package as a different name, expected ${pkg.name} but got ${newDir.name}`
   );
 
-  const { files, filesInWorkdir, md5Hash, ...restOfPkg } = pkg;
+  const {
+    files: _ignore,
+    filesInWorkdir,
+    md5Hash: _ignored,
+    ...restOfPkg
+  } = pkg;
 
   // * all files that were uploaded to OBS should now become Unmodified
   // * all deleted files should be dropped from this list as we committed the

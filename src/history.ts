@@ -605,7 +605,7 @@ async function fetchHead(
     fetchFileList(con, pkg, { expandLinks, retrieveFileContents: false })
   ]);
   const [files, md5Hash] = filesAndHash;
-  const { revisionHash, ...head } = unexpandedHistory[-1];
+  const { revisionHash: _unused, ...head } = unexpandedHistory[-1];
   return {
     ...head,
     files,
@@ -622,7 +622,7 @@ export async function fetchFileContentsAtCommit(
   pkg: Package,
   commit?: Commit
 ): Promise<Commit> {
-  const { files, ...rest } =
+  const { files: _unused, ...rest } =
     commit === undefined ? await fetchHead(con, pkg) : commit;
 
   const newFilesAndHash = await fetchFileList(con, pkg, {
