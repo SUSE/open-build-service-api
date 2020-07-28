@@ -147,7 +147,9 @@ export function packageFileFromDirectoryEntry(
   ].forEach(([value, name]) => {
     if (value === undefined) {
       throw new Error(
-        `Invalid directory or package: could not obtain ${name ?? "undefined"}`
+        `Invalid directory or package: could not obtain ${
+          name?.toString() ?? "undefined"
+        }`
       );
     }
   });

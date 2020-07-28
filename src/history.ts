@@ -507,7 +507,13 @@ async function cachedFetchHistoryAcrossLinks(
           assert(
             linkedHistory.revisionHash === validLink.revision ||
               linkedHistory.revisionHash === validLink.srcmd5,
-            `Got an invalid history back, expected HEAD of linked package (${linkedPkg.projectName}/${linkedPkg.name}) to be at ${validLink.revision} or ${validLink.srcmd5} but got ${linkedHistory.revisionHash}`
+            `Got an invalid history back, expected HEAD of linked package (${
+              linkedPkg.projectName
+            }/${linkedPkg.name}) to be at ${
+              validLink.revision ?? "undefined"
+            } or ${validLink.srcmd5 ?? "undefined"} but got ${
+              linkedHistory.revisionHash
+            }`
           );
           cur.parentCommits === undefined
             ? (cur.parentCommits = [linkedHistory])
@@ -683,7 +689,7 @@ export function historyToGraphviz(commit: Commit): string {
     label = "<f0> ${cmt.revisionHash} | ${formatTime(cmt.commitTime)} | ${
       cmt.projectName
     }/${cmt.packageName} | revision: ${cmt.revision ?? cmt.revisionHash} | ${
-      cmt.commitMessage?.split(/\r?\n/)[0]
+      cmt.commitMessage?.split(/\r?\n/)[0] ?? "no commit message"
     } "
     shape = "record"
   ];
