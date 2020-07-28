@@ -27,9 +27,10 @@
     "prepare": "yarn run build",
     "prepublishOnly": "yarn run build",
     "build": "tsc --pretty",
-    "test": "yarn run build && mocha --require ts-node/register --recursive \"test/**/*.test.ts\"",
-    "coverage": "nyc --include=\"src/**/*.ts\" --reporter=text --reporter=html --reporter=lcov mocha --require ts-node/register --recursive \"test/**/*.test.ts\"",
     "clean": "rm -rf ./lib ./coverage/ ./.nyc_output ./documentation",
+    "pretest": "yarn run build",
+    "test": "mocha",
+    "coverage": "nyc mocha",
     "watch": "yarn run build -- --watch",
     "watch:test": "yarn run test -- --watch",
     "documentation": "typedoc --mode modules --theme minimal --out ./documentation src/"
@@ -85,7 +86,21 @@
     "require": [
       "ts-node/register"
     ],
-    "reporter": [],
-    "all": true
+    "reporter": [
+      "html",
+      "text",
+      "lcov"
+    ],
+    "all": true,
+    "cache": false
+  },
+  "mocha": {
+    "require": [
+      "ts-node/register"
+    ],
+    "spec": "test/**/*.test.ts",
+    "extension": [
+      "ts"
+    ]
   }
 }
