@@ -26,6 +26,7 @@ import { URL } from "url";
 import { Account } from "./account";
 import { ApiError } from "./error";
 import { newXmlBuilder, newXmlParser } from "./xml";
+import { sleep } from "./util";
 
 /**
  * Converts a url into a well defined format (e.g. whether `/` should be
@@ -39,8 +40,6 @@ import { newXmlBuilder, newXmlParser } from "./xml";
 export function normalizeUrl(url: string): string {
   return new URL(url).toString();
 }
-
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const DEFAULT_TIMEOUT_MS = 10000;
 

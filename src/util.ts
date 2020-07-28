@@ -460,3 +460,8 @@ export function undefinedIfNoInput<T, U>(
 ): U | undefined {
   return obj === undefined ? undefined : fn(obj);
 }
+
+/** Sleep for `ms` milliseconds */
+export function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
