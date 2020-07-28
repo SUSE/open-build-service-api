@@ -126,7 +126,7 @@ function makeConstruct<T>(
   type?: new (data: any) => T
 ): (data: any) => T {
   if (construct === undefined && type === undefined) {
-    return (data: any) => data;
+    return (data: any) => data as T;
   }
   if (construct !== undefined) {
     return construct;

@@ -663,7 +663,7 @@ export async function fetchFileContentsAtCommit(
  * @return The resulting graph description in the `dot` language as a string.
  */
 export function historyToGraphviz(commit: Commit): string {
-  const visited: Map<string, boolean> = new Map();
+  const visited = new Map<string, boolean>();
 
   const formatTime = (time: Date): string => {
     const options = {

@@ -424,13 +424,11 @@ export async function readInCheckedOutProject(path: string): Promise<Project> {
     )
   );
 
-  const meta =
-    projMetaContents !== "" ? JSON.parse(projMetaContents) : undefined;
-  const project: Project = {
-    apiUrl: normalizeUrl(apiUrl),
-    name,
-    meta
-  };
+  const meta: ProjectMeta | undefined =
+    projMetaContents !== ""
+      ? (JSON.parse(projMetaContents) as ProjectMeta)
+      : undefined;
+  const project: Project = { apiUrl: normalizeUrl(apiUrl), name, meta };
 
   // let's just assume that the contents of the file are well formed,
   // otherwise something will blow up later anyway.
