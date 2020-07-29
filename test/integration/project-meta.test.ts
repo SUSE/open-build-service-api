@@ -118,7 +118,7 @@ describe("#fetchProjectMeta", () => {
       arch: ["local", "i586", "x86_64"],
       name: "images",
       path: [{ project: "openSUSE:Factory", repository: "standard" }],
-      releasetarget: [
+      releaseTarget: [
         {
           project: "openSUSE:Factory:ToTest",
           repository: "images",
@@ -398,8 +398,8 @@ Here we just try to set as many different options as possible, to check that the
           ],
           rebuild: RebuildMode.Direct,
           block: BlockMode.Local,
-          linkedbuild: LinkedBuildMode.LocalDep,
-          releasetarget: [
+          linkedBuild: LinkedBuildMode.LocalDep,
+          releaseTarget: [
             {
               project: "openSUSE:Factory",
               repository: "standard",

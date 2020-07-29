@@ -277,18 +277,18 @@ export interface BaseRepository {
   block?: BlockMode;
 
   /** Setting how linked projects are rebuild */
-  linkedbuild?: LinkedBuildMode;
+  linkedBuild?: LinkedBuildMode;
 
   /** architectures which this repository builds for */
   arch?: Arch[];
 
   /** repositories that should be released */
-  releasetarget?: ReleaseTarget[];
+  releaseTarget?: ReleaseTarget[];
 
   /** Array of included repositories from other projects */
   path?: Path[];
 
-  hostsystem?: HostSystem;
+  hostSystem?: HostSystem;
 }
 
 /**

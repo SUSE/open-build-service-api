@@ -48,7 +48,7 @@ interface BaseRepositoryApiReply {
     linkedbuild?: string;
   };
   arch?: string[];
-  releasetarget?: baseTypes.ReleaseTargetApiReply[];
+  releaseTarget?: baseTypes.ReleaseTargetApiReply[];
   path?: baseTypes.PathApiReply[];
 }
 
@@ -58,7 +58,7 @@ function baseRepositoryFromApi(
   return deleteUndefinedAndEmptyMembers({
     arch: extractElementAsArray(data, "arch"),
     block: extractElementIfPresent<baseTypes.BlockMode>(data.$, "block"),
-    linkedbuild: extractElementIfPresent<baseTypes.LinkedBuildMode>(
+    linkedBuild: extractElementIfPresent<baseTypes.LinkedBuildMode>(
       data.$,
       "linkedbuild"
     ),
@@ -67,7 +67,7 @@ function baseRepositoryFromApi(
       construct: baseTypes.pathFromApi
     }),
     rebuild: extractElementIfPresent<baseTypes.RebuildMode>(data.$, "rebuild"),
-    releasetarget: extractElementAsArray(data, "releasetarget", {
+    releaseTarget: extractElementAsArray(data, "releasetarget", {
       construct: baseTypes.releaseTargetFromApi
     })
   });
@@ -79,13 +79,13 @@ function baseRepositoryToApi(
   return withoutUndefinedMembers({
     $: withoutUndefinedMembers({
       block: repo.block,
-      linkedbuild: repo.linkedbuild,
+      linkedbuild: repo.linkedBuild,
       name: repo.name,
       rebuild: repo.rebuild
     }),
     arch: repo.arch,
     path: repo.path?.map((pth) => baseTypes.pathToApi(pth)),
-    releasetarget: repo.releasetarget?.map((relTgt) =>
+    releasetarget: repo.releaseTarget?.map((relTgt) =>
       baseTypes.releaseTargetToApi(relTgt)
     )
   });
