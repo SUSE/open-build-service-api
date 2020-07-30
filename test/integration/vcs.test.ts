@@ -53,7 +53,7 @@ type TestFixture = Context & {
 };
 
 describe("ModifiedPackage", function () {
-  this.timeout(10000);
+  this.timeout(20000);
 
   before(skipIfNoMiniObsHook);
   const con = getTestConnection(ApiType.MiniObs);
