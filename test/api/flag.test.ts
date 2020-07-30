@@ -265,7 +265,7 @@ describe("#repositorySettingFromFlag", () => {
       enable: []
     });
 
-    expect(res).to.be.a("Map").and.to.not.have.any.keys(Arch.Riscv64);
+    expect(res).to.equal(undefined);
   });
 });
 

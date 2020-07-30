@@ -28,13 +28,13 @@
  */
 
 import * as assert from "assert";
+import { inspect } from "util";
 import {
-  withoutUndefinedMembers,
   extractElementAsArray,
-  extractElementIfPresent
+  extractElementIfPresent,
+  withoutUndefinedMembers
 } from "../util";
 import { Arch } from "./base-types";
-import { inspect } from "util";
 
 /** Representation of a FlagSwitch as extracted from OBS' API */
 export type FlagSwitchApiReply =
@@ -200,18 +200,70 @@ export function flagToApi(flag: Flag | undefined): FlagApiReply | undefined {
   return res;
 }
 
-export type RepositorySetting = Map<Arch, boolean | undefined> | boolean;
+/**
+ * A repository setting like build, useForBuild, debugInfo, etc.
+ *
+ * If it is undefined, then no setting has been applied in the project
+ * configuration (then OBS' default applies).
+ * If it is a boolean, then that value applies to all architectures.
+ * If it is a map, then each architecture of the repository must be present as a
+ * key and the corresponding value is the setting for this architecture.
+ */
+export type RepositorySetting =
+  | Map<Arch, boolean | undefined>
+  | boolean
+  | undefined;
 
+/**
+ * If the [[Arch]] => setting map contains only the same values, then this value
+ * is returned. Otherwise `repoSettingMap` is returned.
+ */
+export function simplifyRepositorySetting(
+  repoSettingMap: Map<Arch, boolean | undefined>
+): RepositorySetting {
+  const values = [...repoSettingMap.values()];
+  if (repoSettingMap.size === 1) {
+    return values[0];
+  }
+
+  assert(repoSettingMap.size > 1);
+  let allEqual = false;
+  for (let i = 1; i < values.length; i++) {
+    if (values[i] === values[0]) {
+      allEqual = true;
+    } else {
+      allEqual = false;
+      break;
+    }
+  }
+
+  return allEqual ? values[0] : repoSettingMap;
+}
+
+/**
+ * Extracts the repository setting given the [[Flag]].
+ *
+ * @param repositoryName  The name of the repository for which the settings should
+ *     be extracted.
+ * @param architectures  All architectures that apply to this repository.
+ * @param flag  The [[Flag]] which was received from OBS which should be
+ *     converted into a [[RepositorySetting]].
+ * @param defaultSetting  A default that will be used for architectures which
+ *     have no specific setting.
+ *
+ * @return The per architecture settings for the repository with the given name
+ *     as extracted from the flag or the default.
+ */
 export function repositorySettingFromFlag(
   repositoryName: string,
   architectures: Arch[],
   flag?: Flag,
   defaultSetting?: boolean
-): RepositorySetting | undefined {
+): RepositorySetting {
   // default value to be set/returned when no value can be determined:
   // use the defaultSetting if flag is undefined or defaulValue is Unspecified
   // otherwise true/false for Enable/Disable
-  const globalDefault =
+  let globalDefault =
     flag !== undefined
       ? flag.defaultValue === DefaultValue.Unspecified
         ? defaultSetting
@@ -238,28 +290,31 @@ export function repositorySettingFromFlag(
     return globalDefault;
   }
 
-  const res = new Map();
+  const res = new Map<Arch, boolean | undefined>();
 
   const matchesAndDefault: {
-    match: FlagSwitch[];
+    matches: FlagSwitch[];
     value: boolean;
   }[] = [
-    { match: matchingEnable, value: true },
-    { match: matchingDisable, value: false }
+    { matches: matchingEnable, value: true },
+    { matches: matchingDisable, value: false }
   ];
 
   // check each matching <enable>/<disable>:
-  // - no arch field? => return true/false directly
+  // - no arch field? => take this as the new "global" default
   // - arch field? => put it in the Map, but only if the architecture is
   //   actually one of those in architectures
-  for (const { match, value } of matchesAndDefault) {
-    for (const flg of match) {
-      if (flg.arch === undefined) {
-        return value;
-      } else if (
-        architectures.find((arch) => arch === flg.arch) !== undefined
-      ) {
-        res.set(flg.arch, value);
+  for (const { matches, value } of matchesAndDefault) {
+    if (matches.length === 1 && matches[0].arch === undefined) {
+      globalDefault = value;
+    } else {
+      for (const flg of matches) {
+        if (
+          architectures.find((arch) => arch === flg.arch) !== undefined &&
+          flg.arch !== undefined
+        ) {
+          res.set(flg.arch, value);
+        }
       }
     }
   }
@@ -272,11 +327,15 @@ export function repositorySettingFromFlag(
     }
   });
 
-  return res;
+  if (res.size === 0) {
+    return globalDefault;
+  }
+
+  return simplifyRepositorySetting(res);
 }
 
 export function repositorySettingToFlag(
-  repoSettings: [string, RepositorySetting | undefined][],
+  repoSettings: [string, RepositorySetting][],
   //  architectures: Arch[],
   defaultSetting?: boolean
 ): Flag | undefined {
