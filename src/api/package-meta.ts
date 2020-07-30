@@ -128,7 +128,7 @@ function metaRoute(projectName: string, packageName: string): string {
  *
  * @return An object adhering to the [[PackageMeta]] interface.
  */
-export async function getPackageMeta(
+export async function fetchPackageMeta(
   con: Connection,
   projectName: string,
   packageName: string

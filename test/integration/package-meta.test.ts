@@ -22,7 +22,7 @@
 import { afterEach, beforeEach, describe, it } from "mocha";
 import { DefaultValue } from "../../src/api/flag";
 import {
-  getPackageMeta,
+  fetchPackageMeta,
   PackageMeta,
   setPackageMeta
 } from "../../src/api/package-meta";
@@ -40,7 +40,7 @@ import {
   swallowException
 } from "./../test-setup";
 
-describe("#getPackageMeta", () => {
+describe("#fetchPackageMeta", () => {
   beforeEach(beforeEachRecord);
   afterEach(afterEachRecord);
 
@@ -48,7 +48,7 @@ describe("#getPackageMeta", () => {
 
   it("gets a package _meta", async () => {
     const [project, name] = ["devel:tools", "gcovr"];
-    await getPackageMeta(con, project, name).should.eventually.deep.equal({
+    await fetchPackageMeta(con, project, name).should.eventually.deep.equal({
       name,
       project,
       title: "A code coverage report generator using GNU gcov",
@@ -78,7 +78,7 @@ generates an HTML-formatted report.
   });
 
   it("gets a package _meta with a develPackage", async () => {
-    await getPackageMeta(
+    await fetchPackageMeta(
       con,
       "openSUSE:Factory",
       "vagrant"
@@ -132,7 +132,7 @@ It should be gone soon-ish.`,
       newPkg
     ).should.eventually.deep.equal(statusOk);
 
-    await getPackageMeta(con, project, pkgName).should.eventually.deep.equal(
+    await fetchPackageMeta(con, project, pkgName).should.eventually.deep.equal(
       newPkg
     );
   });
@@ -160,7 +160,7 @@ It will be deleted when everything works out.
       newPkg
     ).should.eventually.deep.equal(statusOk);
 
-    await getPackageMeta(
+    await fetchPackageMeta(
       con,
       project,
       complexPkgName
@@ -172,7 +172,7 @@ It will be deleted when everything works out.
       complexPkgName
     ).should.eventually.deep.equal(statusOk);
 
-    await getPackageMeta(con, project, complexPkgName).should.be.rejectedWith(
+    await fetchPackageMeta(con, project, complexPkgName).should.be.rejectedWith(
       ApiError,
       "unknown_package"
     );

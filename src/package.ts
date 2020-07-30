@@ -29,7 +29,7 @@ import {
   fetchDirectory
 } from "./api/directory";
 import {
-  getPackageMeta,
+  fetchPackageMeta,
   PackageMeta,
   packageMetaFromApi,
   packageMetaToApi,
@@ -342,7 +342,7 @@ export async function fetchPackage(
         retrieveFileContents: false | undefined;
       }
     ),
-    getPackageMeta(con, projName, packageName)
+    fetchPackageMeta(con, projName, packageName)
   ]);
 
   const pkg = {
