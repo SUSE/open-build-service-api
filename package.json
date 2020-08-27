@@ -63,8 +63,8 @@
     "sinon": "^9",
     "sinon-chai": "^3.5",
     "source-map-support": "^0.5",
-    "ts-node": "^8.10",
-    "typedoc": "^0.17",
+    "ts-node": "^9",
+    "typedoc": "^0.18",
     "typescript": ">= 3.7"
   },
   "engines": {
