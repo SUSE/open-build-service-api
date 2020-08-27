@@ -73,16 +73,15 @@ export interface StatusReplyApiReply {
 
 /** Converts the status reply from the API into a [[StatusReply]] */
 export function statusReplyFromApi(status: StatusReplyApiReply): StatusReply {
-  let data: any | undefined;
+  const data: Record<string, string> = {};
   if (status.status.data !== undefined) {
-    data = {};
     mapOrApply(status.status.data, (entry) => {
       data[entry.$.name] = entry._;
     });
   }
   const reply: StatusReply = {
     code: status.status.$.code,
-    data,
+    data: Object.keys(data).length === 0 ? undefined : data,
     summary: status.status.summary,
     details: status.status.details
   };
