@@ -150,9 +150,10 @@ export interface ApiCallMainOptions {
    * An arbitrary object to be sent along with the request.
    *
    * This object is encoded to XML via the builder obtained from
-   * [[newXmlBuilder]].
+   * [[newXmlBuilder]] or sent as it is if [[sendPayloadAsRaw]] is defined and
+   * `true`.
    */
-  payload?: any;
+  payload?: any | Buffer;
 
   /**
    * Whether `payload` should be sent as it is. If false (or omitted), then
@@ -506,6 +507,25 @@ export class Connection {
       url.protocol === "https:" || url.protocol === "http:",
       `Invalid url protocol: ${url.protocol}`
     );
+
+    if (
+      options.payload !== undefined &&
+      (options.sendPayloadAsRaw !== undefined || options.sendPayloadAsRaw) &&
+      !Buffer.isBuffer(options.payload)
+    ) {
+      throw new Error(
+        "Provided payload is should be sent as raw but it is not a Buffer"
+      );
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const payload: Buffer | undefined =
+      options.payload === undefined
+        ? undefined
+        : options.sendPayloadAsRaw !== undefined || options.sendPayloadAsRaw
+        ? options.payload
+        : Buffer.from(newXmlBuilder().buildObject(options.payload));
+
     // don't cache the request variable somewhere else as this causes issues
     // with nock's recorder, see:
     // https://stackoverflow.com/questions/62022286/nockback-fails-to-record-any-fixtures/63029672#63029672
@@ -577,11 +597,7 @@ export class Connection {
 
       req.on("error", (err) => reject(err));
 
-      if (options?.payload !== undefined) {
-        const payload =
-          options.sendPayloadAsRaw === undefined || !options.sendPayloadAsRaw
-            ? Buffer.from(newXmlBuilder().buildObject(options.payload))
-            : options.payload;
+      if (payload !== undefined) {
         // obs expects that if it receives data, that the content type is
         // 'application/octet-stream'
         req.setHeader("Content-Type", "application/octet-stream");
