@@ -22,7 +22,7 @@
 import * as assert from "assert";
 import { URL } from "url";
 import { RequestMethod } from "./connection";
-import { withoutUndefinedMembers, mapOrApply } from "./util";
+import { isEmptyObj, mapOrApply, withoutUndefinedMembers } from "./util";
 
 /**
  * Status reply that is received in response to PUT requests or on failed GET
@@ -81,7 +81,7 @@ export function statusReplyFromApi(status: StatusReplyApiReply): StatusReply {
   }
   const reply: StatusReply = {
     code: status.status.$.code,
-    data: Object.keys(data).length === 0 ? undefined : data,
+    data: isEmptyObj(data) ? undefined : data,
     summary: status.status.summary,
     details: status.status.details
   };

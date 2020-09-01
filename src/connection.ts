@@ -72,6 +72,7 @@ interface RetryInfo {
 }
 
 function isRetryInfo(obj: any): obj is RetryInfo {
+  /* eslint-disable @typescript-eslint/no-unsafe-member-access */
   return (
     obj.status !== undefined &&
     (obj.status === 503 ||
@@ -79,6 +80,7 @@ function isRetryInfo(obj: any): obj is RetryInfo {
       obj.status === 301 ||
       obj.status === "timeout")
   );
+  /* eslint-enable @typescript-eslint/no-unsafe-member-access */
 }
 
 function retryInfoOnTimeout(retryAfterMs?: number): RetryInfo {
@@ -449,12 +451,14 @@ export class Connection {
       }
 
       for (let i = 0; i < maxRetries; i++) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const res = await this.doMakeApiCall(
           url,
           reqMethod,
           opts as ApiCallInternalOptions
         );
         if (!isRetryInfo(res)) {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-return
           return res;
         }
         if (res.location !== undefined) {

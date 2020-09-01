@@ -43,7 +43,7 @@ import {
   writePackageUnderscoreFiles
 } from "./package";
 import { setIntersection } from "./set-utils";
-import { pathExists, PathType } from "./util";
+import { dropProperty, pathExists, PathType } from "./util";
 
 /** State of a File that is (potentially) under version control */
 export const enum FileState {
@@ -576,7 +576,7 @@ export async function commit(
       .filter(
         (f) => f.state === FileState.Unmodified || f.state === FileState.Missing
       )
-      .map(({ state, ...restOfFile }) => ({ ...restOfFile })),
+      .map((pkg) => dropProperty(pkg, "state")),
     filesInWorkdir: newFilesInWorkdir,
     ...restOfPkg
   };

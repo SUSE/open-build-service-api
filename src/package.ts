@@ -125,6 +125,7 @@ export interface FetchFileListBaseOptions {
 
 function isPackage(pkg: any): pkg is Package {
   for (const prop of ["name", "apiUrl", "projectName"]) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     if (pkg[prop] === undefined || typeof pkg[prop] !== "string") {
       return false;
     }

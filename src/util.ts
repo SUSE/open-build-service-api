@@ -139,7 +139,8 @@ function makeConstruct<T>(
   }
 }
 
-const isEmptyObj = (obj: any): boolean =>
+export const isEmptyObj = (obj: any): boolean =>
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
   Object.keys(obj).length === 0 && obj.constructor === Object;
 
 /** Return type of [[withoutUndefinedMembers]] */
@@ -163,6 +164,7 @@ export function withoutUndefinedMembers<T>(obj: T): RetT<T> {
 
   Object.keys(obj).forEach((key) => {
     if (obj[key as keyof T] !== undefined) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       res[key] = obj[key as keyof T];
     }
   });
@@ -180,10 +182,12 @@ export function deleteUndefinedAndEmptyMembers<T>(obj: T): T {
     const elem = obj[key as keyof T];
     if (elem !== undefined) {
       if (!Array.isArray(elem) || ((elem as unknown) as any[]).length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         res[key] = elem;
       }
     }
   });
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
   return res;
 }
 
@@ -209,6 +213,7 @@ function extractPropertyFromObject<T>(
     return defaultValue === undefined ? undefined : defaultValue;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
   return makeConstruct<T>(construct, type)(data[key]);
 }
 
@@ -273,11 +278,14 @@ function extractPropertyFromObjectAsArray<T>(
 
   const constructF = makeConstruct<T>(construct, type);
 
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
   if (!Array.isArray(data[key])) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     return [constructF(data[key])];
   }
 
   const res: T[] = [];
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
   data[key].forEach((element: any) => {
     res.push(constructF(element));
   });
