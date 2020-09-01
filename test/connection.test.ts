@@ -456,7 +456,7 @@ describe("Connection", () => {
         const afterCall = new Date();
         expect(afterCall.getTime() - beforeCall.getTime()).to.be.within(
           1500,
-          2000
+          2500
         );
 
         nock.isDone().should.equal(true);
