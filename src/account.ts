@@ -26,8 +26,7 @@ import { promises as fsPromises } from "fs";
 import { homedir } from "os";
 import { normalizeUrl } from "./connection";
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const ConfigIniParser = require("config-ini-parser").ConfigIniParser;
+import { ConfigIniParser } from "config-ini-parser";
 
 export class Account {
   public aliases: string[];
