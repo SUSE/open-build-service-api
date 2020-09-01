@@ -16,9 +16,7 @@
     "api-client",
     "typescript"
   ],
-  "files": [
-    "lib"
-  ],
+  "files": ["lib"],
   "main": "lib/main.js",
   "types": "lib/main.d.ts",
   "scripts": {
@@ -74,33 +72,17 @@
     "trailingComma": "none"
   },
   "nyc": {
-    "include": [
-      "src/**/*.ts"
-    ],
-    "exclude": [
-      "lib"
-    ],
-    "extension": [
-      ".ts"
-    ],
-    "require": [
-      "ts-node/register"
-    ],
-    "reporter": [
-      "html",
-      "text",
-      "lcov"
-    ],
+    "include": ["src/**/*.ts"],
+    "exclude": ["lib"],
+    "extension": [".ts"],
+    "require": ["ts-node/register"],
+    "reporter": ["html", "text", "lcov"],
     "all": true,
     "cache": false
   },
   "mocha": {
-    "require": [
-      "ts-node/register"
-    ],
+    "require": ["ts-node/register"],
     "spec": "test/**/*.test.ts",
-    "extension": [
-      "ts"
-    ]
+    "extension": ["ts"]
   }
 }
