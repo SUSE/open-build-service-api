@@ -559,7 +559,7 @@ export class Connection {
             };
 
             if (
-              options?.decodeResponseFromXml !== undefined &&
+              options.decodeResponseFromXml !== undefined &&
               !options.decodeResponseFromXml
             ) {
               finish(null, Buffer.concat(body));
@@ -572,7 +572,7 @@ export class Connection {
 
       req.on("timeout", () => {
         req.abort();
-        resolve(retryInfoOnTimeout(options?.timeoutMs));
+        resolve(retryInfoOnTimeout(options.timeoutMs));
       });
 
       req.on("error", (err) => reject(err));
