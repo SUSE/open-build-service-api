@@ -120,9 +120,9 @@ describe("PackageFile", function () {
       hist.should.be.an("array").and.have.length(2);
       hist[0].should.deep.equal(rev);
 
-      const [files, hash] = await fetchFileList(con, pkg);
+      const { files, md5Hash } = await fetchFileList(con, pkg);
       expect(files).to.be.an("array").and.have.length(0);
-      expect(hash).to.be.a("string").and.to.deep.equal(hist[1].revisionHash);
+      expect(md5Hash).to.be.a("string").and.to.deep.equal(hist[1].revisionHash);
     });
   });
 });

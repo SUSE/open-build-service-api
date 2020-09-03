@@ -181,11 +181,23 @@ export function fileListFromDirectory(
   );
 }
 
+interface Hash {
+  readonly md5Hash: string;
+}
+
+export interface FileListAndHash extends Hash {
+  files: PackageFile[];
+}
+
+export interface FrozenFileListAndHash extends Hash {
+  readonly files: readonly FrozenPackageFile[];
+}
+
 export async function fetchFileList(
   con: Connection,
   pkg: Package,
   options?: FetchFileListBaseOptions & { retrieveFileContents: true }
-): Promise<[FrozenPackageFile[], string]>;
+): Promise<FrozenFileListAndHash>;
 
 export async function fetchFileList(
   con: Connection,
@@ -193,13 +205,13 @@ export async function fetchFileList(
   options?: FetchFileListBaseOptions & {
     retrieveFileContents: false | undefined;
   }
-): Promise<[PackageFile[], string]>;
+): Promise<FileListAndHash>;
 
 export async function fetchFileList(
   con: Connection,
   pkg: Package,
   options?: FetchFileListBaseOptions & { retrieveFileContents?: boolean }
-): Promise<[(PackageFile | FrozenPackageFile)[], string]> {
+): Promise<FrozenFileListAndHash | FileListAndHash> {
   const expand = options?.expandLinks === undefined || options.expandLinks;
   let route = `/source/${pkg.projectName}/${pkg.name}?expand=${
     expand ? "1" : "0"
@@ -240,10 +252,10 @@ export async function fetchFileList(
     );
   }
 
-  return [
-    retrieveFileContents ? files.map((f) => Object.freeze(f)) : files,
-    fileDir.sourceMd5
-  ];
+  return {
+    files: retrieveFileContents ? files.map((f) => Object.freeze(f)) : files,
+    md5Hash: fileDir.sourceMd5
+  };
 }
 
 /** handy for tests, don't make it public though... */
@@ -332,7 +344,7 @@ export async function fetchPackage(
     name: packageName,
     projectName: projName
   };
-  const [filesAndHash, meta] = await Promise.all([
+  const [{ files, md5Hash }, meta] = await Promise.all([
     fetchFileList(
       con,
       basePkg,
@@ -346,12 +358,7 @@ export async function fetchPackage(
     fetchPackageMeta(con, projName, packageName)
   ]);
 
-  const pkg = {
-    ...basePkg,
-    files: filesAndHash[0],
-    md5Hash: filesAndHash[1],
-    meta
-  };
+  const pkg = { ...basePkg, files, md5Hash, meta };
 
   if (options?.retrieveFileContents) {
     Object.freeze(pkg);
