@@ -31,10 +31,11 @@ import {
   afterEachRecord,
   ApiType,
   beforeEachRecord,
-  getTestConnection
+  getTestConnection,
+  unixToDos
 } from "./../test-setup";
 
-const obsDescription = `<p class="description">
+const obsDescription = unixToDos(`<p class="description">
       The openSUSE Build Service is the public instance of the
       <a href="http://openbuildservice.org">Open Build Service (OBS)</a>
       used for development of the openSUSE distribution and to offer packages from same source for Fedora, Debian, Ubuntu, SUSE Linux Enterprise and other distributions..
@@ -46,9 +47,7 @@ const obsDescription = `<p class="description">
       This instance offers a special <a href="http://software.opensuse.org/search">package search interface</a>. Users of any distribution can
       search there for built packages for their distribution.
       For developers it is an efficient place to build up groups and work together through its project model.
-    </p>`
-  .split("\n")
-  .join("\r\n");
+    </p>`);
 
 const ObsConfiguration: Configuration = {
   title: "openSUSE Build Service",

@@ -246,3 +246,8 @@ export async function removeProjectRepositories(
   const { repository, ...rest } = meta;
   await modifyProjectMeta(con, { ...rest, repository: [] });
 }
+
+/** Converts the line endings from Unix ('\n') to Windows ('\r\n') */
+export function unixToDos(str: string): string {
+  return str.split("\n").join("\r\n");
+}
