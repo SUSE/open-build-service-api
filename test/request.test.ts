@@ -123,9 +123,7 @@ describe("Request", function () {
             state: State.New,
             reviewedAt: new Date("2020-07-18T14:25:57"),
             reviewedBy: "factory-auto",
-            requestedReviewer: {
-              groupId: "opensuse-review-team"
-            },
+            requestedReviewer: { groupId: "opensuse-review-team" },
             comment: "Please review sources",
             reviewHistory: []
           },

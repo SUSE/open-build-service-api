@@ -277,7 +277,7 @@ describe("Request", function () {
           {
             type: RequestActionType.AddRole,
             target,
-            person: { userId: miniObsUsername, role: LocalRole.Downloader }
+            person: { id: miniObsUsername, role: LocalRole.Downloader }
           }
         ],
         reviews: [groupReview, userReview, packageReview, projectReview],

@@ -100,8 +100,8 @@ describe("#fetchProject", () => {
       title: "openSUSE Tumbleweed Images",
       description:
         "Contains the Live CD, JeOS, Vagrant boxes and possibly more.",
-      person: ["dancermak", "dcassany", "favogt", "gmoro"].map((userId) => ({
-        userId,
+      person: ["dancermak", "dcassany", "favogt", "gmoro"].map((id) => ({
+        id,
         role: LocalRole.Maintainer
       }))
     });
@@ -119,7 +119,7 @@ describe("#checkOut", function () {
     description: "a test project with a _meta",
     title: projectName.toLocaleUpperCase(),
     name: projectName,
-    person: [{ role: LocalRole.Maintainer, userId: miniObsUsername }],
+    person: [{ role: LocalRole.Maintainer, id: miniObsUsername }],
     repository: [{ name: "foo" }]
   };
   const proj: Project = {

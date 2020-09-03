@@ -68,20 +68,20 @@ describe("#fetchProjectMeta", () => {
     // users
     expect(proj.person).to.deep.include({
       role: "maintainer",
-      userId: "dimstar_suse"
+      id: "dimstar_suse"
     });
     expect(proj.person).to.deep.include({
       role: "reviewer",
-      userId: "factory-auto"
+      id: "factory-auto"
     });
 
     // groups
     expect(proj.group).to.deep.include({
-      groupId: "factory-maintainers",
+      id: "factory-maintainers",
       role: "maintainer"
     });
     expect(proj.group).to.deep.include({
-      groupId: "factory-staging",
+      id: "factory-staging",
       role: "reviewer"
     });
 
@@ -140,17 +140,17 @@ describe("#fetchProjectMeta", () => {
     ["dancermak", "ojkastl_buildservice"].forEach((user) => {
       expect(proj.person).to.deep.include({
         role: "maintainer",
-        userId: user
+        id: user
       });
       expect(proj.person).to.deep.include({
         role: "bugowner",
-        userId: user
+        id: user
       });
     });
 
     expect(proj.person).to.deep.include({
       role: "maintainer",
-      userId: "dirkmueller"
+      id: "dirkmueller"
     });
 
     // no groups defined
@@ -233,7 +233,7 @@ describe("#fetchProjectMeta", () => {
     // see if we identify the downloader role correctly
     expect(proj.person).to.deep.include({
       role: "downloader",
-      userId: "christopolise"
+      id: "christopolise"
     });
 
     // PowerPC repository includes a block mode setting!
@@ -330,7 +330,7 @@ It should be gone soon.`,
     );
 
     // OBS automatically adds the owner of the home project as the maintainer
-    newProj.person = [{ userId: miniObsUsername, role: LocalRole.Maintainer }];
+    newProj.person = [{ id: miniObsUsername, role: LocalRole.Maintainer }];
 
     await fetchProjectMeta(con, name).should.eventually.deep.equal(newProj);
 
@@ -354,13 +354,13 @@ Here we just try to set as many different options as possible, to check that the
       name,
       title: "Testproject created by obs.ts ;-)",
       person: [
-        { userId: miniObsUsername, role: LocalRole.Bugowner },
-        { userId: "Admin", role: LocalRole.Reader }
+        { id: miniObsUsername, role: LocalRole.Bugowner },
+        { id: "Admin", role: LocalRole.Reader }
       ],
       link: [{ vrevmode: VrevMode.Unextend, project: "openSUSE:Factory" }],
       group: [
-        { groupId: "admins", role: LocalRole.Downloader },
-        { groupId: "everyone", role: LocalRole.Reviewer }
+        { id: "admins", role: LocalRole.Downloader },
+        { id: "everyone", role: LocalRole.Reviewer }
       ],
       access: true,
       sourceAccess: false,
@@ -426,7 +426,7 @@ Here we just try to set as many different options as possible, to check that the
     // OBS adds the home project owner automatically as a maintainer
     // ...unfortunately at another position
     newProj.person!.splice(1, 0, {
-      userId: miniObsUsername,
+      id: miniObsUsername,
       role: LocalRole.Maintainer
     });
 

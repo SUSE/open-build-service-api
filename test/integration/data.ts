@@ -293,11 +293,11 @@ export const virtualizationVagrant: Project = {
     title: "Devel project for Vagrant",
     description: "This is the factory development project for Vagrant",
     person: [
-      { userId: "dancermak", role: LocalRole.Bugowner },
-      { userId: "ojkastl_buildservice", role: LocalRole.Bugowner },
-      { userId: "dancermak", role: LocalRole.Maintainer },
-      { userId: "dirkmueller", role: LocalRole.Maintainer },
-      { userId: "ojkastl_buildservice", role: LocalRole.Maintainer }
+      { id: "dancermak", role: LocalRole.Bugowner },
+      { id: "ojkastl_buildservice", role: LocalRole.Bugowner },
+      { id: "dancermak", role: LocalRole.Maintainer },
+      { id: "dirkmueller", role: LocalRole.Maintainer },
+      { id: "ojkastl_buildservice", role: LocalRole.Maintainer }
     ],
     build: {
       defaultValue: DefaultValue.Enable,
@@ -468,11 +468,11 @@ connection from the Vagrant guest back to the Vagrant host.
 `,
     person: [
       {
-        userId: "dancermak",
+        id: "dancermak",
         role: LocalRole.Bugowner
       },
       {
-        userId: "dancermak",
+        id: "dancermak",
         role: LocalRole.Maintainer
       }
     ],

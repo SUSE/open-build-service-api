@@ -52,7 +52,7 @@ export type GroupWithRoleApiReply = Required<GroupApiReply>;
 /** A user with an optional role. */
 export interface User {
   /** The user's id (= their username) */
-  readonly userId: string;
+  readonly id: string;
   /** An optional user role, if applicable in this context. */
   readonly role?: LocalRole;
 }
@@ -76,7 +76,7 @@ export function userFromApi(
     : Object.freeze(
         withoutUndefinedMembers({
           role: data.$.role,
-          userId: data.$.userid
+          id: data.$.userid
         })
       );
 }
@@ -94,13 +94,13 @@ export function userToApi(
   user?: UserWithRole | User
 ): UserApiReply | UserWithRoleApiReply | undefined {
   return undefinedIfNoInput(user, (u) => ({
-    $: withoutUndefinedMembers({ userid: u.userId, role: u.role })
+    $: withoutUndefinedMembers({ userid: u.id, role: u.role })
   }));
 }
 
 /** A group of users in the Open Build Service */
 export interface Group {
-  readonly groupId: string;
+  readonly id: string;
   readonly role?: LocalRole;
 }
 
@@ -122,7 +122,7 @@ export function groupFromApi(
   return undefinedIfNoInput(data, (g) =>
     Object.freeze(
       withoutUndefinedMembers({
-        groupId: g.$.groupid,
+        id: g.$.groupid,
         role: g.$.role
       })
     )
@@ -142,6 +142,6 @@ export function groupToApi(
   group?: Group | GroupWithRole
 ): GroupApiReply | GroupWithRoleApiReply | undefined {
   return undefinedIfNoInput(group, (g) => ({
-    $: withoutUndefinedMembers({ groupid: g.groupId, role: g.role })
+    $: withoutUndefinedMembers({ groupid: g.id, role: g.role })
   }));
 }

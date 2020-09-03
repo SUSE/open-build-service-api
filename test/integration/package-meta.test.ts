@@ -66,8 +66,8 @@ generates an HTML-formatted report.
 `,
       url: "http://gcovr.com/",
       person: [
-        { userId: "Pharaoh_Atem", role: LocalRole.Maintainer },
-        { userId: "dancermak", role: LocalRole.Maintainer }
+        { id: "Pharaoh_Atem", role: LocalRole.Maintainer },
+        { id: "dancermak", role: LocalRole.Maintainer }
       ],
       build: {
         defaultValue: DefaultValue.Unspecified,

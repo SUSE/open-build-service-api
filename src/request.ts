@@ -347,14 +347,14 @@ interface RequestGroupApiReply {
 
 function userFromRequestUserApi(usr?: RequestUserApiReply): User | undefined {
   return undefinedIfNoInput(usr, (u) =>
-    withoutUndefinedMembers({ userId: u.$.name, role: u.$.role })
+    withoutUndefinedMembers({ id: u.$.name, role: u.$.role })
   );
 }
 
 function userToRequestUserApi(usr?: User): RequestUserApiReply | undefined {
   return undefinedIfNoInput(usr, (u) =>
     withoutUndefinedMembers({
-      $: withoutUndefinedMembers({ name: u.userId, role: u.role })
+      $: withoutUndefinedMembers({ name: u.id, role: u.role })
     })
   );
 }
@@ -363,14 +363,14 @@ function groupFromRequestGroupApi(
   grp?: RequestGroupApiReply
 ): Group | undefined {
   return undefinedIfNoInput(grp, (g) =>
-    withoutUndefinedMembers({ groupId: g.$.name, role: g.$.role })
+    withoutUndefinedMembers({ id: g.$.name, role: g.$.role })
   );
 }
 
 function groupToRequestGroupApi(grp?: Group): RequestGroupApiReply | undefined {
   return undefinedIfNoInput(grp, (g) =>
     withoutUndefinedMembers({
-      $: withoutUndefinedMembers({ name: g.groupId, role: g.role })
+      $: withoutUndefinedMembers({ name: g.id, role: g.role })
     })
   );
 }
@@ -490,18 +490,32 @@ interface RequestReviewApiReply {
   history?: RequestHistoryApiReply | RequestHistoryApiReply[];
 }
 
+export interface UserReviewer {
+  readonly userId: string;
+}
+
+export interface GroupReviewer {
+  readonly groupId: string;
+}
+
+/**
+ * Defines who should review a request:
+ * - [[UserReviewer]]/[[GroupReviewer]]: the respective user or group.
+ * - [[PackageTarget]]/[[ProjectTarget]]: the maintainers/reviewers of the
+ *   package or project
+ */
 export type RequestedReviewer =
-  | Omit<User, "role">
-  | Omit<Group, "role">
+  | UserReviewer
+  | GroupReviewer
   | PackageTarget
   | ProjectTarget;
 
-function isUser(rev: RequestedReviewer): rev is User {
+function isUserReviewer(rev: RequestedReviewer): rev is UserReviewer {
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access */
   return (rev as any).userId !== undefined;
 }
 
-function isGroup(rev: RequestedReviewer): rev is Group {
+function isGroupReviewer(rev: RequestedReviewer): rev is GroupReviewer {
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access */
   return (rev as any).groupId !== undefined;
 }
@@ -575,13 +589,12 @@ function requestReviewToApi(review: RequestReview): RequestReviewApiReply {
     comment
   } = review;
   let by_group, by_user, by_project, by_package;
-  if (isUser(requestedReviewer)) {
+  if (isUserReviewer(requestedReviewer)) {
     by_user = requestedReviewer.userId;
-  } else if (isGroup(requestedReviewer)) {
+  } else if (isGroupReviewer(requestedReviewer)) {
     by_group = requestedReviewer.groupId;
   } else {
-    by_project = (requestedReviewer as PackageTarget | ProjectTarget)
-      .projectName;
+    by_project = requestedReviewer.projectName;
     // ProjectTarget has no packageName, so this will be just undefined if
     // requestedReviewer is a ProjectTarget
     by_package = (requestedReviewer as PackageTarget).packageName;

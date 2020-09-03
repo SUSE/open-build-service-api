@@ -62,10 +62,10 @@ const VirtApplImgOpenSUSETWProjMeta = {
   title: "openSUSE Tumbleweed Images",
   description: "Contains the Live CD, JeOS, Vagrant boxes and possibly more.",
   person: [
-    { userId: "dancermak", role: LocalRole.Maintainer },
-    { userId: "dcassany", role: LocalRole.Maintainer },
-    { userId: "favogt", role: LocalRole.Maintainer },
-    { userId: "gmoro", role: LocalRole.Maintainer }
+    { id: "dancermak", role: LocalRole.Maintainer },
+    { id: "dcassany", role: LocalRole.Maintainer },
+    { id: "favogt", role: LocalRole.Maintainer },
+    { id: "gmoro", role: LocalRole.Maintainer }
   ],
   repository: [
     {
@@ -145,7 +145,7 @@ const setupFsMocks = () => {
 
   options[
     `${targetDir}_with_meta/.osc_obs_ts/_project_meta.json`
-  ] = `{"name":"Virtualization:Appliances:Images:openSUSE-Tumbleweed","title":"openSUSE Tumbleweed Images","description":"Contains the Live CD, JeOS, Vagrant boxes and possibly more.","person":[{"userId":"dancermak","role":"maintainer"},{"userId":"dcassany","role":"maintainer"},{"userId":"favogt","role":"maintainer"},{"userId":"gmoro","role":"maintainer"}],"repository":[{"name":"rpm","path":[{"project":"openSUSE:Factory","repository":"snapshot"}],"arch":["x86_64","i586"]},{"name":"openSUSE_Tumbleweed_vanilla","path":[{"project":"openSUSE:Factory","repository":"snapshot"}],"arch":["x86_64"]},{"name":"openSUSE_Tumbleweed_ARM","path":[{"project":"openSUSE:Factory:ARM","repository":"standard"}],"arch":["aarch64"]},{"name":"openSUSE_Tumbleweed","path":[{"project":"Virtualization:Appliances:Images:openSUSE-Tumbleweed","repository":"rpm"},{"project":"openSUSE:Factory","repository":"snapshot"}],"arch":["x86_64","i586"]}]}`;
+  ] = `{"name":"Virtualization:Appliances:Images:openSUSE-Tumbleweed","title":"openSUSE Tumbleweed Images","description":"Contains the Live CD, JeOS, Vagrant boxes and possibly more.","person":[{"id":"dancermak","role":"maintainer"},{"id":"dcassany","role":"maintainer"},{"id":"favogt","role":"maintainer"},{"id":"gmoro","role":"maintainer"}],"repository":[{"name":"rpm","path":[{"project":"openSUSE:Factory","repository":"snapshot"}],"arch":["x86_64","i586"]},{"name":"openSUSE_Tumbleweed_vanilla","path":[{"project":"openSUSE:Factory","repository":"snapshot"}],"arch":["x86_64"]},{"name":"openSUSE_Tumbleweed_ARM","path":[{"project":"openSUSE:Factory:ARM","repository":"standard"}],"arch":["aarch64"]},{"name":"openSUSE_Tumbleweed","path":[{"project":"Virtualization:Appliances:Images:openSUSE-Tumbleweed","repository":"rpm"},{"project":"openSUSE:Factory","repository":"snapshot"}],"arch":["x86_64","i586"]}]}`;
 
   mockFs(options);
 };
@@ -278,7 +278,7 @@ describe("Project", () => {
         packages: packages!.slice(1, 3),
         meta: {
           ...metaRest,
-          person: [{ userId: "fooUser", role: LocalRole.Downloader }].concat(
+          person: [{ id: "fooUser", role: LocalRole.Downloader }].concat(
             person.slice(1, 3)
           ),
           repository: repository.slice(0, 2).concat([
