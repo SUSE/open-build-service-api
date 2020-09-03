@@ -35,6 +35,7 @@ import {
   packageMetaToApi,
   setPackageMeta
 } from "./api/package-meta";
+import { fetchProjectMeta } from "./api/project-meta";
 import { calculateHash } from "./checksum";
 import { Connection, normalizeUrl, RequestMethod } from "./connection";
 import { StatusReply, statusReplyFromApi, StatusReplyApiReply } from "./error";
@@ -92,9 +93,11 @@ export interface FrozenPackage
   meta?: PackageMeta;
 }
 
-/** Package populated metadata */
-export type PackageWithMeta = Omit<FrozenPackage, "files"> & {
+/** Package with populated metadata */
+export type PackageWithMeta = Omit<FrozenPackage, "files" | "meta"> & {
   files: PackageFile[];
+
+  meta: PackageMeta;
 };
 
 export interface FetchFileListBaseOptions {
@@ -280,13 +283,16 @@ export function fileListToDirectory(pkg: Package): Directory {
   };
 }
 
+/**
+ * Create a new package in the Build Service.
+ */
 export async function createPackage(
   con: Connection,
   project: Project | string,
   packageName: string,
   title: string,
   description?: string
-): Promise<Package> {
+): Promise<PackageWithMeta> {
   const meta: PackageMeta = {
     title,
     description: description ?? title,
@@ -294,9 +300,28 @@ export async function createPackage(
   };
   const projectName = typeof project === "string" ? project : project.name;
   await setPackageMeta(con, projectName, packageName, meta);
-  return { name: packageName, apiUrl: con.url, meta, projectName };
+  const pkg = { name: packageName, apiUrl: con.url, meta, projectName };
+  const { md5Hash, files } = await fetchFileList(con, pkg, {
+    retrieveFileContents: false
+  });
+  return { md5Hash, files, ...pkg };
 }
 
+/**
+ * Fetch the information about package from OBS and populate a [[Package]]
+ * object with the metadata and with the file contents.
+ *
+ * @param con  Connection to be used for the API calls
+ * @param project  Either the name of the project or a [[Project]] object to
+ *     which the package belongs
+ * @param packageName  Name of the package that should be retrieved
+ *
+ * @param options  Additional options for fetching the package.
+ *     This overload is for `retrieveFileContents = true`.
+ *
+ * @return A [[FrozenPackage]], i.e. a package with all metadata and file
+ *     contents populated.
+ */
 export async function fetchPackage(
   con: Connection,
   project: BaseProject | string,
@@ -305,15 +330,6 @@ export async function fetchPackage(
     retrieveFileContents: true;
   }
 ): Promise<FrozenPackage>;
-
-export async function fetchPackage(
-  con: Connection,
-  project: BaseProject | string,
-  packageName: string,
-  options?: Omit<FetchFileListBaseOptions, "revision"> & {
-    retrieveFileContents?: boolean;
-  }
-): Promise<PackageWithMeta>;
 
 /**
  * Fetch the information about package from OBS and populate a [[Package]]
@@ -324,11 +340,21 @@ export async function fetchPackage(
  *     which the package belongs
  * @param packageName  Name of the package that should be retrieved
  *
- * @param retrieveFileContents  Flag whether the file contents at the latest
- *     revision should be fetched too. Defaults to `false`.
- * @param expandLinks  If a package is a link, check out the expanded
- *     sources. Defaults to `true`.
+ * @param options  Additional options for fetching the package.
+ *     This overload is for `retrieveFileContents = true`.
+ *
+ * @return A [[PackageWithMeta]], i.e. a package with all metadata but no file
+ *     contents populated.
  */
+export async function fetchPackage(
+  con: Connection,
+  project: BaseProject | string,
+  packageName: string,
+  options?: Omit<FetchFileListBaseOptions, "revision"> & {
+    retrieveFileContents?: boolean;
+  }
+): Promise<PackageWithMeta>;
+
 export async function fetchPackage(
   con: Connection,
   project: BaseProject | string,
