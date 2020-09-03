@@ -201,18 +201,65 @@ export function flagToApi(flag: Flag | undefined): FlagApiReply | undefined {
 }
 
 /**
- * A repository setting like build, useForBuild, debugInfo, etc.
+ * A repository setting like [[CommonMeta.build]], [[CommonMeta.useForBuild]],
+ * [[CommonMeta.debugInfo]], etc without any defaults applied with the following
+ * possible types:
  *
- * If it is undefined, then no setting has been applied in the project
- * configuration (then OBS' default applies).
- * If it is a boolean, then that value applies to all architectures.
- * If it is a map, then each architecture of the repository must be present as a
- * key and the corresponding value is the setting for this architecture.
+ * - `undefined`: no setting has been applied in the project configuration (and
+ *   OBS' default applies)
+ * - boolean: this value applies to all architectures
+ * - `Map<Arch, boolean | undefined>`: each architecture of the repository must
+ *   be present as a key and the corresponding value is the setting for this
+ *   architecture
  */
-export type RepositorySetting =
+export type RepositorySettingWithoutDefaults =
   | Map<Arch, boolean | undefined>
   | boolean
   | undefined;
+
+/**
+ * Same as [[RepositorySettingWithoutDefaults]] but with defaults applied, so
+ * none of the values are allowed to be `undefined`.
+ */
+export type RepositorySetting = Map<Arch, boolean> | boolean;
+
+/**
+ * Replace all undefined values in `repoSettings` with `defaultValue`
+ */
+export function applyDefaultSetting(
+  repoSettings: RepositorySettingWithoutDefaults,
+  defaultValue: boolean,
+  allArchitectures?: Arch[]
+): RepositorySetting {
+  if (repoSettings === undefined) {
+    return defaultValue;
+  } else if (typeof repoSettings === "boolean") {
+    return repoSettings;
+  } else {
+    assert(repoSettings instanceof Map, "repoSettings must be a Map");
+    repoSettings.forEach((v, k) => {
+      if (v === undefined) {
+        repoSettings.set(k, defaultValue);
+      }
+    });
+    (allArchitectures ?? []).forEach((arch) => {
+      if (!repoSettings.has(arch)) {
+        repoSettings.set(arch, defaultValue);
+      }
+    });
+    assert(
+      [...repoSettings.values()].reduce(
+        (prev, cur) => prev && cur !== undefined,
+        true
+      ),
+      `All values of the repositorySetting must be defined, but got ${[
+        ...repoSettings.values()
+      ]}`
+    );
+
+    return repoSettings as Map<Arch, boolean>;
+  }
+}
 
 /**
  * If the [[Arch]] => setting map contains only the same values, then this value
@@ -220,7 +267,7 @@ export type RepositorySetting =
  */
 export function simplifyRepositorySetting(
   repoSettingMap: Map<Arch, boolean | undefined>
-): RepositorySetting {
+): RepositorySettingWithoutDefaults {
   const values = [...repoSettingMap.values()];
   if (repoSettingMap.size === 1) {
     return values[0];
@@ -259,7 +306,7 @@ export function repositorySettingFromFlag(
   architectures: Arch[],
   flag?: Flag,
   defaultSetting?: boolean
-): RepositorySetting {
+): RepositorySettingWithoutDefaults {
   // default value to be set/returned when no value can be determined:
   // use the defaultSetting if flag is undefined or defaulValue is Unspecified
   // otherwise true/false for Enable/Disable
@@ -335,7 +382,7 @@ export function repositorySettingFromFlag(
 }
 
 export function repositorySettingToFlag(
-  repoSettings: [string, RepositorySetting][],
+  repoSettings: [string, RepositorySettingWithoutDefaults][],
   //  architectures: Arch[],
   defaultSetting?: boolean
 ): Flag | undefined {
