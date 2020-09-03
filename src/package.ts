@@ -607,6 +607,10 @@ export async function readInCheckedOutPackage(
   const name = nameRaw.trim();
   const projectName = projectNameRaw.trim();
 
+  assert(
+    optionalPkgUnderscoreFiles.length === 1,
+    `optionalPkgUnderscoreFiles should have length 1 but got ${optionalPkgUnderscoreFiles.length}`
+  );
   const [metaXml] = await Promise.all(
     optionalPkgUnderscoreFiles.map(async (fname) => {
       try {
