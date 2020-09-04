@@ -40,7 +40,7 @@ describe("hashes", () => {
 `
       })
     );
-    afterEach(() => mockFs.restore());
+    afterEach(mockFs.restore);
 
     it("calculates the hash of a file larger than the chunksize correctly", async () => {
       await calculateFileHash("large", "md5").should.eventually.deep.equal(

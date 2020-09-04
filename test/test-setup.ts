@@ -21,25 +21,82 @@
 
 import mockFs = require("mock-fs");
 
-import * as nock from "nock";
-
 import { should, use } from "chai";
 import * as chaiAsPromised from "chai-as-promised";
 import * as chaiThings from "chai-things";
 import { promises as fsPromises } from "fs";
 import { AsyncFunc, Context, Func, HookFunction } from "mocha";
+import * as nock from "nock";
 import { tmpdir } from "os";
 import { join, sep } from "path";
 import * as sinonChai from "sinon-chai";
 import { directoryToApi } from "../src/api/directory";
+import { fetchProjectMeta, modifyProjectMeta } from "../src/api/project-meta";
 import { Connection } from "../src/connection";
 import { fileListToDirectory, FrozenPackage } from "../src/package";
+import { createUnderscorePackages, Project } from "../src/project";
 import { pathExists, PathType } from "../src/util";
 import { newXmlBuilder } from "../src/xml";
-import { fetchProjectMeta, modifyProjectMeta } from "../src/api/project-meta";
+
+const pathGenerator = (path: string | undefined) =>
+  path === undefined
+    ? (p: string): string => p
+    : (p: string): string => join(path, p);
 
 /**
- * Create a checked out package using mock-fs in the current working directory.
+ * Create the input data structure for mock-fs so that a checked out package is
+ * available in `path`.
+ *
+ * @param pkg  The package which should be checked out.
+ *
+ * @param addFilesToCwd  Boolean flag whether the files of `pkg` should be added
+ *     to the current working directory (i.e. the package is checked out as
+ *     normal). Defaults to `true`.
+ * @param path  Path to which the package should be checked out. Defaults to the
+ *     current working directory.
+ *
+ * @return A record that can be fed directly into
+ *     [`mockFs`](https://github.com/tschaub/mock-fs#mockconfig-options).
+ */
+export function generatePackageFileMockInput(
+  pkg: FrozenPackage,
+  {
+    addFilesToCwd,
+    path
+  }: {
+    addFilesToCwd?: boolean;
+    path?: string;
+  } = {}
+): Record<string, string | Buffer> {
+  const mkPath = pathGenerator(path);
+  const files: { [name: string]: string | Buffer } = {};
+
+  pkg.files?.forEach(
+    (f) => (files[mkPath(`.osc/${f.name}`)] = f.contents ?? "")
+  );
+  if (addFilesToCwd === undefined || addFilesToCwd) {
+    pkg.files?.forEach((f) => (files[mkPath(`${f.name}`)] = f.contents ?? ""));
+  }
+
+  [
+    ["_apiurl", pkg.apiUrl],
+    ["_osclib_version", "1.0"],
+    ["_package", pkg.name],
+    ["_project", pkg.projectName],
+    [
+      "_files",
+      newXmlBuilder().buildObject(directoryToApi(fileListToDirectory(pkg)))
+    ]
+  ].forEach(([fname, contents]) => {
+    files[mkPath(join(".osc", fname))] = `${contents}
+`;
+  });
+
+  return files;
+}
+
+/**
+ * Create a checked out package using mock-fs in the directory `path`.
  *
  * This function sets up a mocked file system in the current working directory
  * and creates all files necessary for it to be a valid checked out package.
@@ -51,39 +108,49 @@ import { fetchProjectMeta, modifyProjectMeta } from "../src/api/project-meta";
  * @param addFilesToCwd Boolean flag whether the files of `pkg` should be added
  *     to the current working directory (i.e. the package is checked out as
  *     normal). Defaults to true.
+ * @param path  Path to which the package should be checked out. Defaults to the
+ *     current working directory.
  */
 export function setupPackageFileMock(
   pkg: FrozenPackage,
   {
     additionalFiles,
-    addFilesToCwd
+    addFilesToCwd,
+    path
   }: {
     additionalFiles?: any;
     addFilesToCwd?: boolean;
+    path?: string;
   } = {}
 ): void {
-  const files: {
-    [name: string]: string | Buffer;
-  } = {};
-  pkg.files?.forEach((f) => (files[`.osc/${f.name}`] = f.contents ?? ""));
-  if (addFilesToCwd === undefined || addFilesToCwd) {
-    pkg.files?.forEach((f) => (files[`${f.name}`] = f.contents ?? ""));
-  }
-
   mockFs({
-    ".osc/_apiurl": `${pkg.apiUrl}
-`,
-    ".osc/_osclib_version": "1.0",
-    ".osc/_package": `${pkg.name}
-`,
-    ".osc/_project": `${pkg.projectName}
-`,
-    ".osc/_files": newXmlBuilder().buildObject(
-      directoryToApi(fileListToDirectory(pkg))
-    ),
-    ...files,
+    ...generatePackageFileMockInput(pkg, { addFilesToCwd, path }),
     ...(additionalFiles ?? {})
   });
+}
+
+export function generateProjectMockInput(
+  proj: Project,
+  path?: string
+): Record<string, Buffer | string> {
+  const mkPath = pathGenerator(path);
+  const files: { [name: string]: string | Buffer } = {};
+
+  [
+    ["_project", proj.name],
+    ["_packages", createUnderscorePackages(proj)],
+    ["_apiurl", proj.apiUrl]
+  ].forEach(([fname, contents]) => {
+    files[mkPath(join(".osc", fname))] = contents;
+  });
+
+  if (proj.meta !== undefined) {
+    files[mkPath(join(".osc_obs_ts", "project_meta.json"))] = JSON.stringify(
+      proj.meta
+    );
+  }
+
+  return files;
 }
 
 use(chaiThings);

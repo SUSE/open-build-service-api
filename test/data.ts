@@ -19,12 +19,14 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import { Arch } from "../../src/api/base-types";
-import { DefaultValue } from "../../src/api/flag";
-import { Project } from "../../src/project";
-import { LocalRole } from "../../src/user";
-import { FrozenPackageFile, PackageFile } from "./../../src/file";
-import { Revision } from "./../../src/history";
+import mockFs = require("mock-fs");
+
+import { Arch } from "../src/api/base-types";
+import { DefaultValue } from "../src/api/flag";
+import { Project } from "../src/project";
+import { LocalRole } from "../src/user";
+import { FrozenPackageFile, PackageFile } from "./../src/file";
+import { Revision } from "./../src/history";
 
 const commonEntries = {
   projectName: "Virtualization:vagrant",
@@ -480,3 +482,58 @@ connection from the Vagrant guest back to the Vagrant host.
   },
   files: vagrantSshfsFileList
 };
+
+export function setupProjectFsMocks(
+  targetDir: string,
+  additionalSettings?: any
+): void {
+  const options: any = {
+    "test/.osc/_apiurl": `https://api.example.org
+`,
+    "test/.osc/_project": `test
+`,
+    "test/.osc/_packages": `<project name="test" />
+`,
+
+    "onePackage/.osc/_apiurl": `https://api.example.org/`,
+    "onePackage/.osc/_project": "justOnePackageInThisProject",
+    "onePackage/.osc/_packages": `<project name="test"><package name="jtc" state=" "/></project>`,
+
+    noDotOsc: mockFs.directory({ items: {} }),
+    noUnderscorePackage: mockFs.directory({
+      items: {
+        ".osc": mockFs.directory({
+          items: { _project: "foo", _apiurl: "https://api.foo.org" }
+        })
+      }
+    })
+  };
+
+  const addVirtApplImg = (dirName: string) => {
+    // the following files have been taken from a checked out copy of the
+    // project Virtualization:Appliances:Images:openSUSE-Tumbleweed
+    options[`${dirName}/.osc/_apiurl`] = `https://api.opensuse.org
+`;
+    options[
+      `${dirName}/.osc/_project`
+    ] = `Virtualization:Appliances:Images:openSUSE-Tumbleweed
+`;
+    options[
+      `${dirName}/.osc/_packages`
+    ] = `<project name="Virtualization:Appliances:Images:openSUSE-Tumbleweed">
+  <package name="live-kiwi-hook" state=" " />
+  <package name="livecd-openSUSE" state=" " />
+  <package name="kiwi-images-vagrant" state=" " />
+  <package name="kiwi-templates-JeOS" state=" " />
+</project>`;
+  };
+
+  addVirtApplImg(targetDir);
+  addVirtApplImg(`${targetDir}_with_meta`);
+
+  options[
+    `${targetDir}_with_meta/.osc_obs_ts/_project_meta.json`
+  ] = `{"name":"Virtualization:Appliances:Images:openSUSE-Tumbleweed","title":"openSUSE Tumbleweed Images","description":"Contains the Live CD, JeOS, Vagrant boxes and possibly more.","person":[{"id":"dancermak","role":"maintainer"},{"id":"dcassany","role":"maintainer"},{"id":"favogt","role":"maintainer"},{"id":"gmoro","role":"maintainer"}],"repository":[{"name":"rpm","path":[{"project":"openSUSE:Factory","repository":"snapshot"}],"arch":["x86_64","i586"]},{"name":"openSUSE_Tumbleweed_vanilla","path":[{"project":"openSUSE:Factory","repository":"snapshot"}],"arch":["x86_64"]},{"name":"openSUSE_Tumbleweed_ARM","path":[{"project":"openSUSE:Factory:ARM","repository":"standard"}],"arch":["aarch64"]},{"name":"openSUSE_Tumbleweed","path":[{"project":"Virtualization:Appliances:Images:openSUSE-Tumbleweed","repository":"rpm"},{"project":"openSUSE:Factory","repository":"snapshot"}],"arch":["x86_64","i586"]}]}`;
+
+  mockFs({ ...options, ...additionalSettings });
+}
