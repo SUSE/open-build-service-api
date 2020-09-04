@@ -84,7 +84,7 @@ interface CommitWithFiles extends BaseCommit {
    *
    * These files have no contents as fetching these would be far too costly.
    */
-  readonly files: PackageFile[];
+  readonly files: readonly PackageFile[];
 
   /** Whether this commit represents the state with links expanded or not. */
   readonly expanded?: boolean;
