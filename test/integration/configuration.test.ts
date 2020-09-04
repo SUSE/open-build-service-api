@@ -28,9 +28,9 @@ import {
   UserRegistration
 } from "./../../src/configuration";
 import {
-  afterEachRecord,
+  afterEachRecordHook,
   ApiType,
-  beforeEachRecord,
+  beforeEachRecordHook,
   getTestConnection,
   unixToDos
 } from "./../test-setup";
@@ -129,8 +129,8 @@ const ObsTestConfiguration: Configuration = {
 };
 
 describe("Configuration", () => {
-  beforeEach(beforeEachRecord);
-  afterEach(afterEachRecord);
+  beforeEach(beforeEachRecordHook);
+  afterEach(afterEachRecordHook);
 
   describe("#fetchConfiguration", () => {
     it("gets the server info from build.opensuse.org", async () => {

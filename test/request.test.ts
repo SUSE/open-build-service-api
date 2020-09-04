@@ -23,8 +23,8 @@ import { describe, it } from "mocha";
 import {
   ApiType,
   getTestConnection,
-  beforeEachRecord,
-  afterEachRecord
+  beforeEachRecordHook,
+  afterEachRecordHook
 } from "./test-setup";
 import {
   fetchRequest,
@@ -41,8 +41,8 @@ describe("Request", function () {
   this.timeout(10000);
   const con = getTestConnection(ApiType.Production);
 
-  beforeEach(beforeEachRecord);
-  afterEach(afterEachRecord);
+  beforeEach(beforeEachRecordHook);
+  afterEach(afterEachRecordHook);
 
   describe("#fetchRequest", () => {
     it("correctly parses SR#821652", async () => {

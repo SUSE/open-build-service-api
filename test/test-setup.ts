@@ -131,7 +131,7 @@ export const createTemporaryDirectory = (): Promise<string> =>
 
 const SET_COOKIE = "Set-Cookie";
 
-export async function beforeEachRecord(this: Context): Promise<void> {
+export async function beforeEachRecordHook(this: Context): Promise<void> {
   this.recordJsonPath = join(
     __dirname,
     "..",
@@ -170,7 +170,12 @@ export async function beforeEachRecord(this: Context): Promise<void> {
   }
 }
 
-export async function afterEachRecord(this: Context) {
+export function beforeEachRecord(ctx: Mocha.Context): Promise<void> {
+  ctx.beforeEachRecord = beforeEachRecordHook;
+  return ctx.beforeEachRecord();
+}
+
+export async function afterEachRecordHook(this: Context) {
   if (this.scopes === undefined) {
     const nockCallObjects = nock.recorder.play();
 
@@ -194,6 +199,11 @@ export async function afterEachRecord(this: Context) {
   nock.enableNetConnect();
   nock.cleanAll();
   nock.abortPendingRequests();
+}
+
+export function afterEachRecord(ctx: Mocha.Context): Promise<void> {
+  ctx.afterEachRecord = afterEachRecordHook;
+  return ctx.afterEachRecord();
 }
 
 export const haveMiniObs: () => boolean = () =>

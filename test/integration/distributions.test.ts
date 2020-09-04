@@ -27,15 +27,15 @@ import {
   fetchHostedDistributions
 } from "../../src/distributions";
 import {
-  afterEachRecord,
+  afterEachRecordHook,
   ApiType,
-  beforeEachRecord,
+  beforeEachRecordHook,
   getTestConnection
 } from "./../test-setup";
 
 describe("Distribution", () => {
-  beforeEach(beforeEachRecord);
-  afterEach(afterEachRecord);
+  beforeEach(beforeEachRecordHook);
+  afterEach(afterEachRecordHook);
 
   const con = getTestConnection(ApiType.Production);
 

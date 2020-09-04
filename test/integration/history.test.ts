@@ -31,9 +31,9 @@ import {
   fetchHistoryAcrossLinks
 } from "../../src/history";
 import {
-  afterEachRecord,
+  afterEachRecordHook,
   ApiType,
-  beforeEachRecord,
+  beforeEachRecordHook,
   getTestConnection
 } from "../test-setup";
 import { dotChangesRev1, vagrantSshfsHistory } from "./data";
@@ -56,12 +56,12 @@ describe("Commit", function () {
   this.timeout(50000);
 
   beforeEach(async function () {
-    this.beforeEachRecord = beforeEachRecord;
+    this.beforeEachRecord = beforeEachRecordHook;
     await this.beforeEachRecord();
     this.con = getTestConnection(ApiType.Production);
   });
 
-  afterEach(afterEachRecord);
+  afterEach(afterEachRecordHook);
 
   describe("#fetchHistoryAcrossLinks", () => {
     it("fetches the history of a package without a link", async function () {
@@ -713,8 +713,8 @@ describe("Commit", function () {
 });
 
 describe("Revision", () => {
-  beforeEach(beforeEachRecord);
-  afterEach(afterEachRecord);
+  beforeEach(beforeEachRecordHook);
+  afterEach(afterEachRecordHook);
 
   const con = getTestConnection(ApiType.Production);
 

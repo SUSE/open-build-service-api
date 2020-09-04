@@ -77,19 +77,19 @@ Internet (like https://build.opensuse.org). We have a two way approach here:
 
 ### Writing a read-only test
 
-You need to add the functions `beforeEachRecord` and `afterEachRecord` as the
-`beforeEach()` and `afterEach()` hooks to your test:
+You need to add the functions `beforeEachRecordHook` and `afterEachRecordHook`
+as the `beforeEach()` and `afterEach()` hooks to your test:
 ```typescript
 import {
-  afterEachRecord,
+  afterEachRecordHook,
   ApiType,
-  beforeEachRecord,
+  beforeEachRecordHook,
   getTestConnection
 } from "./test-setup";
 
 describe("#MyClass", () => {
-  beforeEach(beforeEachRecord);
-  afterEach(afterEachRecord);
+  beforeEach(beforeEachRecordHook);
+  afterEach(afterEachRecordHook);
 
   const con = getTestConnection(ApiType.Production);
 
@@ -108,12 +108,13 @@ respectively.
 In case you want to refresh the fixtures, delete **all** json files belonging to
 that test suite (= the `describe()` block** and run the tests again.
 
-**WARNING:** If you need to perform additional setup in `beforeEach`, then do
-the following and don't forget to `await` beforeEachRecord():
+**Note:** If you need to perform additional setup in `beforeEach`, then use
+`beforeEachRecord` instead (and `afterEachRecord` for `afterEach`):
 ```typescript
+import { beforeEachRecordHook } from "./test-setup"
+
 beforeEach(async function () {
-  this.beforeEachRecord = beforeEachRecord;
-  await this.beforeEachRecord();
+  await beforeEachRecord(this);
   // additional setup follows here
 });
 ```

@@ -28,15 +28,15 @@ import {
   repositoryWithFlagsFromMeta
 } from "../src/repository";
 import {
-  afterEachRecord,
+  afterEachRecordHook,
   ApiType,
-  beforeEachRecord,
+  beforeEachRecordHook,
   getTestConnection
 } from "./test-setup";
 
 describe("RepositoryWithFlags", () => {
-  beforeEach(beforeEachRecord);
-  afterEach(afterEachRecord);
+  beforeEach(beforeEachRecordHook);
+  afterEach(afterEachRecordHook);
 
   const con = getTestConnection(ApiType.Production);
 

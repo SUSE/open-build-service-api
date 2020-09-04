@@ -30,9 +30,9 @@ import { ApiError } from "../../src/error";
 import { deletePackage } from "../../src/package";
 import { LocalRole } from "../../src/user";
 import {
-  afterEachRecord,
+  afterEachRecordHook,
   ApiType,
-  beforeEachRecord,
+  beforeEachRecordHook,
   getTestConnection,
   miniObsUsername,
   skipIfNoMiniObsHook,
@@ -41,8 +41,8 @@ import {
 } from "./../test-setup";
 
 describe("#fetchPackageMeta", () => {
-  beforeEach(beforeEachRecord);
-  afterEach(afterEachRecord);
+  beforeEach(beforeEachRecordHook);
+  afterEach(afterEachRecordHook);
 
   const con = getTestConnection(ApiType.Production);
 

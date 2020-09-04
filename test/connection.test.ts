@@ -28,9 +28,9 @@ import { Connection, normalizeUrl, RequestMethod } from "../src/connection";
 import { ApiError } from "../src/error";
 import { range } from "../src/util";
 import {
-  afterEachRecord,
+  afterEachRecordHook,
   ApiType,
-  beforeEachRecord,
+  beforeEachRecordHook,
   getTestConnection
 } from "./test-setup";
 
@@ -100,9 +100,9 @@ describe("Connection", () => {
   });
 
   describe("#makeApiCall", () => {
-    beforeEach(beforeEachRecord);
+    beforeEach(beforeEachRecordHook);
 
-    afterEach(afterEachRecord);
+    afterEach(afterEachRecordHook);
 
     const todo1 = {
       userId: 1,

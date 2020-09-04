@@ -41,9 +41,9 @@ import { LocalRole } from "../../src/user";
 import { pathExists, PathType } from "../../src/util";
 import { newXmlParser } from "../../src/xml";
 import {
-  afterEachRecord,
+  afterEachRecordHook,
   ApiType,
-  beforeEachRecord,
+  beforeEachRecordHook,
   getTestConnection,
   miniObsUsername,
   skipIfNoMiniObs,
@@ -51,8 +51,8 @@ import {
 } from "./../test-setup";
 
 describe("#fetchProject", () => {
-  beforeEach(beforeEachRecord);
-  afterEach(afterEachRecord);
+  beforeEach(beforeEachRecordHook);
+  afterEach(afterEachRecordHook);
 
   const con = getTestConnection(ApiType.Production);
 

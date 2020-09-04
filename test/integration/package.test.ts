@@ -27,6 +27,7 @@ import { branchPackage, createPackage, fetchPackage } from "../../src/package";
 import { createProject, deleteProject } from "../../src/project";
 import {
   afterEachRecord,
+  afterEachRecordHook,
   ApiType,
   beforeEachRecord,
   getTestConnection,
@@ -44,11 +45,10 @@ describe("Package", function () {
   this.timeout(5000);
 
   beforeEach(async function () {
-    this.beforeEachRecord = beforeEachRecord;
-    await this.beforeEachRecord();
+    await beforeEachRecord(this);
     this.con = getTestConnection(ApiType.Production);
   });
-  afterEach(afterEachRecord);
+  afterEach(afterEachRecordHook);
 
   describe("#fetchPackage", () => {
     it("fetches the file list and sets the file properties of vagrant-sshfs", async function () {

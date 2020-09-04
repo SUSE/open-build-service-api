@@ -40,9 +40,9 @@ import { ApiError } from "../../src/error";
 import { deleteProject } from "../../src/project";
 import { LocalRole } from "../../src/user";
 import {
-  afterEachRecord,
+  afterEachRecordHook,
   ApiType,
-  beforeEachRecord,
+  beforeEachRecordHook,
   getTestConnection,
   miniObsUsername,
   skipIfNoMiniObsHook,
@@ -56,9 +56,9 @@ const findRepoByNameBuilder = (proj: ProjectMeta) => (repoName: string) =>
 describe("#fetchProjectMeta", () => {
   const prodCon = getTestConnection(ApiType.Production);
 
-  beforeEach(beforeEachRecord);
+  beforeEach(beforeEachRecordHook);
 
-  afterEach(afterEachRecord);
+  afterEach(afterEachRecordHook);
 
   it("should correctly parse openSUSE:Factory", async () => {
     const proj = await fetchProjectMeta(prodCon.clone(), "openSUSE:Factory");
