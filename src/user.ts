@@ -145,3 +145,12 @@ export function groupToApi(
     $: withoutUndefinedMembers({ groupid: g.id, role: g.role })
   }));
 }
+
+/** Permissions of a user or a user group */
+export interface Permissions {
+  /** user or group id */
+  readonly id: string;
+
+  /** Roles of the user or group */
+  roles: LocalRole[];
+}

@@ -230,6 +230,22 @@ interface UnderscorePackages {
 }
 
 /**
+ * Creates the [[UnderscorePackages]] structure that can be serialized to xml to
+ * create the `.osc/_packages` files.
+ */
+export function createUnderscorePackages(project: Project): string {
+  const underscorePackages: UnderscorePackages = {
+    project: { $: { name: project.name } }
+  };
+  if (project.packages !== undefined && project.packages.length > 0) {
+    underscorePackages.project.package = project.packages.map((pkg) => {
+      return { $: { name: pkg.name, state: " " } };
+    });
+  }
+  return newXmlBuilder().buildObject(underscorePackages);
+}
+
+/**
  * Write the project settings into the `_apiurl`, `_project` and `_packages`
  * file into the `.osc` subdirectory of `path`. Save the project's `_meta` into
  * `.osc_obs_ts/_project_meta.json` if `proj.meta` is not undefined.
@@ -250,17 +266,7 @@ async function writeProjectUnderscoreFiles(
     `${path} must already exist and be a directory`
   );
 
-  const underscorePackages: UnderscorePackages = {
-    project: { $: { name: proj.name } }
-  };
-  if (proj.packages !== undefined && proj.packages.length > 0) {
-    underscorePackages.project.package = proj.packages.map((pkg) => {
-      return { $: { name: pkg.name, state: " " } };
-    });
-  }
-  const underscorePackagesContents = newXmlBuilder().buildObject(
-    underscorePackages
-  );
+  const underscorePackagesContents = createUnderscorePackages(proj);
 
   if (proj.meta !== undefined) {
     // it's ok to use recursive here as path is guaranteed to exist

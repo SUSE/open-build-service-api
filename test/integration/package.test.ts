@@ -20,26 +20,36 @@
  */
 
 import { expect } from "chai";
+import { promises as fsPromises } from "fs";
 import { after, afterEach, before, beforeEach, describe, it } from "mocha";
+import * as nock from "nock";
+import { dirname, join } from "path";
 import { calculateHash } from "../../src/checksum";
 import { setFileContentsAndCommit } from "../../src/file";
-import { branchPackage, createPackage, fetchPackage } from "../../src/package";
+import {
+  branchPackage,
+  createPackage,
+  fetchPackage,
+  readInUnifiedPackage
+} from "../../src/package";
 import { createProject, deleteProject } from "../../src/project";
+import { copyRecursive, rmRf } from "../../src/util";
+import {
+  vagrantSshfs,
+  vagrantSshfsDotChangesContents,
+  vagrantSshfsDotChangesWithExtraFields
+} from "../data";
 import {
   afterEachRecord,
   afterEachRecordHook,
   ApiType,
   beforeEachRecord,
+  createTemporaryDirectory,
   getTestConnection,
   miniObsOnlyHook,
   skipIfNoMiniObs,
   swallowException
 } from "./../test-setup";
-import {
-  vagrantSshfs,
-  vagrantSshfsDotChangesContents,
-  vagrantSshfsDotChangesWithExtraFields
-} from "./data";
 
 describe("Package", function () {
   this.timeout(5000);
@@ -340,6 +350,90 @@ describe("Package mutable tests", function () {
         otherBranchInHome,
         "ccl"
       ).should.eventually.deep.equal(branchedPackage);
+    });
+  });
+});
+
+describe("UnifiedPackage", function () {
+  this.timeout(10000);
+
+  describe("#readInUnifiedPackage", () => {
+    const con = getTestConnection(ApiType.Production);
+
+    const networkChromiumMeta =
+      '{"name":"network:chromium","repository":[{"arch":["i586","x86_64"],"name":"openSUSE_Tumbleweed","path":[{"project":"openSUSE:Factory","repository":"snapshot"}]},{"arch":["aarch64"],"name":"openSUSE_Leap_15.2_Ports","path":[{"project":"openSUSE:Leap:15.2:Update","repository":"ports"}]},{"arch":["x86_64"],"name":"openSUSE_Leap_15.2","path":[{"project":"openSUSE:Leap:15.2:Update","repository":"standard"}]},{"arch":["aarch64"],"name":"openSUSE_Leap_15.1_Ports","path":[{"project":"openSUSE:Leap:15.1:Update","repository":"ports"}]},{"arch":["x86_64"],"name":"openSUSE_Leap_15.1","path":[{"project":"openSUSE:Leap:15.1:Update","repository":"standard"}]},{"arch":["armv7l","aarch64"],"name":"openSUSE_Factory_ARM","path":[{"project":"openSUSE:Factory:ARM","repository":"standard"}]}],"description":"Chromium","title":"Chromium","build":{"defaultValue":2,"disable":[{"repository":"openSUSE_Leap_15.0_Ports"}],"enable":[{"arch":"aarch64","repository":"openSUSE_Leap_15.0_Ports"}]},"debugInfo":{"defaultValue":0,"disable":[],"enable":[]},"group":[{"id":"factory-maintainers","role":"maintainer"}],"person":[{"role":"bugowner","id":"scarabeus_iv"},{"role":"maintainer","id":"Guillaume_G"},{"role":"maintainer","id":"michel_mno"},{"role":"maintainer","id":"pluskalm"},{"role":"maintainer","id":"scarabeus_iv"}]}';
+
+    const pkgName = "memory-constraints";
+    const projName = "network:chromium";
+    const src = join(__dirname, "..", "data", projName);
+
+    async function commonBefore(this: Mocha.Context) {
+      await beforeEachRecord(this);
+      this.dest = await createTemporaryDirectory();
+      await copyRecursive(src, this.dest);
+    }
+
+    async function commonAfter(this: Mocha.Context) {
+      await rmRf(this.dest);
+      await afterEachRecord(this);
+    }
+
+    const testFn = async function (this: Mocha.Context) {
+      const pkg = await readInUnifiedPackage(con, join(this.dest, pkgName));
+
+      pkg.projectName.should.deep.equal(projName);
+      pkg.name.should.deep.equal(pkgName);
+      expect(pkg.files).to.have.length(3);
+      expect(pkg.users).to.have.length(0);
+      expect(pkg.projectUsers).to.have.length(4);
+      expect(pkg.projectUsers.map((u) => u.id)).to.deep.equal([
+        "scarabeus_iv",
+        "Guillaume_G",
+        "michel_mno",
+        "pluskalm"
+      ]);
+      expect(pkg.repositories).to.have.length(6);
+    };
+
+    describe("checked out via osc", () => {
+      beforeEach(commonBefore);
+
+      afterEach(commonAfter);
+
+      it("reads in network:chromium/memory-constraints", testFn);
+    });
+
+    describe("checked out via open-build-service-api", () => {
+      beforeEach(async function () {
+        this.commonBefore = commonBefore;
+        await this.commonBefore(false);
+        const projMetaDest = join(
+          this.dest,
+          ".osc_obs_ts",
+          "_project_meta.Jason"
+        );
+        await fsPromises.mkdir(dirname(projMetaDest));
+        await fsPromises.writeFile(projMetaDest, networkChromiumMeta);
+        nock.disableNetConnect();
+      });
+
+      afterEach(commonAfter);
+
+      it("reads in network:chromium/memory-constraints", testFn);
+    });
+
+    describe("just the package checked out", () => {
+      beforeEach(async function () {
+        await beforeEachRecord(this);
+        this.dest = await createTemporaryDirectory();
+        await copyRecursive(join(src, pkgName), join(this.dest, pkgName));
+      });
+      afterEach(commonAfter);
+
+      it(
+        "reads in network:chromium/memory-constraints without a parent project",
+        testFn
+      );
     });
   });
 });

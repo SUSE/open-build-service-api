@@ -21,7 +21,7 @@
 
 import * as assert from "assert";
 import { promises as fsPromises } from "fs";
-import { join } from "path";
+import { join, resolve } from "path";
 import {
   Directory,
   directoryFromApi,
@@ -35,10 +35,10 @@ import {
   packageMetaToApi,
   setPackageMeta
 } from "./api/package-meta";
-import { fetchProjectMeta } from "./api/project-meta";
+import { fetchProjectMeta, ProjectMeta } from "./api/project-meta";
 import { calculateHash } from "./checksum";
 import { Connection, normalizeUrl, RequestMethod } from "./connection";
-import { StatusReply, statusReplyFromApi, StatusReplyApiReply } from "./error";
+import { StatusReply, StatusReplyApiReply, statusReplyFromApi } from "./error";
 import {
   fetchFileContents,
   FrozenPackageFile,
@@ -46,7 +46,9 @@ import {
   PackageFile,
   packageFileFromDirectoryEntry
 } from "./file";
-import { Project, BaseProject } from "./project";
+import { BaseProject, Project, readInCheckedOutProject } from "./project";
+import { RepositoryWithFlags, repositoryWithFlagsFromMeta } from "./repository";
+import { GroupWithRole, Permissions, UserWithRole } from "./user";
 import { createOrEnsureEmptyDir, unixTimeStampFromDate, zip } from "./util";
 import { FileState, ModifiedPackage } from "./vcs";
 import { newXmlBuilder, newXmlParser } from "./xml";
@@ -99,6 +101,160 @@ export type PackageWithMeta = Omit<FrozenPackage, "files" | "meta"> & {
 
   meta: PackageMeta;
 };
+
+interface BaseUnifiedPackage {
+  /** Name of the package */
+  readonly name: string;
+
+  /** url to the API of the OBS instance */
+  readonly apiUrl: string;
+
+  /** Name of the project to which the package belongs */
+  readonly projectName: string;
+
+  /**
+   * Repositories with the settings from the project merged into the packages
+   * settings.
+   */
+  repositories: RepositoryWithFlags[];
+
+  /** Users that have any permissions set for this package */
+  users: Permissions[];
+  /** Users that have permissions set for the packages' parent project */
+  projectUsers: Permissions[];
+
+  /** Groups that have any permissions set for this package */
+  groups: Permissions[];
+  /** Groups that have permissions set for the packages' parent project */
+  projectGroups: Permissions[];
+
+  /** Url to the package's upstream */
+  url?: string;
+
+  /**
+   * Title of the package
+   *
+   * If not supplied then it defaults to the packages' name.
+   */
+  title?: string;
+
+  /** Long description of the package, defaults to nothing. */
+  description?: string;
+}
+
+/** A full description of a Package containing all the metadata */
+export interface UnifiedPackage extends BaseUnifiedPackage {
+  /** The files in the package at HEAD */
+  files: PackageFile[];
+
+  /** md5 checksum of the expanded package files. */
+  md5Hash: string;
+}
+
+/**
+ * Merges the array of individual user or group entries and merges multiple
+ * user/group elements into one [[Permission]] object with the roles.
+ */
+function mergeUsersOrGroups(
+  usersOrGroups: UserWithRole[] | GroupWithRole[] | undefined
+): Permissions[] {
+  const perms: Permissions[] = [];
+
+  (usersOrGroups ?? []).forEach((usrOrGrp) => {
+    const ind = perms.findIndex((p) => p.id === usrOrGrp.id);
+    if (ind === -1) {
+      perms.push({ id: usrOrGrp.id, roles: [usrOrGrp.role] });
+    } else {
+      if (perms[ind].roles.findIndex((role) => usrOrGrp.role === role) === -1) {
+        perms[ind].roles.push(usrOrGrp.role);
+      }
+    }
+  });
+
+  return perms;
+}
+
+/**
+ * Create a [[UnifiedPackage]] from a [[Package]] and fetch all missing metadata.
+ *
+ * @param con  Connection to be used to fetch missing metadata.
+ * @param pkg  The package which should be converted to a [[UnifiedPackage]].
+ * @param projectMeta  Optional project configuration in case already obtained
+ *     via other means. It is fetched from the Build Service if not provided.
+ */
+async function unifiedPackageFromPackage(
+  con: Connection,
+  pkg: Package,
+  projectMeta?: ProjectMeta
+): Promise<UnifiedPackage> {
+  const [pkgMeta, projMeta, { files, md5Hash }] = await Promise.all([
+    pkg.meta ?? fetchPackageMeta(con, pkg.projectName, pkg.name),
+    projectMeta ?? fetchProjectMeta(con, pkg.projectName),
+    pkg.files === undefined || pkg.md5Hash === undefined
+      ? fetchFileList(con, pkg, { retrieveFileContents: false })
+      : { files: pkg.files, md5Hash: pkg.md5Hash }
+  ]);
+
+  const { person, group, title, description } = pkgMeta;
+
+  const repositories = repositoryWithFlagsFromMeta(projMeta, pkgMeta);
+
+  return {
+    ...pkg,
+    files,
+    md5Hash,
+    repositories,
+    users: mergeUsersOrGroups(person),
+    projectUsers: mergeUsersOrGroups(projMeta.person),
+    groups: mergeUsersOrGroups(group),
+    projectGroups: mergeUsersOrGroups(projMeta.group),
+    description,
+    title,
+    url: pkgMeta.url
+  };
+}
+
+/** Retrieve a package including all metadata from the Build Service */
+export async function fetchUnifiedPackage(
+  con: Connection,
+  project: string | Project,
+  packageName: string
+): Promise<UnifiedPackage> {
+  const projectName = typeof project === "string" ? project : project.name;
+  const [pkg, projMeta] = await Promise.all([
+    fetchPackage(con, projectName, packageName, {
+      retrieveFileContents: false
+    }),
+    fetchProjectMeta(con, projectName)
+  ]);
+  return unifiedPackageFromPackage(con, pkg, projMeta);
+}
+
+/**
+ * Read a package including all metadata from the disk.
+ *
+ * If the package is checked out as part of a project with the project's
+ * metadata being present, then they are read from disk and not fetched from the
+ * Build Service.
+ */
+export async function readInUnifiedPackage(
+  con: Connection,
+  path: string
+): Promise<UnifiedPackage> {
+  const [pkg, proj] = await Promise.all([
+    readInCheckedOutPackage(path),
+    (async () => {
+      try {
+        const proj = await readInCheckedOutProject(resolve(path, ".."));
+        return proj;
+      } catch (err) {
+        return undefined;
+      }
+    })()
+  ]);
+
+  return unifiedPackageFromPackage(con, pkg, proj?.meta);
+}
 
 export interface FetchFileListBaseOptions {
   /** Defines if package links should be expanded, defaults to true */

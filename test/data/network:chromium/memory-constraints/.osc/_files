@@ -1,0 +1,6 @@
+<directory name="memory-constraints" rev="634f0374d8e4b6ddba8535fa0c9ded74" srcmd5="634f0374d8e4b6ddba8535fa0c9ded74">
+  <linkinfo project="openSUSE:Factory" package="memory-constraints" srcmd5="82477b0a52937b105694e6923f81705d" baserev="82477b0a52937b105694e6923f81705d" lsrcmd5="67ff3ba11a96f15c306e11dd14db7b6e" />
+  <entry name="memory-constraints.changes" md5="9964379a1edc0fa067ec3611acd4a5a9" size="1212" mtime="1588603649" />
+  <entry name="memory-constraints.macros" md5="6d251637540af67d0bde49fbb3be27dd" size="1345" mtime="1560608738" />
+  <entry name="memory-constraints.spec" md5="bd5ae7447dc3f3383961c83c02102e93" size="1388" mtime="1588604069" />
+</directory>

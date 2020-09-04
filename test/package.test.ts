@@ -18,13 +18,25 @@
  * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
+
+import { expect } from "chai";
 import { promises as fsPromises } from "fs";
 import { join } from "path";
-import { checkOutPackage } from "../src/package";
+import { Arch } from "../src/api/base-types";
+import { checkOutPackage, fetchUnifiedPackage } from "../src/package";
+import { RepositoryWithFlags } from "../src/repository";
+import { LocalRole } from "../src/user";
 import { pathExists, PathType, rmRf } from "../src/util";
 import { FileState } from "../src/vcs";
-import { vagrantSshfs, virtualizationVagrant } from "./integration/data";
-import { createTemporaryDirectory } from "./test-setup";
+import { vagrantSshfs, virtualizationVagrant } from "./data";
+import {
+  afterEachRecordHook,
+  ApiType,
+  beforeEachRecordHook,
+  createTemporaryDirectory,
+  getTestConnection,
+  unixToDos
+} from "./test-setup";
 
 describe("Package", () => {
   beforeEach(async function () {
@@ -127,6 +139,76 @@ connection from the Vagrant guest back to the Vagrant host.
       await pathExists(join(this.dotOscPath, "_meta")).should.eventually.equal(
         undefined
       );
+    });
+  });
+});
+
+describe("UnifiedPackage", () => {
+  const con = getTestConnection(ApiType.Production);
+  beforeEach(beforeEachRecordHook);
+  afterEach(afterEachRecordHook);
+
+  describe("#fetchUnifiedPackage", () => {
+    it("fetches the Rstudio package and automatically applies the repositories", async () => {
+      const projName = "devel:languages:R:released";
+      const pkgName = "rstudio";
+      const pkg = await fetchUnifiedPackage(con, projName, pkgName);
+
+      pkg.name.should.deep.equal(pkgName);
+      pkg.projectName.should.deep.equal(projName);
+      expect(pkg.url).to.deep.equal("https://github.com/rstudio/rstudio");
+
+      expect(pkg.users).to.have.length(2);
+      expect(pkg.groups).to.have.length(0);
+
+      expect(pkg.users).to.include.a.thing.that.deep.equals({
+        id: "dancermak",
+        roles: [LocalRole.Bugowner, LocalRole.Maintainer]
+      });
+      expect(pkg.users).to.include.a.thing.that.deep.equals({
+        id: "mvarlese",
+        roles: [LocalRole.Maintainer]
+      });
+
+      expect(pkg.projectUsers).to.have.length(5);
+      expect(pkg.projectGroups).to.deep.equal([
+        { id: "factory-maintainers", roles: [LocalRole.Maintainer] }
+      ]);
+
+      ["Mailaender", "TheBlackCat", "deadpoint", "dsteuer", "mvarlese"].forEach(
+        (id) =>
+          expect(pkg.projectUsers).to.include.a.thing.that.deep.equals({
+            id,
+            roles: [LocalRole.Maintainer]
+          })
+      );
+
+      expect(pkg.title).to.deep.equal("RStudio");
+      expect(pkg.description).to.deep.equal(
+        unixToDos(`RStudio is a set of integrated tools designed to help you be more productive
+with R.
+
+It includes a console, syntax-highlighting editor that supports direct code
+execution, and a variety of robust tools for plotting, viewing history,
+debugging and managing your workspace.`)
+      );
+      expect(pkg.repositories).to.be.an("array").and.have.length(16);
+
+      const getRepoByName = (name: string): RepositoryWithFlags | undefined =>
+        pkg.repositories.find((repo) => repo.name === name);
+
+      expect(getRepoByName("openSUSE_Tumbleweed")).to.deep.equal({
+        name: "openSUSE_Tumbleweed",
+        arch: [Arch.I586, Arch.X86_64],
+        path: [{ project: "openSUSE:Tumbleweed", repository: "standard" }],
+        useForBuild: true,
+        debugInfo: false,
+        build: new Map([
+          [Arch.X86_64, true],
+          [Arch.I586, false]
+        ]),
+        publish: true
+      });
     });
   });
 });

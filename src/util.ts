@@ -388,6 +388,33 @@ export async function rmRf(dir: string): Promise<void> {
   await fsPromises.rmdir(dir);
 }
 
+/**
+ * Copy the contents of `src` recursively to `dest`
+ *
+ * @param src  source directory which contents should be copied
+ * @param dest destination to which everything from `src` is copied to. If it
+ *     does not exist, then it is created (as are all directories leading to
+ *     it). If this directory already exist, then it is not touched.
+ */
+export async function copyRecursive(src: string, dest: string): Promise<void> {
+  const dentriesAndVoid = await Promise.all([
+    fsPromises.readdir(src, { withFileTypes: true }),
+    fsPromises.mkdir(dest, { recursive: true })
+  ]);
+
+  await Promise.all(
+    dentriesAndVoid[0].map(async (dentry) => {
+      const srcFullPath = join(src, dentry.name);
+      const destFullPath = join(dest, dentry.name);
+      if (dentry.isFile()) {
+        await fsPromises.copyFile(srcFullPath, destFullPath);
+      } else {
+        await copyRecursive(srcFullPath, destFullPath);
+      }
+    })
+  );
+}
+
 export const enum PathType {
   File,
   Directory
