@@ -170,7 +170,7 @@ describe("#repositorySettingFromFlag", () => {
   const arches = [Arch.Aarch64, Arch.X86_64];
 
   it("should return undefined when the flag is undefined", () => {
-    expect(repositorySettingFromFlag("foo", [])).to.equal(undefined);
+    expect(repositorySettingFromFlag("foo", [], undefined)).to.equal(undefined);
   });
 
   it("should return true when the repository is enabled", () => {

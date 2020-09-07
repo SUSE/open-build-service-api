@@ -287,6 +287,24 @@ export function simplifyRepositorySetting(
   return allEqual ? values[0] : repoSettingMap;
 }
 
+export interface RepositorySettingFromFlagDefault {
+  defaultSetting?: boolean;
+}
+
+export function repositorySettingFromFlag(
+  repositoryName: string,
+  architectures: Arch[],
+  flag: Flag | undefined,
+  options: RepositorySettingFromFlagDefault & { defaultSetting: true }
+): RepositorySetting;
+
+export function repositorySettingFromFlag(
+  repositoryName: string,
+  architectures: Arch[],
+  flag: Flag | undefined,
+  options?: RepositorySettingFromFlagDefault
+): RepositorySettingWithoutDefaults;
+
 /**
  * Extracts the repository setting given the [[Flag]].
  *
@@ -304,9 +322,9 @@ export function simplifyRepositorySetting(
 export function repositorySettingFromFlag(
   repositoryName: string,
   architectures: Arch[],
-  flag?: Flag,
-  defaultSetting?: boolean
-): RepositorySettingWithoutDefaults {
+  flag: Flag | undefined,
+  { defaultSetting }: { defaultSetting?: boolean } = {}
+): RepositorySettingWithoutDefaults | RepositorySetting {
   // default value to be set/returned when no value can be determined:
   // use the defaultSetting if flag is undefined or defaulValue is Unspecified
   // otherwise true/false for Enable/Disable

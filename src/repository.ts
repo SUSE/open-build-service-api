@@ -37,59 +37,73 @@ const PUBLISH_DEFAULT = true;
 const USE_FOR_BUILD_DEFAULT = true;
 const BUILD_DEFAULT = true;
 
-/**
- * A repository where OBS' flags are expanded.
- */
-export interface RepositoryWithFlags extends BaseRepository {
+type RepositoryWithFlagType<T> = BaseRepository & {
   /** Are packages from this repository being build */
-  readonly build: RepositorySettingWithoutDefaults;
+  readonly build: T;
   /** Is the repository getting published */
-  readonly publish: RepositorySettingWithoutDefaults;
+  readonly publish: T;
   /**
    * Can packages from this repository be in the buildroot of other packages in
    * the repository.
    */
-  readonly useForBuild: RepositorySettingWithoutDefaults;
+  readonly useForBuild: T;
   /** Are debugging information for this repository generated and stored */
-  readonly debugInfo: RepositorySettingWithoutDefaults;
+  readonly debugInfo: T;
+};
+
+/**
+ * A repository where OBS' flags are expanded.
+ */
+export type RepositoryWithFlags = RepositoryWithFlagType<RepositorySetting>;
+
+type RepositoryWithNonDefaultFlags = RepositoryWithFlagType<
+  RepositorySettingWithoutDefaults
+>;
+
+interface SetDefaultsOption {
+  setDefaults: boolean;
 }
 
 function getRepositoryWithFlags(
   meta: CommonMeta,
   repository: BaseRepository[],
-  setDefaults: boolean = false
-): RepositoryWithFlags[] {
+  setDefaults: { setDefaults: true }
+): RepositoryWithFlags[];
+
+function getRepositoryWithFlags(
+  meta: CommonMeta,
+  repository: BaseRepository[],
+  setDefaults?: SetDefaultsOption
+): RepositoryWithNonDefaultFlags[];
+
+function getRepositoryWithFlags(
+  meta: CommonMeta,
+  repository: BaseRepository[],
+  setDefaults?: SetDefaultsOption
+): RepositoryWithNonDefaultFlags[] {
   const { build, publish, useForBuild, debugInfo } = meta;
 
-  const repos: RepositoryWithFlags[] = [];
+  const repos: RepositoryWithNonDefaultFlags[] = [];
 
   repository.forEach((repo) => {
     const arches = repo.arch ?? [];
-    const newRepo: RepositoryWithFlags = {
-      build: repositorySettingFromFlag(
-        repo.name,
-        arches,
-        build,
-        setDefaults ? BUILD_DEFAULT : undefined
-      ),
-      debugInfo: repositorySettingFromFlag(
-        repo.name,
-        arches,
-        debugInfo,
-        setDefaults ? DEBUG_INFO_DEFAULT : undefined
-      ),
-      publish: repositorySettingFromFlag(
-        repo.name,
-        arches,
-        publish,
-        setDefaults ? PUBLISH_DEFAULT : undefined
-      ),
-      useForBuild: repositorySettingFromFlag(
-        repo.name,
-        arches,
-        useForBuild,
-        setDefaults ? USE_FOR_BUILD_DEFAULT : undefined
-      ),
+    const newRepo: RepositoryWithNonDefaultFlags = {
+      build: repositorySettingFromFlag(repo.name, arches, build, {
+        defaultSetting: setDefaults?.setDefaults ? BUILD_DEFAULT : undefined
+      }),
+      debugInfo: repositorySettingFromFlag(repo.name, arches, debugInfo, {
+        defaultSetting: setDefaults?.setDefaults
+          ? DEBUG_INFO_DEFAULT
+          : undefined
+      }),
+      publish: repositorySettingFromFlag(repo.name, arches, publish, {
+        defaultSetting: setDefaults?.setDefaults ? PUBLISH_DEFAULT : undefined
+      }),
+      useForBuild: repositorySettingFromFlag(repo.name, arches, useForBuild, {
+        defaultSetting: setDefaults?.setDefaults
+          ? USE_FOR_BUILD_DEFAULT
+          : undefined
+      }),
       ...repo
     };
 
@@ -161,15 +175,21 @@ export function repositoryWithFlagsFromMeta(
     return [];
   }
 
-  const projRepos = getRepositoryWithFlags(
-    projMeta,
-    repository,
-    pkgMeta === undefined
-  );
-
-  if (pkgMeta === undefined) {
-    return projRepos;
+  const setDefaults = pkgMeta === undefined;
+  // we have to do this weird duplication of calling getRepositoryWithFlags
+  // twice because the typescript compiler is not smart enough to remember that
+  // `setDefaults` is true unless there is a branch
+  if (setDefaults) {
+    return getRepositoryWithFlags(projMeta, repository, {
+      setDefaults
+    });
   }
+
+  const projRepos = getRepositoryWithFlags(projMeta, repository, {
+    setDefaults
+  });
+
+  assert(pkgMeta !== undefined);
   const pkgRepos = getRepositoryWithFlags(pkgMeta, repository);
 
   const repos: RepositoryWithFlags[] = [];
