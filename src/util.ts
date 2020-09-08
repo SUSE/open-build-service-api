@@ -320,6 +320,18 @@ export function extractElementAsArray<T>(
   return res === undefined ? [] : res;
 }
 
+/** An Error class for a failed process execution. */
+export class ProcessError extends Error {
+  constructor(
+    public readonly command: string,
+    public readonly exitCode: number,
+    public readonly stderr: any[]
+  ) {
+    super(`${command} exited with ${exitCode}, got stderr: ${stderr.join("")}`);
+    assert(exitCode !== 0, "A ProcessError was created with zero exit code.");
+  }
+}
+
 /**
  * Run the supplied command on system and resolve to its stdout.
  *
@@ -327,9 +339,11 @@ export function extractElementAsArray<T>(
  * optional parameters can be used to set the process working directory, to feed
  * data into the processes via stdin and to set its `argv`.
  *
- * A promise is returned that resolves to the processes stdout if it exists with
- * 0. Otherwise the promise is rejected with an Error containing its return code
- * and stderr.
+ * A promise is returned that resolves to the processes' stdout if it exits with
+ * 0.
+ *
+ * @throw A [[ProcessError]] is thrown if the process returns a non-zero exit
+ *     code.
  */
 export function runProcess(
   command: string,
@@ -357,11 +371,7 @@ export function runProcess(
       if (code === 0) {
         resolve(output.join(""));
       } else {
-        reject(
-          new Error(
-            `${command} exited with ${code}, got stderr: ${stderr.join("")}`
-          )
-        );
+        reject(new ProcessError(command, code, stderr));
       }
     });
 

@@ -205,7 +205,7 @@ describe("#runProcess", () => {
     async () => {
       await util
         .runProcess("false")
-        .should.be.rejectedWith(Error, /false exited with 1/);
+        .should.be.rejectedWith(util.ProcessError, /false exited with 1/);
     }
   );
 
