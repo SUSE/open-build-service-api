@@ -19,11 +19,17 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import mockFs = require("mock-fs");
+
 import { expect } from "chai";
 import { promises as fsPromises } from "fs";
 import { join } from "path";
 import { Arch } from "../src/api/base-types";
-import { checkOutPackage, fetchUnifiedPackage } from "../src/package";
+import {
+  checkOutPackage,
+  fetchUnifiedPackage,
+  readInCheckedOutPackage
+} from "../src/package";
 import { RepositoryWithFlags } from "../src/repository";
 import { LocalRole } from "../src/user";
 import { pathExists, PathType, rmRf } from "../src/util";
@@ -37,6 +43,7 @@ import {
   getTestConnection,
   unixToDos
 } from "./test-setup";
+import { calculateHash } from "../src/checksum";
 
 describe("Package", () => {
   beforeEach(async function () {
@@ -139,6 +146,36 @@ connection from the Vagrant guest back to the Vagrant host.
       await pathExists(join(this.dotOscPath, "_meta")).should.eventually.equal(
         undefined
       );
+    });
+  });
+
+  describe("#readInCheckedOutPackage", () => {
+    const apiUrl = "https://api.foo.org";
+    const projectName = "testProject";
+    const packageName = "testPackage";
+
+    beforeEach(() =>
+      mockFs({
+        ".osc/_apiurl": apiUrl,
+        ".osc/_project": projectName,
+        ".osc/_files": "<directory />",
+        ".osc/_osclib_version": "1.0",
+        ".osc/_package": packageName,
+        foo: "foo"
+      })
+    );
+
+    afterEach(() => mockFs.restore());
+
+    it("accepts completely new packages without any files", async () => {
+      await readInCheckedOutPackage(".").should.eventually.deep.equal({
+        apiUrl,
+        name: packageName,
+        projectName,
+        meta: undefined,
+        files: [],
+        md5Hash: calculateHash("", "md5")
+      });
     });
   });
 });

@@ -53,6 +53,8 @@ import { createOrEnsureEmptyDir, unixTimeStampFromDate, zip } from "./util";
 import { FileState, ModifiedPackage } from "./vcs";
 import { newXmlBuilder, newXmlParser } from "./xml";
 
+const EMPTY_STRING_MD5HASH = "d41d8cd98f00b204e9800998ecf8427e";
+
 /** Interface uniquely identifying a Package in the Open Build Service */
 export interface BasePackage {
   /** Url to the API from which this package was retrieved */
@@ -312,7 +314,7 @@ function isFrozenPackage(pkg: any): pkg is FrozenPackage {
 
 // FIXME: this should maybe not be exported
 export function fileListFromDirectory(
-  pkg: Package,
+  pkg: BasePackage,
   fileDir: Directory
 ): PackageFile[] {
   if (
@@ -440,18 +442,21 @@ export function fileListToDirectory(pkg: Package): Directory {
 }
 
 /**
- * Create a new package in the Build Service.
+ * Creates a new package in the Build Service.
+ *
+ * When no `title` is provided, then the package's name is used instead. If the
+ * description is omitted, then an empty string is used.
  */
 export async function createPackage(
   con: Connection,
   project: Project | string,
   packageName: string,
-  title: string,
+  title?: string,
   description?: string
 ): Promise<PackageWithMeta> {
   const meta: PackageMeta = {
-    title,
-    description: description ?? title,
+    title: title ?? packageName,
+    description: description ?? "",
     name: packageName
   };
   const projectName = typeof project === "string" ? project : project.name;
@@ -794,17 +799,20 @@ export async function readInCheckedOutPackage(
     await newXmlParser().parseStringPromise(fileDirectoryXml)
   );
 
+  const basePkg = { apiUrl, name, projectName };
+  const emptyFiles = fileListFromDirectory(basePkg, dir);
+
   // FIXME: actually we should be able to calculate the md5Hash of the package
   // if we have all contents
-  if (dir.sourceMd5 === undefined) {
+  if (dir.sourceMd5 === undefined && emptyFiles.length > 0) {
     throw new Error(
       `Got an invalid package: '${path}/.osc/_files' does not have the srcmd5 attribute.`
     );
   }
 
-  const pkg = { apiUrl, name, projectName, meta, md5Hash: dir.sourceMd5 };
-
-  const emptyFiles = fileListFromDirectory(pkg, dir);
+  // either the directory listing contains a md5sum or it's an empty array and
+  // then the package's md5hash is that of an empty string
+  const md5Hash = dir.sourceMd5 ?? EMPTY_STRING_MD5HASH;
 
   const files = await Promise.all(
     emptyFiles.map(async (f) => {
@@ -818,7 +826,7 @@ export async function readInCheckedOutPackage(
         // !the hash is wrong!
         if (curHash !== f.md5Hash) {
           throw new Error(
-            `reading in package ${pkg.name} from ${path}: file hash of ${f.name} (${curHash}) does not match the expected hash '${f.md5Hash}'`
+            `reading in package ${basePkg.name} from ${path}: file hash of ${f.name} (${curHash}) does not match the expected hash '${f.md5Hash}'`
           );
         }
       }
@@ -826,7 +834,7 @@ export async function readInCheckedOutPackage(
     })
   );
 
-  return { files, ...pkg };
+  return { files, meta, md5Hash, ...basePkg };
 }
 
 /** Options for customizing the branching of a [[Package]]. */

@@ -170,18 +170,20 @@ function serviceInfoFromApi(serviceInfo: ServiceInfoApiReply): ServiceInfo {
 
 export interface DirectoryApiReply {
   /**  Directory listing */
-  directory: {
-    $?: {
-      name?: string;
-      rev?: string;
-      vrev?: string;
-      srcmd5?: string;
-      count?: number;
-    };
-    entry?: DirectoryEntryApiReply[];
-    linkinfo?: LinkInfoApiReply[];
-    serviceinfo?: ServiceInfoApiReply[];
-  };
+  directory:
+    | ""
+    | {
+        $?: {
+          name?: string;
+          rev?: string;
+          vrev?: string;
+          srcmd5?: string;
+          count?: number;
+        };
+        entry?: DirectoryEntryApiReply[];
+        linkinfo?: LinkInfoApiReply[];
+        serviceinfo?: ServiceInfoApiReply[];
+      };
 }
 
 export interface Directory {
@@ -203,6 +205,10 @@ export type DirectoryEntryWithName = Omit<DirectoryEntry, "name"> & {
 export function directoryFromApi(
   directoryApiReply: DirectoryApiReply
 ): Directory {
+  if (typeof directoryApiReply.directory === "string") {
+    return {};
+  }
+
   const dir: Directory = {
     name: directoryApiReply.directory.$?.name,
     revision: directoryApiReply.directory.$?.rev,
