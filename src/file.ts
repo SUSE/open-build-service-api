@@ -65,6 +65,40 @@ export function isFrozenPackageFile(
   );
 }
 
+/**
+ * Creates a new FrozenPackageFile from a string or a `Buffer`.
+ *
+ * @param fileName  The name of the file.
+ * @param contents  The file's contents. The file size and hash is calculated
+ *     from the contents.
+ * @param modifiedTime  An optional modification time. Defaults to now.
+ */
+export function packageFileFromBuffer(
+  fileName: string,
+  packageName: string,
+  projectName: string,
+  contents: Buffer | string,
+  modifiedTime?: Date
+): FrozenPackageFile {
+  const contBuf =
+    typeof contents === "string" ? Buffer.from(contents) : contents;
+  return Object.freeze({
+    name: fileName,
+    packageName,
+    projectName,
+    contents: contBuf,
+    size: contBuf.length,
+    md5Hash: calculateHash(contBuf, "md5"),
+    modifiedTime:
+      modifiedTime ??
+      (() => {
+        const now = new Date();
+        now.setMilliseconds(0);
+        return now;
+      })()
+  });
+}
+
 export async function packageFileFromFile(
   path: string,
   pkg: Package
@@ -109,15 +143,13 @@ export async function packageFileFromFile(
   stat.mtime.setMilliseconds(0);
   await fsPromises.utimes(path, stat.atime, stat.mtime);
 
-  return Object.freeze({
-    name: basename(path),
+  return packageFileFromBuffer(
+    basename(path),
     packageName,
     projectName,
-    size: stat.size,
     contents,
-    md5Hash: calculateHash(contents, "md5"),
-    modifiedTime: stat.mtime
-  });
+    stat.mtime
+  );
 }
 
 export function packageFileFromDirectoryEntry(
