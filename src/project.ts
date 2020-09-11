@@ -485,13 +485,46 @@ export async function updateCheckedOutProject(
 }
 
 /**
- * Create a new project on the build service instance.
+ * Creates a new project in the Open Build Service with the provided name.
+ *
+ * The project name and title are set to `projectName`, the description is left
+ * empty.
+ *
+ * @return The created project with the project's configuration retrieved from
+ *     the Open Build Service (thus it can include additional changes that are
+ *     automatically applied by OBS)
  */
 export async function createProject(
   con: Connection,
-  projMeta: ProjectMeta
-): Promise<StatusReply> {
-  return modifyProjectMeta(con, projMeta);
+  projectName: string
+): Promise<ProjectWithMeta>;
+
+/**
+ * Creates a new project in the Open Build Service with the provided project
+ * configuration.
+ *
+ * @param projectMeta  The project's configuration (aka `_meta`). Can be used to
+ *     customize this project further.
+ */
+export async function createProject(
+  con: Connection,
+  projectMeta: ProjectMeta
+): Promise<ProjectWithMeta>;
+
+export async function createProject(
+  con: Connection,
+  projMetaOrName: ProjectMeta | string
+): Promise<ProjectWithMeta> {
+  const meta =
+    typeof projMetaOrName === "string"
+      ? { name: projMetaOrName, title: projMetaOrName, description: "" }
+      : projMetaOrName;
+  await modifyProjectMeta(con, meta);
+  return {
+    name: meta.name,
+    apiUrl: con.url,
+    meta: await fetchProjectMeta(con, meta.name)
+  };
 }
 
 /**
