@@ -21,9 +21,18 @@
 
 import { expect } from "chai";
 import { describe, it } from "mocha";
-import { deleteFile } from "../../src/file";
-import { branchPackage, Package, PackageWithMeta } from "../../src/package";
-import { deleteProject } from "../../src/project";
+import {
+  deleteFile,
+  packageFileFromBuffer,
+  setFileContentsAndCommit
+} from "../../src/file";
+import {
+  branchPackage,
+  createPackage,
+  Package,
+  PackageWithMeta
+} from "../../src/package";
+import { createProject, deleteProject } from "../../src/project";
 import {
   createRequest,
   fetchRequest,
@@ -60,7 +69,7 @@ describe("Request", function () {
   const originalPackage = {
     apiUrl: con.url,
     name: packageName,
-    projectName: "openSUSE.org:devel:tools"
+    projectName: `home:${miniObsUsername}:devel:tools`
   };
 
   beforeEach(async () => {
@@ -71,12 +80,27 @@ describe("Request", function () {
       `home:${miniObsUsername}:branches:${originalPackage.projectName}`
     );
 
+    await createProject(con, originalPackage.projectName);
+    await createPackage(con, originalPackage.projectName, originalPackage.name);
+    await setFileContentsAndCommit(
+      con,
+      packageFileFromBuffer(
+        "ccls.spec",
+        originalPackage.name,
+        originalPackage.projectName,
+        "Surprise!"
+      )
+    );
+
     branchedPackage = await branchPackage(con, originalPackage);
-    await removeProjectRepositories(con, branchedPackage.projectName);
   });
 
   afterEach(async () => {
-    await swallowException(deleteProject, con, branchedPackage.projectName);
+    await Promise.all([
+      swallowException(deleteProject, con, branchedPackage.projectName),
+      swallowException(deleteProject, con, originalPackage.projectName)
+    ]);
+
     // wait for the obs backend to realize that the branched package is gone
     await sleep(2000);
   });
