@@ -31,7 +31,7 @@ export type SupportedHashfunction = "md5" | "sha256";
  * `hashFunction` encoded as hex.
  */
 export function calculateHash(
-  contents: Buffer,
+  contents: Buffer | string,
   hashFunction: SupportedHashfunction
 ): string {
   const hash = createHash(hashFunction);
