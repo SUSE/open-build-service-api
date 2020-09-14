@@ -30,6 +30,14 @@ import { promises as fsPromises, Stats } from "fs";
 import { join } from "path";
 import { TypesEqual } from "./types";
 
+export function zip<T, U>(arr1: T[], arr2: U[]): [T, U][];
+export function zip<T, U>(arr1: T[], arr2: readonly U[]): readonly [T, U][];
+export function zip<T, U>(arr1: readonly T[], arr2: U[]): readonly [T, U][];
+export function zip<T, U>(
+  arr1: readonly T[],
+  arr2: readonly U[]
+): readonly [T, U][];
+
 /**
  * Convert two arrays into an array of Tuples.
  *
@@ -40,7 +48,7 @@ import { TypesEqual } from "./types";
 export function zip<T, U>(
   arr1: T[] | readonly T[],
   arr2: U[] | readonly U[]
-): [T, U][] {
+): [T, U][] | readonly [T, U][] {
   const res: [T, U][] = [];
   for (let i = 0; i < Math.min(arr1.length, arr2.length); i++) {
     res.push([arr1[i], arr2[i]]);

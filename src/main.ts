@@ -50,7 +50,14 @@ export {
   submitPackage
 } from "./request";
 export { Group, GroupWithRole, User, UserWithRole } from "./user";
-export { pathExists, PathType, ProcessError, rmRf, runProcess } from "./util";
+export {
+  pathExists,
+  PathType,
+  ProcessError,
+  rmRf,
+  runProcess,
+  zip
+} from "./util";
 export {
   addAndDeleteFilesFromPackage,
   commit,
