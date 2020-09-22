@@ -518,3 +518,13 @@ export function undefinedIfNoInput<T, U>(
 export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
+
+export function dropUndefined<T>(arr: (T | undefined)[]): T[];
+export function dropUndefined<T>(arr: readonly (T | undefined)[]): readonly T[];
+
+/** Remove all elements from `arr` that are `undefined` */
+export function dropUndefined<T>(
+  arr: (T | undefined)[] | readonly (T | undefined)[]
+): T[] | readonly T[] {
+  return arr.filter((elem) => elem !== undefined) as T[];
+}

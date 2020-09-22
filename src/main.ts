@@ -51,6 +51,7 @@ export {
 } from "./request";
 export { Group, GroupWithRole, User, UserWithRole } from "./user";
 export {
+  dropUndefined,
   pathExists,
   PathType,
   ProcessError,
