@@ -23,14 +23,22 @@ import mockFs = require("mock-fs");
 import { expect } from "chai";
 import { afterEach, beforeEach, describe, it } from "mocha";
 import { Arch } from "../src/api/base-types";
+import { ProjectMeta } from "../src/api/project-meta";
 import {
   Project,
+  readInAndUpdateCheckedoutProject,
   readInCheckedOutProject,
   updateCheckedOutProject
 } from "../src/project";
 import { LocalRole } from "../src/user";
 import { pathExists, PathType } from "../src/util";
 import { setupProjectFsMocks } from "./data";
+import {
+  afterEachRecord,
+  ApiType,
+  beforeEachRecordHook,
+  getTestConnection
+} from "./test-setup";
 
 const VirtApplImgOpenSUSETW =
   "Virtualization:Appliances:Images:openSUSE-Tumbleweed";
@@ -253,6 +261,98 @@ describe("Project", () => {
       await readInCheckedOutProject(
         `${targetDir}_with_meta`
       ).should.eventually.deep.equal(newProj);
+    });
+  });
+
+  describe("#readInAndUpdateCheckedoutProject", () => {
+    const con = getTestConnection(ApiType.Production);
+
+    const projName = "Virtualization:vagrant:Leap:15.2";
+    const defaultPackageNames = [
+      "vagrant",
+      "rubygem-i18n-1.1",
+      "vagrant-libvirt"
+    ];
+
+    const projMeta: ProjectMeta = {
+      title: "Leap 15.2 development project for Vagrant",
+      description: "",
+      name: projName,
+      person: [{ id: "dancermak", role: LocalRole.Maintainer }],
+      repository: [
+        {
+          name: "openSUSE_Leap_15.2",
+          path: [{ project: "openSUSE:Leap:15.2", repository: "standard" }],
+          arch: [Arch.X86_64]
+        }
+      ]
+    };
+
+    const setupFsMock = (pkgNames?: string[]) =>
+      mockFs({
+        ".osc/_apiurl": `${ApiType.Production}
+`,
+        ".osc/_packages": `<project name="${projName}">`.concat(
+          (pkgNames ?? defaultPackageNames)
+            .map(
+              (name) => `<package name="${name}" state=" " />
+`
+            )
+            .join("\n"),
+          `</project>
+`
+        ),
+        ".osc/_project": `${projName}
+`
+      });
+
+    beforeEach(beforeEachRecordHook);
+
+    afterEach(async function () {
+      mockFs.restore();
+      await afterEachRecord(this);
+    });
+
+    it("reads in a project and ensures that the packages array and the project meta are up to date", async () => {
+      setupFsMock();
+
+      await readInCheckedOutProject(".").should.eventually.not.have.property(
+        "meta"
+      );
+
+      const proj = await readInAndUpdateCheckedoutProject(con, ".");
+      proj.name.should.equal(projName);
+      proj.apiUrl.should.equal(ApiType.Production);
+      proj.meta.should.deep.equal(projMeta);
+      expect(proj.packages).to.have.length(3);
+      expect(proj.packages.map((p) => p.name)).to.deep.equal(
+        defaultPackageNames
+      );
+
+      await readInCheckedOutProject(".").should.eventually.deep.equal(proj);
+    });
+
+    it("removes no longer existing packages from _packages", async () => {
+      setupFsMock(defaultPackageNames.concat("foo"));
+
+      const proj = await readInAndUpdateCheckedoutProject(con, ".");
+      proj.should.have.property("meta").that.is.not.undefined;
+      expect(proj.packages).to.have.length(3);
+      expect(proj.packages.map((p) => p.name)).to.deep.equal(
+        defaultPackageNames
+      );
+
+      await readInCheckedOutProject(".").should.eventually.deep.equal(proj);
+    });
+
+    it("does not add new packages to _packages", async () => {
+      setupFsMock(["vagrant"]);
+
+      const proj = await readInAndUpdateCheckedoutProject(con, ".");
+      proj.should.have.property("meta").that.is.not.undefined;
+      expect(proj.packages.map((p) => p.name)).to.deep.equal(["vagrant"]);
+
+      await readInCheckedOutProject(".").should.eventually.deep.equal(proj);
     });
   });
 });

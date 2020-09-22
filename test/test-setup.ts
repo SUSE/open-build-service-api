@@ -167,8 +167,8 @@ const envOrDefault = (envVar: string, defaultValue: string): string => {
 };
 
 export const enum ApiType {
-  Production = "https://api.opensuse.org",
-  Staging = "https://api-test.opensuse.org",
+  Production = "https://api.opensuse.org/",
+  Staging = "https://api-test.opensuse.org/",
   MiniObs = "http://localhost:3000"
 }
 

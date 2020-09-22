@@ -59,6 +59,7 @@ import { setDifference } from "./set-utils";
 import {
   createOrEnsureEmptyDir,
   deleteUndefinedAndEmptyMembers,
+  dropUndefined,
   mapOrApply,
   pathExists,
   PathType,
@@ -453,6 +454,36 @@ export async function readInCheckedOutProject(path: string): Promise<Project> {
   }
 
   return deleteUndefinedAndEmptyMembers(project);
+}
+
+/**
+ * Read in the project from the provided `path` and update it's metadata on
+ * disk.
+ *
+ * If the project has already a package list in it's metadata, then that list is
+ * only updates in so far as packages that are gone from OBS are removed from
+ * that list.
+ */
+export async function readInAndUpdateCheckedoutProject(
+  con: Connection,
+  path: string
+): Promise<ProjectWithPackages> {
+  const proj = await readInCheckedOutProject(path);
+  const projFromObs = await fetchProject(con, proj.name, {
+    fetchPackageList: true
+  });
+  const { meta: _ignore, packages: packagesOfProject, ...restOfProj } = proj;
+  const packages =
+    packagesOfProject === undefined
+      ? projFromObs.packages
+      : dropUndefined(
+          packagesOfProject.map((pkg) =>
+            projFromObs.packages.find((p) => p.name === pkg.name)
+          )
+        );
+  const newProj = { ...restOfProj, meta: projFromObs.meta, packages };
+  await writeProjectUnderscoreFiles(newProj, path);
+  return newProj;
 }
 
 /**
