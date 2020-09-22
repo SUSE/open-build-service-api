@@ -25,7 +25,11 @@ import { afterEach, beforeEach, describe, it } from "mocha";
 import { Arch } from "../src/api/base-types";
 import { ProjectMeta } from "../src/api/project-meta";
 import {
+  isProjectWithMeta,
+  isProjectWithPackages,
   Project,
+  ProjectWithMeta,
+  ProjectWithPackages,
   readInAndUpdateCheckedoutProject,
   readInCheckedOutProject,
   updateCheckedOutProject
@@ -353,6 +357,33 @@ describe("Project", () => {
       expect(proj.packages.map((p) => p.name)).to.deep.equal(["vagrant"]);
 
       await readInCheckedOutProject(".").should.eventually.deep.equal(proj);
+    });
+  });
+
+  describe("type guards", () => {
+    const proj: Project = { name: "foo", apiUrl: "bar" };
+    const projWMeta: ProjectWithMeta = {
+      ...proj,
+      meta: { description: "", title: "", name: "foo" }
+    };
+    const projWPkgs: ProjectWithPackages = {
+      ...projWMeta,
+      packages: []
+    };
+
+    it("identifies a Project correctly", () => {
+      isProjectWithMeta(proj).should.equal(false);
+      isProjectWithPackages(proj).should.equal(false);
+    });
+
+    it("identifies a ProjectWithMeta correctly", () => {
+      isProjectWithMeta(projWMeta).should.equal(true);
+      isProjectWithPackages(projWMeta).should.equal(false);
+    });
+
+    it("identifies a ProjectWithPackages correctly", () => {
+      isProjectWithMeta(projWPkgs).should.equal(true);
+      isProjectWithPackages(projWPkgs).should.equal(true);
     });
   });
 });

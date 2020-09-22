@@ -120,12 +120,26 @@ export interface Project extends BaseProject {
 /** A project where the metadata are guaranteed set */
 export type ProjectWithMeta = Omit<Project, "meta"> & { meta: ProjectMeta };
 
+/** Typeguard checking if the supplied `project` is a [[ProjectWithMeta]] */
+export function isProjectWithMeta(
+  project: Project
+): project is ProjectWithMeta {
+  return project.meta !== undefined;
+}
+
 /**
  * A project where the package list and the metadata are guaranteed to be set
  */
 export type ProjectWithPackages = Omit<ProjectWithMeta, "packages"> & {
   packages: Package[];
 };
+
+/** Typeguard checking if the supplied `project` is a [[ProjectWithPackages]] */
+export function isProjectWithPackages(
+  project: Project
+): project is ProjectWithPackages {
+  return isProjectWithMeta(project) && project.packages !== undefined;
+}
 
 /**
  * Retrieves the list of packages of the given project
