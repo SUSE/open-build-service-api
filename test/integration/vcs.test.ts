@@ -26,8 +26,16 @@ import { join } from "path";
 import { setPackageMeta } from "../../src/api/package-meta";
 import { ProjectMeta } from "../../src/api/project-meta";
 import { calculateHash } from "../../src/checksum";
+import {
+  packageFileFromBuffer,
+  setFileContentsAndCommit
+} from "../../src/file";
 import { fetchHistory } from "../../src/history";
-import { checkOutPackage, FrozenPackage } from "../../src/package";
+import {
+  checkOutPackage,
+  fetchPackage,
+  FrozenPackage
+} from "../../src/package";
 import { createProject, deleteProject } from "../../src/project";
 import { pathExists, PathType, rmRf } from "../../src/util";
 import {
@@ -78,11 +86,16 @@ describe("ModifiedPackage", function () {
   });
 
   afterEach(async function () {
-    await deleteProject(con, this.testPkg.projectName);
-    await rmRf(this.tmpPath);
+    await Promise.all([
+      deleteProject(con, this.testPkg.projectName),
+      rmRf(this.tmpPath)
+    ]);
   });
 
-  const createAndCheckoutPkg = async (ctx: TestFixture) => {
+  const createAndCheckoutPkg = async (
+    ctx: TestFixture,
+    checkout: boolean = true
+  ) => {
     await createProject(con, ctx.testProjMeta);
 
     await setPackageMeta(con, ctx.testPkg.projectName, ctx.testPkg.name, {
@@ -91,7 +104,9 @@ describe("ModifiedPackage", function () {
       description: "Just a package for testing"
     });
 
-    await checkOutPackage(ctx.testPkg, ctx.checkoutPath);
+    if (checkout) {
+      await checkOutPackage(ctx.testPkg, ctx.checkoutPath);
+    }
   };
 
   describe("#commit", () => {
@@ -290,18 +305,25 @@ describe("ModifiedPackage", function () {
     it(
       "deletes files that are to be deleted but were not removed correctly prior to commiting",
       castToAsyncFunc<TestFixture>(async function () {
-        await createAndCheckoutPkg(this);
+        await createAndCheckoutPkg(this, false);
         const spec = "testfile.spec";
-
-        await fsPromises.writeFile(
-          join(this.checkoutPath, spec),
-          Buffer.from("whatever")
+        await setFileContentsAndCommit(
+          con,
+          packageFileFromBuffer(
+            spec,
+            this.testPkg.name,
+            this.testPkg.projectName,
+            "whatever"
+          ),
+          `Add ${spec}`
         );
 
-        let pkg = await readInModifiedPackageFromDir(this.checkoutPath);
-
-        pkg = await addAndDeleteFilesFromPackage(pkg, [], [spec]);
-        await commit(con, pkg, `Add ${spec}`);
+        let pkg = await checkOutPackage(
+          con,
+          this.testPkg.projectName,
+          this.testPkg.name,
+          this.checkoutPath
+        );
 
         await fsPromises.writeFile(
           join(this.checkoutPath, ".osc", "_to_be_deleted"),
@@ -324,6 +346,52 @@ describe("ModifiedPackage", function () {
           join(this.checkoutPath, spec),
           PathType.File
         ).should.eventually.equal(undefined);
+        await pathExists(
+          join(this.checkoutPath, ".osc", spec),
+          PathType.File
+        ).should.eventually.equal(undefined);
+      })
+    );
+
+    it(
+      "deletes files on the server as well",
+      castToAsyncFunc<TestFixture>(async function () {
+        await createAndCheckoutPkg(this, false);
+        const spec = "testfile.spec";
+        const tarfile = "source.tar.gz";
+        for (const fname of [spec, tarfile]) {
+          await setFileContentsAndCommit(
+            con,
+            packageFileFromBuffer(
+              fname,
+              this.testPkg.name,
+              this.testPkg.projectName,
+              "whatever"
+            ),
+            `Add ${fname}`
+          );
+        }
+
+        let pkg = await checkOutPackage(
+          con,
+          this.testPkg.projectName,
+          this.testPkg.name,
+          this.checkoutPath
+        );
+
+        pkg = await addAndDeleteFilesFromPackage(pkg, [spec], []);
+        await fsPromises.writeFile(join(pkg.path, tarfile), "foo");
+        pkg = await readInModifiedPackageFromDir(pkg.path);
+        pkg = await commit(con, pkg, `Delete ${spec}`);
+
+        const pkgOnObs = await fetchPackage(con, pkg.projectName, pkg.name, {
+          retrieveFileContents: true
+        });
+        expect(pkgOnObs.files).to.have.lengthOf(1);
+        pkgOnObs.files[0].should.deep.include({
+          name: tarfile,
+          contents: Buffer.from("foo")
+        });
       })
     );
   });

@@ -157,9 +157,9 @@ export async function addAndDeleteFilesFromPackage(
   );
   if (toAddAndDelete.size > 0) {
     throw new Error(
-      `Cannot add and remove the files: ${[...toAddAndDelete.entries()].join(
-        ", "
-      )}.`
+      `Cannot add and remove the following files simultaneously: ${[
+        ...toAddAndDelete.entries()
+      ].join(", ")}.`
     );
   }
 
@@ -240,7 +240,8 @@ export async function addAndDeleteFilesFromPackage(
   return newPkg;
 }
 
-/** Removes the provided files from the list of tracked files.
+/**
+ * Removes the provided files from the list of tracked files.
  *
  * This function sets the state of all files in the array `filesToUntrack` from
  * [[FileState.ToBeAdded]] to [[FileState.Untracked]] and modifies the files in
@@ -491,9 +492,19 @@ export async function readInModifiedPackageFromDir(
   };
 }
 
+/**
+ * Creates a directory from the files in the working directory of a modified
+ * package.
+ *
+ * This function only includes the files that shall actually be committed and
+ * will thus omit untracked files and those that will be deleted.
+ */
 function directoryFromModifiedPackage(pkg: ModifiedPackage): Directory {
   const dentries: DirectoryEntry[] = pkg.filesInWorkdir
-    .filter((f) => f.state !== FileState.Untracked)
+    .filter(
+      (f) =>
+        f.state !== FileState.Untracked && f.state !== FileState.ToBeDeleted
+    )
     .map((f) => ({
       name: f.name,
       size: f.size,
@@ -518,10 +529,15 @@ export async function commit(
       if (f.state === FileState.Modified || f.state === FileState.ToBeAdded) {
         await uploadFileContents(con, f);
       } else if (f.state === FileState.ToBeDeleted) {
-        const fpath = join(pkg.path, f.name);
-        if (await pathExists(fpath, PathType.File)) {
-          await fsPromises.unlink(fpath);
-        }
+        await Promise.all(
+          [join(pkg.path, f.name), join(pkg.path, ".osc", f.name)].map(
+            async (p) => {
+              if ((await pathExists(p, PathType.File)) !== undefined) {
+                return fsPromises.unlink(p);
+              }
+            }
+          )
+        );
       }
     })
   );
