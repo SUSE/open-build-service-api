@@ -157,9 +157,9 @@ export async function addAndDeleteFilesFromPackage(
   );
   if (toAddAndDelete.size > 0) {
     throw new Error(
-      `Cannot add and remove the files: ${[...toAddAndDelete.entries()].join(
-        ", "
-      )}.`
+      `Cannot add and remove the following files simultaneously: ${[
+        ...toAddAndDelete.entries()
+      ].join(", ")}.`
     );
   }
 
