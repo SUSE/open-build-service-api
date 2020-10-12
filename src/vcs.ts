@@ -240,7 +240,8 @@ export async function addAndDeleteFilesFromPackage(
   return newPkg;
 }
 
-/** Removes the provided files from the list of tracked files.
+/**
+ * Removes the provided files from the list of tracked files.
  *
  * This function sets the state of all files in the array `filesToUntrack` from
  * [[FileState.ToBeAdded]] to [[FileState.Untracked]] and modifies the files in
