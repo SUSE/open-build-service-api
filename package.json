@@ -25,10 +25,10 @@
     "prepare": "yarn run build",
     "prepublishOnly": "yarn run build",
     "build": "tsc --pretty",
-    "clean": "rm -rf ./lib ./coverage/ ./.nyc_output ./documentation",
     "pretest": "yarn run build",
     "test": "mocha",
     "coverage": "nyc mocha",
+    "clean": "rm -rf ./lib ./coverage/ ./.nyc_output ./documentation ./.osc_config ./Pipfile*; pipenv --rm",
     "watch": "yarn run build -- --watch",
     "watch:test": "yarn run test -- --watch",
     "documentation": "typedoc --mode modules --theme minimal --out ./documentation src/"

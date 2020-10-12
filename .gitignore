@@ -9,3 +9,6 @@ lib
 lib_test
 documentation/
 open-build-service/
+Pipfile
+Pipfile.lock
+.osc_config/
