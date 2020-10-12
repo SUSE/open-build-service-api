@@ -529,10 +529,15 @@ export async function commit(
       if (f.state === FileState.Modified || f.state === FileState.ToBeAdded) {
         await uploadFileContents(con, f);
       } else if (f.state === FileState.ToBeDeleted) {
-        const fpath = join(pkg.path, f.name);
-        if (await pathExists(fpath, PathType.File)) {
-          await fsPromises.unlink(fpath);
-        }
+        await Promise.all(
+          [join(pkg.path, f.name), join(pkg.path, ".osc", f.name)].map(
+            async (p) => {
+              if ((await pathExists(p, PathType.File)) !== undefined) {
+                return fsPromises.unlink(p);
+              }
+            }
+          )
+        );
       }
     })
   );
