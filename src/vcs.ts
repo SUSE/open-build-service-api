@@ -492,9 +492,19 @@ export async function readInModifiedPackageFromDir(
   };
 }
 
+/**
+ * Creates a directory from the files in the working directory of a modified
+ * package.
+ *
+ * This function only includes the files that shall actually be committed and
+ * will thus omit untracked files and those that will be deleted.
+ */
 function directoryFromModifiedPackage(pkg: ModifiedPackage): Directory {
   const dentries: DirectoryEntry[] = pkg.filesInWorkdir
-    .filter((f) => f.state !== FileState.Untracked)
+    .filter(
+      (f) =>
+        f.state !== FileState.Untracked && f.state !== FileState.ToBeDeleted
+    )
     .map((f) => ({
       name: f.name,
       size: f.size,
