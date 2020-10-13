@@ -1,0 +1,141 @@
+* Links in OBS
+
+** Link files
+
+[[https://github.com/openSUSE/open-build-service/blob/master/docs/api/api/link.rng][_link file schema]]
+
+** Linking packages
+
+- packages are linked via a =_link= file:
+#+BEGIN_SRC xml
+<link project="devel:languages:ruby" package="ruby2.6" baserev="d8b8358e9e7aa6fe732ceb2112fd227c">
+  <patches>
+    <!-- <branch /> for a full copy, default case  -->
+    <!-- <apply name="patch" /> apply a patch on the source directory  -->
+    <!-- <topadd>%define build_with_feature_x 1</topadd> add a line on the top (spec file only) -->
+    <!-- <add name="file.patch" /> add a patch to be applied after %setup (spec file only) -->
+    <!-- <delete name="filename" /> delete a file -->
+  </patches>
+</link>
+#+END_SRC
+
+** Simple case: just a link
+
+=ruby2.6= in [[https://build.opensuse.org/package/show/Virtualization:vagrant/ruby2.6][Virtualization:vagrant]] is just link to [[https://build.opensuse.org/package/show/devel:languages:ruby/ruby2.6][devel:languages:ruby/ruby2.6]]:
+#+BEGIN_SRC xml
+<link project="devel:languages:ruby" package="ruby2.6">
+  <patches>
+  </patches>
+</link>
+#+END_SRC
+
+which produces this =<linkinfo>= (via =GET
+https://api.opensuse.org/source/Virtualization:vagrant/ruby2.6?expand=0=):
+#+BEGIN_SRC xml
+<linkinfo
+ project="devel:languages:ruby" package="ruby2.6"
+ srcmd5="79e1007e6c69fc2b2161a462fd619346"
+ xsrcmd5="06c51075393fe15fe340289afec7f2ed"
+ lsrcmd5="f71d3715b36d6a5100ada5c7ede53032"/>
+#+END_SRC
+
+or this with expanded sources:
+#+BEGIN_SRC xml
+<linkinfo project="devel:languages:ruby" package="ruby2.6"
+ srcmd5="79e1007e6c69fc2b2161a462fd619346"
+ lsrcmd5="f71d3715b36d6a5100ada5c7ede53032"/>
+#+END_SRC
+
+the attributes appear to have the following meaning:
+- =srcmd5=: md5 hash of the *expanded* sources of the latest revision of the
+  package that is being linked to (here: =devel:languages:ruby/ruby2.6=)
+- =lsrcmd5=: md5 hash of the *unexpanded* sources of the latest revision of
+  package that contains the =_link= (here: =Virtualization:vagrant/ruby2.6=)
+- =xsrcmd5=: md5 hash of the *expanded* sources of the latest revision of
+  package that contains the =_link= (here: =Virtualization:vagrant/ruby2.6=)
+
+** Complicated case: link with local files
+
+=ruby2.6= in [[https://build.opensuse.org/package/show/devel:languages:ruby/ruby2.6][devel:languages:ruby]] links to [[https://build.opensuse.org/package/show/openSUSE:Factory/ruby2.6][openSUSE:Factory/ruby2.6]]:
+#+BEGIN_SRC xml
+<link project="openSUSE:Factory" baserev="d8b8358e9e7aa6fe732ceb2112fd227c">
+  <patches>
+    <branch/>
+  </patches>
+</link>
+#+END_SRC
+
+which results in this =<linkinfo>= for the unexpanded sources:
+#+BEGIN_SRC xml
+<linkinfo project="openSUSE:Factory" package="ruby2.6"
+ srcmd5="d8b8358e9e7aa6fe732ceb2112fd227c"
+ baserev="d8b8358e9e7aa6fe732ceb2112fd227c"
+ xsrcmd5="79e1007e6c69fc2b2161a462fd619346"
+ lsrcmd5="05e518fbd4c8058d539fd44156a8d09e"/>
+#+END_SRC
+
+and for the expanded:
+#+BEGIN_SRC xml
+<linkinfo project="openSUSE:Factory" package="ruby2.6"
+ srcmd5="d8b8358e9e7aa6fe732ceb2112fd227c"
+ baserev="d8b8358e9e7aa6fe732ceb2112fd227c"
+ lsrcmd5="05e518fbd4c8058d539fd44156a8d09e"/>
+#+END_SRC
+
+the attributes appear to have the following meaning:
+- =srcmd5=: md5 hash of the sources of the package that is being linked to (here
+  =openSUSE:Factory/ruby2.6=)
+- =baserev=: this value is taken from the =_link= file and is the same as
+  =srcmd5=
+- =lsrcmd5=: md5 hash of the source files of the *unexpanded* package that
+  contains the =_link= (here =devel:languages:ruby/ruby2.6=)
+- =xsrcmd5=: md5 hash of the source files of the *expanded* sources of the
+  package containing the =_link= (here =devel:languages:ruby/ruby2.6=)
+
+
+** links in the past
+
+- =ruby2.6= in [[https://build.opensuse.org/package/show/devel:languages:ruby/ruby2.6][devel:languages:ruby]] links to [[https://build.opensuse.org/package/show/openSUSE:Factory/ruby2.6][openSUSE:Factory/ruby2.6]] let's take a
+- look at revision 15 (srcmd5: =e4f3b3aeaa7a30e9c91eb94edf902c8c=, by =darix=,
+  commited on <2019-02-25 Mon 21:36>)
+
+- unexpanded linkinfo:
+#+BEGIN_SRC xml
+<linkinfo project="openSUSE:Factory" package="ruby2.6"
+ srcmd5="d8b8358e9e7aa6fe732ceb2112fd227c"
+ baserev="57fb883a2c94fade46f6bf2615d37ed9"
+ xsrcmd5="8f4f4ddb9e351829dbd0c6a8f180c44f"
+ lsrcmd5="e4f3b3aeaa7a30e9c91eb94edf902c8c"/>
+#+END_SRC
+
+- expanded linkinfo:
+#+BEGIN_SRC xml
+<linkinfo project="openSUSE:Factory" package="ruby2.6"
+ srcmd5="d8b8358e9e7aa6fe732ceb2112fd227c"
+ baserev="57fb883a2c94fade46f6bf2615d37ed9"
+ lsrcmd5="e4f3b3aeaa7a30e9c91eb94edf902c8c"/>
+#+END_SRC
+
+which gives us the following meaning of the attributes:
+- =srcmd5=: md5 hash of HEAD of the *expanded* sources of the package that is
+  being linked to (=openSUSE:Factory/ruby2.6=)
+- =baserev=: taken from the =_link= file from [[https://build.opensuse.org/package/view_file/devel:languages:ruby/ruby2.6/_link?expand=0&rev=e4f3b3aeaa7a30e9c91eb94edf902c8c][devel:languages:ruby/ruby2.6 at revision 15]], this is the revision at which the package was branched of from
+  =openSUSE:Factory/ruby2.6=
+- =lsrcmd5=: md5 hash of the *unexpanded* sources of
+  =devel:languages:ruby/ruby2.6= at revision 15
+- =xsrcmd5=: md5 hash of the *expanded* sources of
+  =devel:languages:ruby/ruby2.6= at revision 15
+
+
+** links against specific revisions
+
+- =_link= files can specify specific revisions too, e.g. [[https://build.opensuse.org/package/show/OBS:Server:Unstable/rubygem-rack][OBS:Server:Unstable/rubygem-rack]] has the following =_link= at revision 16:
+#+BEGIN_SRC xml
+<link baserev="1e95a9532dc805f63f1769f099d7073d" package="rubygem-rack" project="devel:languages:ruby:extensions" rev="6e7876a909141a9340d68f47e5d8e4ac" vrev="49">
+  <patches>
+    <apply name="project.diff" />
+  </patches>
+</link>
+#+END_SRC
+
+\Rightarrow if the project specifies a rev, then we should prefer that
