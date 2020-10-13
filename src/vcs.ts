@@ -543,10 +543,15 @@ export async function commit(
   );
 
   const baseRoute = `/source/${pkg.projectName}/${pkg.name}?cmd=commitfilelist&withvalidate=1`;
-  const route =
+  let route =
     commitMessage === undefined
       ? baseRoute
       : baseRoute.concat(`&comment=${commitMessage}`);
+
+  // if the package is a link, then we have to tell obs explicitly to **not**
+  // delete it, as it otherwise just deletes the _link...
+  route = pkg.sourceLink === undefined ? route : route.concat("&keeplink=1");
+
   const newDirectoryApiReply = await con.makeApiCall<DirectoryApiReply>(route, {
     method: RequestMethod.POST,
     payload: directoryToApi(directoryFromModifiedPackage(pkg))
