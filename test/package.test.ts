@@ -94,6 +94,7 @@ describe("Package", () => {
   <entry name="vagrant-sshfs.changes" size="3534" md5="2f8fce37f601e56d459ad30787ab9532" mtime="1589297496"/>
   <entry name="vagrant-sshfs.keyring" size="32547" md5="f868df2487146cd0b2a716014e62f4a0" mtime="1580292453"/>
   <entry name="vagrant-sshfs.spec" size="4329" md5="b0eb5911e23c6c99baf22f1e85f7a620" mtime="1589297496"/>
+  <linkinfo project="openSUSE:Factory" package="vagrant-sshfs" srcmd5="eeb0cd1461e64b5d6df871d11f406aed" baserev="eeb0cd1461e64b5d6df871d11f406aed" lsrcmd5="9ab168efd2fc2b2bc946ab0e4296453c"/>
 </directory>`);
       (await fsPromises.readFile(join(this.dotOscPath, "_project")))
         .toString()
@@ -172,7 +173,6 @@ connection from the Vagrant guest back to the Vagrant host.
         apiUrl,
         name: packageName,
         projectName,
-        meta: undefined,
         files: [],
         md5Hash: calculateHash("", "md5")
       });

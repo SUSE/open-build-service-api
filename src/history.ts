@@ -277,7 +277,7 @@ async function fetchExpandedRevisions(
 
     const next = {
       revisionHash: dentry.revision ?? dentry.sourceMd5 ?? rev.revisionHash,
-      files: fileListFromDirectory(pkg, dentry),
+      files: fileListFromDirectory(pkg, dentry).files,
       commitMessage,
       requestId,
       userId,

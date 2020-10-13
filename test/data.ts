@@ -458,6 +458,13 @@ export const vagrantSshfs = {
   name: "vagrant-sshfs",
   projectName: "Virtualization:vagrant",
   md5Hash: "67206eaa7b5ce4691d09fafb0d849142",
+  sourceLink: {
+    project: "openSUSE:Factory",
+    package: "vagrant-sshfs",
+    srcmd5: "eeb0cd1461e64b5d6df871d11f406aed",
+    baserev: "eeb0cd1461e64b5d6df871d11f406aed",
+    lsrcmd5: "9ab168efd2fc2b2bc946ab0e4296453c"
+  },
   meta: {
     name: "vagrant-sshfs",
     project: "Virtualization:vagrant",

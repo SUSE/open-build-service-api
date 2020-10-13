@@ -26,7 +26,8 @@ import {
   Directory,
   directoryFromApi,
   directoryToApi,
-  fetchDirectory
+  fetchDirectory,
+  LinkInfo
 } from "./api/directory";
 import {
   fetchPackageMeta,
@@ -49,7 +50,12 @@ import {
 import { BaseProject, Project, readInCheckedOutProject } from "./project";
 import { RepositoryWithFlags, repositoryWithFlagsFromMeta } from "./repository";
 import { GroupWithRole, Permissions, UserWithRole } from "./user";
-import { createOrEnsureEmptyDir, unixTimeStampFromDate, zip } from "./util";
+import {
+  createOrEnsureEmptyDir,
+  unixTimeStampFromDate,
+  withoutUndefinedMembers,
+  zip
+} from "./util";
 import { FileState, ModifiedPackage } from "./vcs";
 import { newXmlBuilder, newXmlParser } from "./xml";
 
@@ -82,6 +88,12 @@ export interface Package extends BasePackage {
    * yet. If it is an empty array, then no files are present.
    */
   files?: PackageFile[];
+
+  /**
+   * If this package is a link to another package, then this field **must** be
+   * defined and contain the entries from the `_link` file.
+   */
+  sourceLink?: LinkInfo;
 }
 
 type PackageWithRequiredFiles = Omit<Package, "files"> & {
@@ -89,12 +101,14 @@ type PackageWithRequiredFiles = Omit<Package, "files"> & {
 };
 
 export interface FrozenPackage
-  extends Readonly<Required<Omit<Package, "meta" | "files">>> {
+  extends Readonly<Required<Omit<Package, "meta" | "files" | "sourceLink">>> {
   /** The files present in this package at HEAD. */
   readonly files: FrozenPackageFile[];
 
   /** The package's configuration (meta) */
   meta?: PackageMeta;
+
+  sourceLink?: LinkInfo;
 }
 
 /** Package with populated metadata */
@@ -142,6 +156,12 @@ interface BaseUnifiedPackage {
 
   /** Long description of the package, defaults to nothing. */
   description?: string;
+
+  /**
+   * If this package is a link to another package, then this field contains
+   * information about the link.
+   */
+  sourceLink?: LinkInfo;
 }
 
 /** A full description of a Package containing all the metadata */
@@ -312,53 +332,71 @@ function isFrozenPackage(pkg: any): pkg is FrozenPackage {
   );
 }
 
+interface HashAndLink {
+  readonly md5Hash: string;
+  readonly sourceLink?: LinkInfo;
+}
+
+export interface FileListAndLinkAndHash extends HashAndLink {
+  files: PackageFile[];
+}
+
+export interface FrozenFileListAndLinkAndHash extends HashAndLink {
+  readonly files: readonly FrozenPackageFile[];
+}
+
 // FIXME: this should maybe not be exported
 export function fileListFromDirectory(
   pkg: BasePackage,
   fileDir: Directory
-): PackageFile[] {
-  if (
+): FileListAndLinkAndHash {
+  const files: PackageFile[] =
     fileDir.directoryEntries === undefined ||
     fileDir.directoryEntries.length === 0
-  ) {
-    return [];
+      ? []
+      : fileDir.directoryEntries
+          .filter((dentry) => dentry.name !== undefined)
+          .map((dentry) => {
+            return {
+              name: dentry.name!,
+              projectName: pkg.projectName,
+              packageName: pkg.name,
+              size: dentry.size,
+              modifiedTime: dentry.modifiedTime,
+              md5Hash: dentry.md5
+            };
+          });
+
+  if (fileDir.linkInfos !== undefined && fileDir.linkInfos.length > 1) {
+    throw new Error(
+      `Invalid package ${pkg.projectName}/${pkg.name} received: it contains more than one <linkinfo> entry: ${fileDir.linkInfos}`
+    );
   }
 
-  const files: PackageFile[] = fileDir.directoryEntries
-    .filter((dentry) => dentry.name !== undefined)
-    .map((dentry) => {
-      return {
-        name: dentry.name!,
-        projectName: pkg.projectName,
-        packageName: pkg.name,
-        size: dentry.size,
-        modifiedTime: dentry.modifiedTime,
-        md5Hash: dentry.md5
-      };
-    });
+  if (
+    fileDir.sourceMd5 === undefined &&
+    fileDir.directoryEntries !== undefined &&
+    fileDir.directoryEntries.length > 0
+  ) {
+    throw new Error(
+      `Directory of the package ${pkg.projectName}/${pkg.name} has no md5 hash defined although directory entries are present`
+    );
+  }
 
-  return zip(fileDir.directoryEntries, files).map(([dentry, pkgFile]) =>
-    packageFileFromDirectoryEntry(pkgFile, dentry)
-  );
+  return withoutUndefinedMembers({
+    sourceLink:
+      fileDir.linkInfos === undefined ? undefined : fileDir.linkInfos[0],
+    files: zip(fileDir.directoryEntries ?? [], files).map(([dentry, pkgFile]) =>
+      packageFileFromDirectoryEntry(pkgFile, dentry)
+    ),
+    md5Hash: fileDir.sourceMd5 ?? EMPTY_STRING_MD5HASH
+  });
 }
-
-interface Hash {
-  readonly md5Hash: string;
-}
-
-export interface FileListAndHash extends Hash {
-  files: PackageFile[];
-}
-
-export interface FrozenFileListAndHash extends Hash {
-  readonly files: readonly FrozenPackageFile[];
-}
-
 export async function fetchFileList(
   con: Connection,
   pkg: Package,
   options?: FetchFileListBaseOptions & { retrieveFileContents: true }
-): Promise<FrozenFileListAndHash>;
+): Promise<FrozenFileListAndLinkAndHash>;
 
 export async function fetchFileList(
   con: Connection,
@@ -366,13 +404,13 @@ export async function fetchFileList(
   options?: FetchFileListBaseOptions & {
     retrieveFileContents: false | undefined;
   }
-): Promise<FileListAndHash>;
+): Promise<FileListAndLinkAndHash>;
 
 export async function fetchFileList(
   con: Connection,
   pkg: Package,
   options?: FetchFileListBaseOptions & { retrieveFileContents?: boolean }
-): Promise<FrozenFileListAndHash | FileListAndHash> {
+): Promise<FrozenFileListAndLinkAndHash | FileListAndLinkAndHash> {
   const expand = options?.expandLinks === undefined || options.expandLinks;
   let route = `/source/${pkg.projectName}/${pkg.name}?expand=${
     expand ? "1" : "0"
@@ -388,13 +426,16 @@ export async function fetchFileList(
   }
   const fileDir = await fetchDirectory(con, route);
 
+  // This check is kind of done in fileListFromDirectory as well, but there it
+  // is more lax (sourceMd5 can be undefined if there are no files). But we know
+  // that OBS must *always* give us back a md5 hash, even for empty packages
   if (fileDir.sourceMd5 === undefined) {
     throw new Error(
       `File content listing of the package ${pkg.projectName}/${pkg.name} has no md5 hash defined`
     );
   }
 
-  const files = fileListFromDirectory(pkg, fileDir);
+  const { files, md5Hash, sourceLink } = fileListFromDirectory(pkg, fileDir);
 
   const retrieveFileContents =
     options?.retrieveFileContents !== undefined && options.retrieveFileContents;
@@ -413,10 +454,11 @@ export async function fetchFileList(
     );
   }
 
-  return {
+  return withoutUndefinedMembers({
     files: retrieveFileContents ? files.map((f) => Object.freeze(f)) : files,
-    md5Hash: fileDir.sourceMd5
-  };
+    md5Hash,
+    sourceLink
+  });
 }
 
 /** handy for tests, don't make it public though... */
@@ -437,7 +479,8 @@ export function fileListToDirectory(pkg: Package): Directory {
                   ? unixTimeStampFromDate(pkgFile.modifiedTime).toString()
                   : undefined
             };
-          })
+          }),
+    linkInfos: pkg.sourceLink === undefined ? undefined : [pkg.sourceLink]
   };
 }
 
@@ -531,7 +574,7 @@ export async function fetchPackage(
     name: packageName,
     projectName: projName
   };
-  const [{ files, md5Hash }, meta] = await Promise.all([
+  const [{ files, md5Hash, sourceLink }, meta] = await Promise.all([
     fetchFileList(
       con,
       basePkg,
@@ -545,7 +588,7 @@ export async function fetchPackage(
     fetchPackageMeta(con, projName, packageName)
   ]);
 
-  const pkg = { ...basePkg, files, md5Hash, meta };
+  const pkg = { ...basePkg, files, md5Hash, meta, sourceLink };
 
   if (options?.retrieveFileContents) {
     Object.freeze(pkg);
@@ -800,19 +843,10 @@ export async function readInCheckedOutPackage(
   );
 
   const basePkg = { apiUrl, name, projectName };
-  const emptyFiles = fileListFromDirectory(basePkg, dir);
-
-  // FIXME: actually we should be able to calculate the md5Hash of the package
-  // if we have all contents
-  if (dir.sourceMd5 === undefined && emptyFiles.length > 0) {
-    throw new Error(
-      `Got an invalid package: '${path}/.osc/_files' does not have the srcmd5 attribute.`
-    );
-  }
-
-  // either the directory listing contains a md5sum or it's an empty array and
-  // then the package's md5hash is that of an empty string
-  const md5Hash = dir.sourceMd5 ?? EMPTY_STRING_MD5HASH;
+  const { sourceLink, md5Hash, files: emptyFiles } = fileListFromDirectory(
+    basePkg,
+    dir
+  );
 
   const files = await Promise.all(
     emptyFiles.map(async (f) => {
@@ -834,7 +868,13 @@ export async function readInCheckedOutPackage(
     })
   );
 
-  return { files, meta, md5Hash, ...basePkg };
+  return withoutUndefinedMembers({
+    files,
+    meta,
+    md5Hash,
+    sourceLink,
+    ...basePkg
+  });
 }
 
 /** Options for customizing the branching of a [[Package]]. */
