@@ -25,15 +25,20 @@ import { after, afterEach, before, beforeEach, describe, it } from "mocha";
 import * as nock from "nock";
 import { dirname, join } from "path";
 import { calculateHash } from "../../src/checksum";
-import { setFileContentsAndCommit } from "../../src/file";
+import {
+  packageFileFromBuffer,
+  setFileContentsAndCommit
+} from "../../src/file";
 import {
   branchPackage,
+  checkOutPackage,
   createPackage,
   fetchPackage,
   readInUnifiedPackage
 } from "../../src/package";
 import { createProject, deleteProject } from "../../src/project";
 import { copyRecursive, rmRf } from "../../src/util";
+import { addAndDeleteFilesFromPackage, commit } from "../../src/vcs";
 import {
   vagrantSshfs,
   vagrantSshfsDotChangesContents,
@@ -255,6 +260,8 @@ describe("Package mutable tests", function () {
   };
   const contents = Buffer.from("contents or stuff");
 
+  let tmpDir: string;
+
   before(async function () {
     skipIfNoMiniObs(this);
     await createProject(con, {
@@ -274,6 +281,10 @@ describe("Package mutable tests", function () {
     });
   });
 
+  beforeEach(async () => {
+    tmpDir = await createTemporaryDirectory();
+  });
+
   const branchInHome = `home:${con.username}:branches:${projectName}`;
   const otherBranchInHome = `home:${con.username}:cclsBranch`;
 
@@ -281,7 +292,10 @@ describe("Package mutable tests", function () {
     miniObsOnlyHook(async () => {
       await Promise.all([
         swallowException(deleteProject, con, branchInHome),
-        swallowException(deleteProject, con, otherBranchInHome)
+        swallowException(deleteProject, con, otherBranchInHome),
+        swallowException(async () =>
+          tmpDir !== undefined ? rmRf(tmpDir) : undefined
+        )
       ]);
     })
   );
@@ -350,6 +364,67 @@ describe("Package mutable tests", function () {
         otherBranchInHome,
         "ccl"
       ).should.eventually.deep.equal(branchedPackage);
+    });
+
+    it("does not destroy the _link on a commit", async () => {
+      await setFileContentsAndCommit(
+        con,
+        packageFileFromBuffer(
+          "ccls.tar.gz",
+          ccls.name,
+          ccls.projectName,
+          "I'm a tarpit!"
+        ),
+        "Add tarball"
+      );
+      const branchedPkg = await branchPackage(con, ccls);
+      branchedPkg.name.should.equal(ccls.name);
+      expect(branchedPkg.sourceLink).to.not.equal(undefined);
+
+      // construct the linkinfo from what we know:
+      // - baserev & srcmd5 are the hash of the expanded sources of the source
+      //   package
+      // - lsrcmd5 is the md5 hash of the unexpanded package containing the
+      //   _link file at HEAD
+      const baserev = (await fetchPackage(con, ccls.projectName, ccls.name))
+        .md5Hash;
+      const getLinkInfo = async () => ({
+        lsrcmd5: (
+          await fetchPackage(con, branchedPkg.projectName, branchedPkg.name, {
+            expandLinks: false
+          })
+        ).md5Hash,
+        package: ccls.name,
+        project: ccls.projectName,
+        srcmd5: baserev,
+        baserev
+      });
+      branchedPkg.sourceLink!.should.deep.equal(await getLinkInfo());
+
+      let checkedOutBranchedPkg = await checkOutPackage(
+        con,
+        branchedPkg.projectName,
+        branchedPkg.name,
+        tmpDir
+      );
+
+      checkedOutBranchedPkg = await addAndDeleteFilesFromPackage(
+        checkedOutBranchedPkg,
+        [checkedOutBranchedPkg.files[0].name],
+        []
+      );
+
+      checkedOutBranchedPkg = await commit(
+        con,
+        checkedOutBranchedPkg,
+        `Deleted ${checkedOutBranchedPkg.files[0].name}`
+      );
+
+      await fetchPackage(
+        con,
+        branchedPkg.projectName,
+        branchedPkg.name
+      ).should.eventually.deep.include({ sourceLink: await getLinkInfo() });
     });
   });
 });
