@@ -124,7 +124,8 @@ describe("Request", function () {
 
       req.should.deep.include({
         ...newReq,
-        creatorUserId: miniObsUsername
+        creatorUserId: miniObsUsername,
+        description: `Requesting deletion of ${target.projectName}/${target.packageName}`
       });
       expect(req.id).to.be.a("number");
       expect(req.state).to.deep.include({
@@ -152,7 +153,8 @@ describe("Request", function () {
 
       req.should.deep.include({
         ...newReq,
-        creatorUserId: miniObsUsername
+        creatorUserId: miniObsUsername,
+        description: `Requesting deletion of ${target.projectName}`
       });
       expect(req.id).to.be.a("number");
       expect(req.state).to.deep.include({
@@ -163,15 +165,27 @@ describe("Request", function () {
       await fetchRequest(con, req.id).should.eventually.deep.equal(req);
     });
 
+    it("creates a new delete request with a custom description", async () => {
+      const description = "Please be gone!";
+      const req = await requestDeletion(
+        con,
+        { projectName: branchedPackage.projectName },
+        { description }
+      ).should.eventually.deep.include({
+        description,
+        creatorUserId: miniObsUsername
+      });
+
+      await fetchRequest(con, req.id).should.eventually.deep.equal(req);
+    });
+
     it("creates a deletion request with an auto acceptance date", async () => {
       const in2sec = new Date();
       in2sec.setSeconds(in2sec.getSeconds() + 2);
       in2sec.setMilliseconds(0);
-      const req = await requestDeletion(
-        miniObsAdminCon,
-        branchedPackage,
-        in2sec
-      );
+      const req = await requestDeletion(miniObsAdminCon, branchedPackage, {
+        autoAcceptAt: in2sec
+      });
       expect(req.autoAcceptAt).to.deep.equal(in2sec);
       req.creatorUserId.should.equal(miniObsAdminCon.username);
 
@@ -244,7 +258,8 @@ describe("Request", function () {
         actions: [
           { ...actions[0], options: { sourceUpdate: SourceUpdate.Cleanup } }
         ],
-        creatorUserId: miniObsUsername
+        creatorUserId: miniObsUsername,
+        description: `Submission of ${target.packageName}`
       });
       expect(req.id).to.be.a("number");
       expect(req.state).to.deep.include({

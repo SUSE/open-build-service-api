@@ -839,6 +839,8 @@ function isPackage(
  * @param target  The destination of the submission. If a [[Project]] is given or
  *     if the [[Target.packageName]] field is unset, then the target package
  *     name is equal to the source package name.
+ * @param description  The description of this request.
+ *     Defaults to `Submission of ${sourcePackageName}`.
  *
  * @return The created submitrequest.
  */
@@ -848,9 +850,10 @@ export function submitPackage(
   target:
     | Required<Omit<Target, "repository" | "releaseProject">>
     | Project
-    | Package
+    | Package,
+  description?: string
 ): Promise<ExistingRequest> {
-  const src: Source = isPackage(source)
+  const src: SourcePackage = isPackage(source)
     ? { packageName: source.name, projectName: source.projectName }
     : source;
   const tgt: Target = isPackage(target)
@@ -860,7 +863,8 @@ export function submitPackage(
     : target;
   const newReq: RequestCreation = {
     actions: [{ type: RequestActionType.Submit, source: src, target: tgt }],
-    reviews: []
+    reviews: [],
+    description: description ?? `Submission of ${src.packageName}`
   };
   return createRequest(con, newReq);
 }
@@ -872,13 +876,19 @@ export function submitPackage(
  * @param autoAcceptAt  Date at which the request will be automatically accepted
  *     unless the reviewer declines it or the creator revokes it.
  *     Note that only administrators can set this property.
+ * @param description  An optional description of this request.
+ *     Defaults to `Requesting deletion of ${projectName}` or
+ *     `Requesting deletion of ${projectName}/${packageName}`.
  *
  * @return The resulting deleterequest.
  */
 export function requestDeletion(
   con: Connection,
   target: PackageTarget | ProjectTarget | Project | Package,
-  autoAcceptAt?: Date
+  {
+    autoAcceptAt,
+    description
+  }: { autoAcceptAt?: Date; description?: string } = {}
 ): Promise<ExistingRequest> {
   const tgt: PackageTarget | ProjectTarget = isPackage(target)
     ? { projectName: target.projectName, packageName: target.name }
@@ -894,7 +904,15 @@ export function requestDeletion(
     ],
     // reviews: [{ state: State.New, requestedReviewer: tgt, reviewHistory: [] }],
     reviews: [],
-    autoAcceptAt
+    autoAcceptAt,
+    description:
+      description ??
+      "Requesting deletion of ".concat(
+        tgt.projectName,
+        (tgt as PackageTarget).packageName !== undefined
+          ? `/${(tgt as PackageTarget).packageName}`
+          : ""
+      )
   };
   return createRequest(con, newReq);
 }
