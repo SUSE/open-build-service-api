@@ -622,9 +622,6 @@ export interface Request {
   /** User id of the creator of this request. */
   readonly creatorUserId?: string;
 
-  /** Optional title of this request */
-  readonly title?: string;
-
   /** Optional description of this request */
   readonly description?: string;
 
@@ -700,7 +697,6 @@ interface RequestApiReply {
     priority?: ObsRatings;
     review?: RequestReviewApiReply | RequestReviewApiReply[];
     history?: RequestHistoryApiReply | RequestHistoryApiReply[];
-    title?: string;
     accept_at?: string;
   };
 }
@@ -716,7 +712,6 @@ function requestFromApi(req: RequestApiReply): Request {
       priority: req.request.priority,
       reviews: mapOrApplyOptional(req.request.review, requestReviewFromApi),
       history: mapOrApplyOptional(req.request.history, requestHistoryFromApi),
-      title: req.request.title,
       autoAcceptAt: undefinedIfNoInput(
         req.request.accept_at,
         (acpt) => new Date(acpt)
@@ -726,15 +721,15 @@ function requestFromApi(req: RequestApiReply): Request {
 }
 
 function requestToApi(req: RequestCreation): RequestApiReply {
-  const { actions, description, priority, title, reviews } = req;
+  const { actions, description, priority, reviews } = req;
 
   return {
     request: withoutUndefinedMembers({
+      description,
+
       action: mapOrApplyOptional(actions, requestActionToApi),
       review: mapOrApplyOptional(reviews, requestReviewToApi),
-      description,
       priority,
-      title,
       // ensure that we use UTC for the time string, as OBS will use UTC
       // implicitly
       accept_at: undefinedIfNoInput(req.autoAcceptAt, (d) => d.toISOString())
