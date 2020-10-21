@@ -215,7 +215,7 @@ describe("#runProcess", () => {
       const nonExistantDir = "/foo/bar/baz/I/really/hope/this/does/not/exist";
       await util
         .runProcess("ls", { args: [nonExistantDir] })
-        .should.be.rejectedWith(Error, nonExistantDir);
+        .should.be.rejectedWith(util.ProcessError, nonExistantDir);
     }
   );
 
@@ -253,6 +253,16 @@ baz
     const env = await util.runProcess("env");
     env.should.include("MY_SUPERSPECIAL_SNOWFLAKE_VAR=42");
   });
+
+  myIt(
+    "throws an exception when the called command does not exist",
+    async () => {
+      const nonExistentCmd = "this_command_does_hopefully_not_exist";
+      await util
+        .runProcess(nonExistentCmd)
+        .should.be.rejectedWith(Error, new RegExp(`${nonExistentCmd}.*ENOENT`));
+    }
+  );
 });
 
 describe("#pathExists", () => {

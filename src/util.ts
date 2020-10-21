@@ -382,6 +382,7 @@ export function runProcess(
         reject(new ProcessError(command, code, stderr));
       }
     });
+    child.on("error", (err) => reject(err));
 
     if (stdin !== undefined) {
       child.stdin.write(stdin);
