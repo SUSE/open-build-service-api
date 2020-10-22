@@ -25,8 +25,10 @@
 import { promises as fsPromises } from "fs";
 import { homedir } from "os";
 import { normalizeUrl } from "./connection";
-
 import { ConfigIniParser } from "config-ini-parser";
+
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const Bunzip = require("seek-bzip");
 
 export class Account {
   public aliases: string[];
@@ -106,11 +108,20 @@ export async function readAccountsFromOscrc(
       };
 
       const aliases = sectionElementGetter("aliases");
+      const pw = sectionElementGetter("pass");
+      const credMngrClass = sectionElementGetter("credentials_mgr_class");
+
       return new Account({
         aliases: aliases === undefined ? [] : aliases.split(","),
         apiUrl: sect,
         email: sectionElementGetter("email"),
-        password: sectionElementGetter("pass"),
+        password:
+          credMngrClass !== undefined &&
+          credMngrClass ===
+            "osc.credentials.ObfuscatedConfigFileCredentialsManager" &&
+          pw !== undefined
+            ? Bunzip.decode(Buffer.from(pw, "base64")).toString("ascii")
+            : pw,
         realname: sectionElementGetter("realname"),
         username: oscrcContents.get(sect, "user")
       });

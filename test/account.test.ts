@@ -35,6 +35,14 @@ import "./test-setup";
 describe("Account", () => {
   beforeEach(() => {
     const options: any = {
+      /* the last password is generated in the same way that osc would do it:
+>>> import bz2
+>>> import base64
+>>> password = "fooBarBaz"
+>>> compressed_pw = bz2.compress(password.encode('ascii'))
+>>> base64.b64encode(compressed_pw).decode("ascii")
+'QlpoOTFBWSZTWaakzEYAAAIFgBAAIQCQECAAIZMagwC6IoLxdyRThQkKakzEYA=='
+       */
       ".oscrc": `
 [general]
 
@@ -56,6 +64,11 @@ pass = secondFakePw
 realname = Foo Baz
 email = foo@baz.com
 aliases = api,api_test
+
+[https://api.internal.xyz]
+user = me
+pass = QlpoOTFBWSZTWaakzEYAAAIFgBAAIQCQECAAIZMagwC6IoLxdyRThQkKakzEYA==
+credentials_mgr_class=osc.credentials.ObfuscatedConfigFileCredentialsManager
 `,
       ".oscrc_empty": "",
       ".oscrc_no_api_sections": `
@@ -78,7 +91,7 @@ pass = you
     it("parses a valid .oscrc correctly", async () => {
       const accounts = await readAccountsFromOscrc(".oscrc");
 
-      expect(accounts).to.be.a("array").and.have.length(3);
+      expect(accounts).to.be.a("array").and.have.length(4);
 
       expect(accounts).to.include.something.that.deep.equals({
         aliases: ["obs"],
@@ -103,6 +116,14 @@ pass = you
         password: "guess",
         realname: undefined,
         username: "bazUser"
+      });
+      expect(accounts).to.include.something.that.deep.equals({
+        aliases: [],
+        apiUrl: "https://api.internal.xyz/",
+        email: undefined,
+        password: "fooBarBaz",
+        realname: undefined,
+        username: "me"
       });
     });
 
