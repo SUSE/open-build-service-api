@@ -24,9 +24,9 @@ import mockFs = require("mock-fs");
 import { expect } from "chai";
 import { existsSync } from "fs";
 import { describe, it } from "mocha";
+import { assertType, TypesEqual } from "../src/types";
 import * as util from "../src/util";
-import { RetT } from "../src/util";
-import { TypesEqual, assertType } from "../src/types";
+import { RetT, strToInt } from "../src/util";
 
 class TestClass {
   constructor(readonly value: string) {}
@@ -319,5 +319,16 @@ describe("#range", () => {
 
   it("creates an array starting at the given start when provided", () => {
     expect(util.range(1, 5)).to.deep.equal([1, 2, 3, 4]);
+  });
+});
+
+describe("#strToInt", () => {
+  it("parses a string", () => {
+    strToInt("10").should.equal(10);
+    strToInt("10", 16).should.equal(16);
+  });
+
+  it("throws an exception if the string cannot be parsed", () => {
+    expect(() => strToInt("foo")).to.throw(Error, /could not parse foo/);
   });
 });

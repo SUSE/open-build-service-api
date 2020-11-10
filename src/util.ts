@@ -529,3 +529,13 @@ export function dropUndefined<T>(
 ): T[] | readonly T[] {
   return arr.filter((elem) => elem !== undefined) as T[];
 }
+
+export function strToInt(str: string, radix?: number): number {
+  const res = parseInt(str, radix);
+  if (isNaN(res)) {
+    throw new Error(
+      `could not parse ${str} as a number with radix ${radix ?? 10}`
+    );
+  }
+  return res;
+}
