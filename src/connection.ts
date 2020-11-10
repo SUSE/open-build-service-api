@@ -25,8 +25,9 @@ import * as https from "https";
 import { URL } from "url";
 import { Account } from "./account";
 import { ApiError } from "./error";
-import { newXmlBuilder, newXmlParser } from "./xml";
+import { isToken, Token } from "./token";
 import { sleep } from "./util";
+import { newXmlBuilder, newXmlParser } from "./xml";
 
 /**
  * Converts a url into a well defined format (e.g. whether `/` should be
@@ -193,6 +194,78 @@ type ApiCallInternalOptions = Omit<ApiCallOptions, "timeoutMs"> & {
   timeoutMs: number;
 };
 
+/** Additional options for the creation of a Connection */
+interface ConnectionConstructionOptions {
+  /**
+   * URL to the API, it **must** use `https` unless `forceHttps` is set to
+   * `false`.
+   * `https://api.opensuse.org/` is used if unspecified.
+   * CAUTION: this is **not** the URL to the webui of the buildservice instance
+   * (usually you have to swap the initial `build.` to `api.`).
+   */
+  url?: string;
+
+  /**
+   * A custom root certificate in the PEM format that should be used to connect
+   * to the API.
+   * If not provided, nodejs will by default use its certificate chain, which
+   * may or may not include the system certificates. Thus connections to servers
+   * with certificates signed by custom CAs *can* fail.
+   */
+  serverCaCertificate?: string;
+
+  /**
+   * If set to `false`, then the constructor will accept `http` urls in the
+   * [[url]] field as well next to `https` ones.
+   * Defaults to `true`.
+   */
+  forceHttps?: boolean;
+
+  /**
+   * Override the maximum number of concurrent requests thate are made to the
+   * API.
+   * See [[Connection.maxConcurrentConnections]] for further
+   * information. Currently this defaults to 6 (which is the same number of
+   * concurrent requests that a browser will issue to a single host).
+   */
+  maxConcurrentConnections?: number;
+}
+
+type CloneOptionsWithUsername = {
+  username: string;
+} & ConnectionConstructionOptions;
+type CloneOptionsWithToken = { token: Token } & ConnectionConstructionOptions;
+type CloneOptions =
+  | CloneOptionsWithUsername
+  | CloneOptionsWithToken
+  | ConnectionConstructionOptions;
+
+function isCloneOptionsWithToken(
+  opts: CloneOptions
+): opts is CloneOptionsWithToken {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+  return (opts as any).token !== undefined;
+}
+function isCloneOptionsWithUsername(
+  opts: CloneOptions
+): opts is CloneOptionsWithUsername {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+  return typeof (opts as any).username === "string";
+}
+
+function mergeRequestOptions(
+  globalOptions: http.RequestOptions | https.RequestOptions,
+  perCallOptions: http.RequestOptions | https.RequestOptions
+): http.RequestOptions | https.RequestOptions {
+  const { headers: globalHeaders, ...restOfGlobal } = globalOptions;
+  const { headers: perCallHeaders, ...restOfPerCall } = perCallOptions;
+  return {
+    headers: { ...globalHeaders, ...perCallHeaders },
+    ...restOfGlobal,
+    ...restOfPerCall
+  };
+}
+
 /**
  * Class for storing the credentials to connect to an Open Build Service
  * instance.
@@ -221,11 +294,11 @@ export class Connection {
    */
   public readonly maxConcurrentConnections: number = 6;
 
-  /** the user's password */
-  private readonly password: string;
+  private readonly requestOptions: https.RequestOptions;
 
-  /** HTTP simple auth header containing the necessary credentials */
-  private readonly headers: string;
+  private readonly authSource:
+    | Token
+    | { readonly username: string; readonly password: string };
 
   private cookies: string[] = [];
 
@@ -264,23 +337,30 @@ export class Connection {
   }
 
   /**
+   * Creates a new connection using a [[Token]] to authorize the API calls.
+   *
+   * @param token  A [[Token]] for authorization.
+   * @param options  Additional options to configure this Connection.
+   *
+   * @throw Error when the url is invalid or when it does not use https (and
+   *     `forceHttps` is true or undefined).
+   *
+   * **CAUTION**: Tokens can only be used for a very limited subset of OBS' API
+   *     routes and can additionally be bound to specific packages. It is
+   *     **your** responsibility to ensure that you do not accidentally use a
+   *     Token based Connection for a route that does not support it or on an
+   *     invalid package.
+   *     Currently tokens can be used to trigger service runs, rebuild packages
+   *     and release projects.
+   */
+  constructor(token: Token, options?: ConnectionConstructionOptions);
+
+  /**
    * Construct a connection using the provided username and password
+   *
    * @param username  username used for authentication
    * @param password  password of the user
-   * @param options  Additional options for the new Connection:
-   *     - `url`: URL to the API, it **must** use `https` unless `forceHttps` is
-   *       set to false.
-   *       `https://api.opensuse.org/` is used if unspecified.
-   *       CAUTION: this is **not** the URL to the webpage of the buildservice
-   *       instance (usually you have to swap the initial `build.` to `api.`).
-   *     - `serverCaCertificate` A custom root certificate in the PEM format
-   *       that should be used to connect to the API.
-   *       If not provided, nodejs will by default use its certificate chain,
-   *       which may or may not include the system certificates. Thus
-   *       connections to servers with certificates signed by custom CAs *can*
-   *       fail.
-   *     - `forceHttps`: If set to `false`, then the constructor will accept
-   *        http urls as well. Other protocols are rejected.
+   * @param options  Additional options to configure this Connection.
    *
    * @throw Error when the url is invalid or when it does not use https (and
    *     `forceHttps` is true or undefined).
@@ -288,27 +368,51 @@ export class Connection {
   constructor(
     username: string,
     password: string,
-    options: {
-      url?: string;
-      serverCaCertificate?: string;
-      forceHttps?: boolean;
-      maxConcurrentConnections?: number;
-    } = {}
+    options?: ConnectionConstructionOptions
+  );
+
+  constructor(
+    usernameOrToken: string | Token,
+    passwordOrOptions?: string | ConnectionConstructionOptions,
+    options?: ConnectionConstructionOptions
   ) {
-    this.password = password;
-    this.username = username;
+    let opts: ConnectionConstructionOptions | undefined;
+    if (typeof usernameOrToken === "string") {
+      assert(
+        typeof passwordOrOptions === "string",
+        `invalid Overloaded call of the Connection constructor, 2nd parameter must be a string, but got a ${typeof passwordOrOptions} instead`
+      );
+      this.authSource = {
+        username: usernameOrToken,
+        password: passwordOrOptions
+      };
+      this.requestOptions = { auth: `${usernameOrToken}:${passwordOrOptions}` };
+      this.username = usernameOrToken;
+      opts = options;
+    } else {
+      assert(typeof passwordOrOptions !== "string");
 
-    this.headers = `${this.username}:${this.password}`;
-    this.serverCaCertificate = options.serverCaCertificate;
+      this.authSource = usernameOrToken;
+      this.requestOptions = {
+        headers: { Authorization: `Token ${usernameOrToken.string}` }
+      };
+      this.username = usernameOrToken.userId;
+      opts = passwordOrOptions;
+    }
 
-    this.url = normalizeUrl(options.url ?? "https://api.opensuse.org");
+    this.serverCaCertificate = opts?.serverCaCertificate;
+    if (this.serverCaCertificate !== undefined) {
+      this.requestOptions.ca = this.serverCaCertificate;
+    }
 
-    if (options.maxConcurrentConnections !== undefined) {
-      this.maxConcurrentConnections = options.maxConcurrentConnections;
+    this.url = normalizeUrl(opts?.url ?? "https://api.opensuse.org");
+
+    if (opts?.maxConcurrentConnections !== undefined) {
+      this.maxConcurrentConnections = opts.maxConcurrentConnections;
     }
 
     const protocol = new URL(this.url).protocol;
-    this.forceHttps = options.forceHttps ?? true;
+    this.forceHttps = opts?.forceHttps ?? true;
     if (this.forceHttps) {
       if (protocol !== "https:") {
         throw new Error(
@@ -331,7 +435,7 @@ export class Connection {
    * If some of the parameters are not provided, then the current values are
    * used. Note that the cookies are **not** cloned into the new Connection!
    *
-   * @param username  An optional new username.
+   * @param usernameOrToken  An optional new username or a new token.
    * @param url  An optional new URL to the API.
    * @param serverCaCertificate  An optional new server certificate.
    * @param forceHttps  Whether to enforce https or permit http as well (defaults
@@ -342,26 +446,43 @@ export class Connection {
    *
    * @throw Same errors as the constructor.
    */
-  public clone({
-    username,
-    url,
-    serverCaCertificate,
-    forceHttps,
-    maxConcurrentConnections
-  }: {
-    username?: string;
-    url?: string;
-    serverCaCertificate?: string;
-    forceHttps?: boolean;
-    maxConcurrentConnections?: number;
-  } = {}): Connection {
-    return new Connection(username ?? this.username, this.password, {
+  public clone(cloneOptions: CloneOptions = {}): Connection {
+    const {
+      url,
+      serverCaCertificate,
+      forceHttps,
+      maxConcurrentConnections
+    } = cloneOptions;
+    const opts = {
       url: url ?? this.url,
       serverCaCertificate: serverCaCertificate ?? this.serverCaCertificate,
       forceHttps: forceHttps ?? this.forceHttps,
       maxConcurrentConnections:
         maxConcurrentConnections ?? this.maxConcurrentConnections
-    });
+    };
+    if (isToken(this.authSource)) {
+      if (isCloneOptionsWithToken(cloneOptions)) {
+        return new Connection(cloneOptions.token, opts);
+      } else if (isCloneOptionsWithUsername(cloneOptions)) {
+        throw new Error(
+          `cannot clone a Connection that uses a token for authentication and provide a new username`
+        );
+      } else {
+        return new Connection(this.authSource, opts);
+      }
+    } else {
+      if (isCloneOptionsWithToken(cloneOptions)) {
+        return new Connection(cloneOptions.token, opts);
+      } else if (isCloneOptionsWithUsername(cloneOptions)) {
+        return new Connection(
+          cloneOptions.username,
+          this.authSource.password,
+          opts
+        );
+      } else {
+        return new Connection(this.username, this.authSource.password, opts);
+      }
+    }
   }
 
   /**
@@ -533,13 +654,11 @@ export class Connection {
     return new Promise((resolve, reject) => {
       const req = request(
         url,
-        {
-          auth: this.headers,
-          ca: this.serverCaCertificate,
+        mergeRequestOptions(this.requestOptions, {
           headers: { cookie: this.cookies },
           method: reqMethod,
           timeout: options.timeoutMs
-        },
+        }),
         (response) => {
           const body: any[] = [];
 

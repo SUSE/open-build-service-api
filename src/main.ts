@@ -49,6 +49,14 @@ export {
   requestDeletion,
   submitPackage
 } from "./request";
+export {
+  createToken,
+  deleteToken,
+  fetchTokens,
+  Token,
+  TokenKind,
+  TokenOperation
+} from "./token";
 export { Group, GroupWithRole, User, UserWithRole } from "./user";
 export {
   dropUndefined,

@@ -26,6 +26,7 @@ import { URL } from "url";
 import { Account } from "../src/account";
 import { Connection, normalizeUrl, RequestMethod } from "../src/connection";
 import { ApiError } from "../src/error";
+import { TokenKind } from "../src/token";
 import { range } from "../src/util";
 import {
   afterEachRecordHook,
@@ -253,6 +254,12 @@ describe("Connection", () => {
       nock.enableNetConnect();
     });
 
+    it("rejects payloads that are not of type Buffer", async () => {
+      await con
+        .makeApiCall("/", { payload: "foo", sendPayloadAsRaw: true })
+        .should.be.rejectedWith(Error, /payload.*is not a Buffer/);
+    });
+
     describe("timeouts", () => {
       it("throws an exception when the request timed out", async () => {
         nock(url)
@@ -468,17 +475,32 @@ describe("Connection", () => {
     const con = new Connection("fake", "fakePw", {
       url: "https://build.opensuse.org"
     });
+    const token = {
+      userId: "fake",
+      id: 42,
+      string: "superSecretValue",
+      kind: TokenKind.Rebuild
+    };
+    const tokenCon = new Connection(token);
 
     it("creates an exact copy if no parameters are provided", () => {
       const cloned = con.clone();
+      const tokenCloned = tokenCon.clone();
       [
-        "password",
+        "authSource",
+        "authHeaders",
         "username",
         "headers",
         "serverCaCertificate",
-        "url"
+        "url",
+        "maxConcurrentConnections"
       ].forEach((key) =>
-        expect((con as any)[key]).to.deep.equal((cloned as any)[key])
+        [
+          [cloned, con],
+          [tokenCloned, tokenCon]
+        ].forEach(([clone, orig]) =>
+          expect((clone as any)[key]).to.deep.equal((orig as any)[key])
+        )
       );
     });
 
@@ -490,12 +512,42 @@ describe("Connection", () => {
       };
       expect(con.clone(newParams)).to.deep.include({
         ...newParams,
-        password: "fakePw"
+        authSource: { username: newParams.username, password: "fakePw" }
       });
     });
 
     it("rejects new invalid parameters", () => {
       expect(() => con.clone({ url: "" })).to.throw(TypeError, /invalid url/i);
+    });
+
+    it("rejects overriding the username if the Connection has been created from a Token", () => {
+      expect(() => tokenCon.clone({ username: "newUsername" })).to.throw(
+        Error,
+        /cannot clone/
+      );
+    });
+
+    it("clones a Connection and uses a new Token", () => {
+      const { id, kind, userId } = token;
+      const string = "otherSuperSecret";
+      const maxConcurrentConnections = 80;
+      const newToken = { id, kind, userId, string };
+      tokenCon
+        .clone({ token: newToken, maxConcurrentConnections })
+        .should.deep.include({
+          username: userId,
+          authSource: newToken,
+          maxConcurrentConnections
+        });
+    });
+
+    it("clones a username based Connection to use a token instead", () => {
+      const forceHttps = false;
+      con.clone({ token: token, forceHttps }).should.deep.include({
+        authSource: token,
+        forceHttps,
+        username: token.userId
+      });
     });
   });
 
