@@ -32,6 +32,9 @@ until curl ${obs_url}/about 2>/dev/null ; do
   sleep 1
 done
 
+# OBS now for some reason needs a while to be able to process
+sleep 30
+
 popd
 
 TEST_USER="obsTestUser"
