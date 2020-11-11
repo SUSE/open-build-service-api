@@ -82,7 +82,7 @@
     "cache": false
   },
   "mocha": {
-    "require": ["ts-node/register"],
+    "require": ["ts-node/register", "test/setup.js"],
     "spec": "test/**/*.test.ts",
     "extension": ["ts"]
   }

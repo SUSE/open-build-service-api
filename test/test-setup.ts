@@ -21,15 +21,11 @@
 
 import mockFs = require("mock-fs");
 
-import { should, use } from "chai";
-import * as chaiAsPromised from "chai-as-promised";
-import * as chaiThings from "chai-things";
 import { promises as fsPromises } from "fs";
 import { AsyncFunc, Context, Func, HookFunction } from "mocha";
 import * as nock from "nock";
 import { tmpdir } from "os";
 import { join, sep } from "path";
-import * as sinonChai from "sinon-chai";
 import { directoryToApi } from "../src/api/directory";
 import { fetchProjectMeta, modifyProjectMeta } from "../src/api/project-meta";
 import { Connection } from "../src/connection";
@@ -152,14 +148,6 @@ export function generateProjectMockInput(
 
   return files;
 }
-
-use(chaiThings);
-use(sinonChai);
-
-// must be the last one: https://github.com/domenic/chai-as-promised#node
-use(chaiAsPromised);
-
-should();
 
 const envOrDefault = (envVar: string, defaultValue: string): string => {
   const envVarVal = process.env[envVar];
