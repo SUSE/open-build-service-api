@@ -14,6 +14,7 @@ fi
 cd "${repo_dir}"
 git fetch -tp origin
 git checkout master
+git reset --hard origin/master
 git submodule init
 git submodule update
 
