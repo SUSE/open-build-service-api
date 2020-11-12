@@ -260,6 +260,26 @@ describe("Connection", () => {
         .should.be.rejectedWith(Error, /payload.*is not a Buffer/);
     });
 
+    it("reuses only the pathname and search parameters of a URL", async () => {
+      const fooParam = "fooo";
+      const barParam = "barrr";
+      const success = "Success!";
+      const baseRoute = "some/path";
+      const scopes = nock(url)
+        .get(`/${baseRoute}?foo=${fooParam}&bar=${barParam}`)
+        .reply(200, success);
+
+      const route = new URL(`http://name.xyz/${baseRoute}`);
+      route.searchParams.append("foo", fooParam);
+      route.searchParams.append("bar", barParam);
+
+      await con
+        .makeApiCall(route, { decodeResponseFromXml: false })
+        .should.eventually.deep.equal(Buffer.from(success));
+
+      scopes.isDone().should.equal(true);
+    });
+
     describe("timeouts", () => {
       it("throws an exception when the request timed out", async () => {
         nock(url)

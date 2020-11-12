@@ -494,7 +494,7 @@ export class Connection {
    *     The reply is only decoded when the request succeeds.
    */
   public async makeApiCall<T>(
-    route: string,
+    route: string | URL,
     options?: ApiCallMainOptions & { decodeResponseFromXml?: true }
   ): Promise<T>;
 
@@ -505,7 +505,7 @@ export class Connection {
    * @return The raw reply as a `Buffer`.
    */
   public async makeApiCall(
-    route: string,
+    route: string | URL,
     options?: ApiCallMainOptions & { decodeResponseFromXml: false }
   ): Promise<Buffer>;
 
@@ -517,7 +517,9 @@ export class Connection {
    * codes is received: `301`, `429` or `503`. At most [[options.maxRetries]]
    * retries are issued with a sleep between them that is doubled on each retry.
    *
-   * @param route  route to which the request will be sent
+   * @param route  route or full URL to which the request will be sent.
+   *     If a URL is provided, then only its pathname & search are used
+   *     (i.e. you can use an arbitrary baseurl to construct search parameters).
    * @param options  Additional options for further control. By default the
    *     request is a [[GET|RequestMethod.GET]] request with no payload and the
    *     response is assumed to be XML.
@@ -529,10 +531,13 @@ export class Connection {
    *       [[options.maxRetries]] requests.
    */
   public async makeApiCall(
-    route: string,
+    route: string | URL,
     options?: ApiCallOptions
   ): Promise<any> {
-    let url = new URL(route, this.url);
+    let url = new URL(
+      typeof route === "string" ? route : `${route.pathname}${route.search}`,
+      this.url
+    );
     const reqMethod =
       options?.method === undefined ? RequestMethod.GET : options.method;
     assert(
