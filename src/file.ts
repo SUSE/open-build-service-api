@@ -186,13 +186,17 @@ export function packageFileFromDirectoryEntry(
     }
   });
 
+  assert(
+    md5Hash !== undefined && modifiedTime !== undefined && size !== undefined
+  );
+
   return withoutUndefinedMembers({
     name: dentry.name,
     packageName: file.packageName,
     projectName: file.projectName,
-    md5Hash: md5Hash!,
-    modifiedTime: modifiedTime!,
-    size: size!,
+    md5Hash: md5Hash,
+    modifiedTime: modifiedTime,
+    size: size,
     contents: file.contents
   });
 }

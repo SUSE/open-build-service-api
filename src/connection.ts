@@ -689,9 +689,13 @@ export class Connection {
                 resolve(retry);
               }
 
-              if (response.statusCode! < 200 || response.statusCode! > 299) {
+              assert(
+                response.statusCode !== undefined,
+                "Received a response that has no statusCode entry"
+              );
+              if (response.statusCode < 200 || response.statusCode > 299) {
                 reject(
-                  new ApiError(response.statusCode!, url, reqMethod, payload)
+                  new ApiError(response.statusCode, url, reqMethod, payload)
                 );
               }
               resolve(payload);
