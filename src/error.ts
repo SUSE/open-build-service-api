@@ -145,7 +145,7 @@ export class ApiError extends Error {
       // status-reply then
     }
 
-    let errMsg = `Failed to make a ${method} request to ${url}, got a ${statusCode}`;
+    let errMsg = `Failed to make a ${method} request to ${url.href}, got a ${statusCode}`;
     if (decodedStatus !== undefined) {
       errMsg = errMsg.concat(`:
 status: ${decodedStatus.code}

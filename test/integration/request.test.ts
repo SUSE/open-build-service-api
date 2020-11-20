@@ -67,7 +67,7 @@ describe("Request", function () {
   const packageName = "ccls";
   let branchedPackage: PackageWithMeta;
   const originalPackage = {
-    apiUrl: con.url,
+    apiUrl: con.url.href,
     name: packageName,
     projectName: `home:${miniObsUsername}:devel:tools`
   };
@@ -205,7 +205,7 @@ describe("Request", function () {
       );
 
       branchedBranchedPackage = await branchPackage(con, {
-        apiUrl: con.url,
+        apiUrl: con.url.href,
         name: packageName,
         projectName: branchedPackage.projectName
       });

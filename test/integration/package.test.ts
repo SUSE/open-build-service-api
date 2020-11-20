@@ -254,7 +254,7 @@ describe("Package mutable tests", function () {
   const packageName = "ccls";
   const projectName = `home:${con.username}:testForBranch`;
   const ccls = {
-    apiUrl: con.url,
+    apiUrl: con.url.href,
     name: packageName,
     projectName
   };
@@ -309,7 +309,7 @@ describe("Package mutable tests", function () {
       branchedPackage.should.deep.include({
         name: packageName,
         projectName: branchInHome,
-        apiUrl: con.url
+        apiUrl: con.url.href
       });
       expect(branchedPackage.md5Hash).to.be.a("string");
       expect(branchedPackage.files).to.be.an("array").and.have.length(1);

@@ -525,13 +525,19 @@ describe("Connection", () => {
     });
 
     it("uses the new parameters if supplied", () => {
+      const username = "fake2";
+      const urlStr = "https://api-test.opensuse.org/";
+      const serverCaCertificate = "looks legit";
       const newParams = {
-        username: "fake2",
-        url: "https://api-test.opensuse.org/",
-        serverCaCertificate: "looks legit"
+        username,
+        url: urlStr,
+        serverCaCertificate
       };
+
       expect(con.clone(newParams)).to.deep.include({
-        ...newParams,
+        username,
+        serverCaCertificate,
+        url: new URL(urlStr),
         authSource: { username: newParams.username, password: "fakePw" }
       });
     });
@@ -580,7 +586,7 @@ describe("Connection", () => {
       };
       const con = Connection.from(new Account(opts));
       con.username.should.deep.equal(opts.username);
-      con.url.should.deep.equal(opts.apiUrl);
+      con.url.should.deep.equal(new URL(opts.apiUrl));
     });
 
     it("throws an error if the account has no password set", () => {
@@ -604,7 +610,7 @@ describe("Connection", () => {
 
       Connection.from(new Account(opts), {
         forceHttps: false
-      }).url.should.deep.equal(opts.apiUrl);
+      }).url.should.deep.equal(new URL(opts.apiUrl));
 
       expect(() => Connection.from(new Account(opts))).to.throw(
         Error,

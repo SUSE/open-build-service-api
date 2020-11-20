@@ -62,7 +62,7 @@ describe("#fetchProject", () => {
       fetchPackageList: false
     });
 
-    expect(virtualizationVagrant).to.have.property("apiUrl", con.url);
+    expect(virtualizationVagrant).to.have.property("apiUrl", con.url.href);
     expect(virtualizationVagrant).to.have.property("name", projectName);
     expect(virtualizationVagrant).to.have.property("meta");
     expect(virtualizationVagrant).to.not.have.property("packages");
@@ -77,7 +77,7 @@ describe("#fetchProject", () => {
     const projectName = "Virtualization:Appliances:Images:openSUSE-Tumbleweed";
     const TW = await fetchProject(con, projectName);
 
-    expect(TW).to.have.property("apiUrl", con.url);
+    expect(TW).to.have.property("apiUrl", con.url.href);
     expect(TW).to.have.property("name", projectName);
     expect(TW).to.have.property("meta");
     expect(TW)
@@ -92,7 +92,7 @@ describe("#fetchProject", () => {
           "livecd-tumbleweed-kde",
           "livecd-tumbleweed-x11",
           "livecd-tumbleweed-xfce"
-        ].map((name) => ({ name, apiUrl: con.url, projectName }))
+        ].map((name) => ({ name, apiUrl: con.url.href, projectName }))
       );
 
     expect(TW.meta).to.deep.include({
@@ -361,7 +361,7 @@ describe("#fetchProjectList", function () {
     const projectsAfter = await fetchProjectList(con);
     expect(projectsAfter).to.include.a.thing.that.deep.equals({
       name,
-      apiUrl: con.url
+      apiUrl: con.url.href
     });
   });
 });

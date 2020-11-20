@@ -200,7 +200,7 @@ export async function fetchProject(
 ): Promise<ProjectWithMeta | ProjectWithPackages> {
   const meta = await fetchProjectMeta(con, projectName);
   const proj = {
-    apiUrl: con.url,
+    apiUrl: con.url.href,
     name: projectName,
     meta
   };
@@ -567,7 +567,7 @@ export async function createProject(
   await modifyProjectMeta(con, meta);
   return {
     name: meta.name,
-    apiUrl: con.url,
+    apiUrl: con.url.href,
     meta: await fetchProjectMeta(con, meta.name)
   };
 }
@@ -605,7 +605,7 @@ export async function fetchProjectList(
   );
   return Object.freeze(
     projectsDir.directoryEntries.map((dentry) => ({
-      apiUrl: con.url,
+      apiUrl: con.url.href,
       name: dentry.name
     }))
   );

@@ -449,7 +449,7 @@ async function cachedFetchHistoryAcrossLinks(
     }
 
     const linkedPkg: Package = {
-      apiUrl: con.url,
+      apiUrl: con.url.href,
       name: validLink.package,
       projectName: validLink.project
     };

@@ -504,7 +504,7 @@ export async function createPackage(
   };
   const projectName = typeof project === "string" ? project : project.name;
   await setPackageMeta(con, projectName, packageName, meta);
-  const pkg = { name: packageName, apiUrl: con.url, meta, projectName };
+  const pkg = { name: packageName, apiUrl: con.url.href, meta, projectName };
   const { md5Hash, files } = await fetchFileList(con, pkg, {
     retrieveFileContents: false
   });
@@ -570,7 +570,7 @@ export async function fetchPackage(
   const projName: string = typeof project === "string" ? project : project.name;
 
   const basePkg = {
-    apiUrl: con.url,
+    apiUrl: con.url.href,
     name: packageName,
     projectName: projName
   };
@@ -898,9 +898,9 @@ async function _branchPackage(
   pkg: Package,
   branchOptions?: BranchOptions
 ): Promise<PackageWithMeta> {
-  if (normalizeUrl(con.url) !== normalizeUrl(pkg.apiUrl)) {
+  if (con.url.href !== normalizeUrl(pkg.apiUrl)) {
     throw new Error(
-      `The package ${pkg.projectName}/${pkg.name} belongs to the API ${pkg.apiUrl} but the connection is only valid for ${con.url}`
+      `The package ${pkg.projectName}/${pkg.name} belongs to the API ${pkg.apiUrl} but the connection is only valid for ${con.url.href}`
     );
   }
 
@@ -1017,7 +1017,7 @@ export function branchPackage(
     return _branchPackage(
       con,
       {
-        apiUrl: con.url,
+        apiUrl: con.url.href,
         projectName: pkgOrProjectName,
         name: packageNameOrOptions
       },

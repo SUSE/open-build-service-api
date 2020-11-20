@@ -279,7 +279,7 @@ export class Connection {
   public readonly username: string;
 
   /** URL to the API of this buildservice instance */
-  public readonly url: string;
+  public readonly url: URL;
 
   /**
    * Maximum number of concurrent API calls that can be performed by this
@@ -405,24 +405,24 @@ export class Connection {
       this.requestOptions.ca = this.serverCaCertificate;
     }
 
-    this.url = normalizeUrl(opts?.url ?? "https://api.opensuse.org");
+    this.url = new URL(opts?.url ?? "https://api.opensuse.org");
 
     if (opts?.maxConcurrentConnections !== undefined) {
       this.maxConcurrentConnections = opts.maxConcurrentConnections;
     }
 
-    const protocol = new URL(this.url).protocol;
+    const protocol = this.url.protocol;
     this.forceHttps = opts?.forceHttps ?? true;
     if (this.forceHttps) {
       if (protocol !== "https:") {
         throw new Error(
-          `${this.url} does not use https, got ${protocol} instead`
+          `${this.url.href} does not use https, got ${protocol} instead`
         );
       }
     } else {
       if (protocol !== "https:" && protocol !== "http:") {
         throw new Error(
-          `${this.url} doesn't use http or https, got ${protocol} instead`
+          `${this.url.href} doesn't use http or https, got ${protocol} instead`
         );
       }
     }
@@ -454,7 +454,7 @@ export class Connection {
       maxConcurrentConnections
     } = cloneOptions;
     const opts = {
-      url: url ?? this.url,
+      url: url ?? this.url.href,
       serverCaCertificate: serverCaCertificate ?? this.serverCaCertificate,
       forceHttps: forceHttps ?? this.forceHttps,
       maxConcurrentConnections:
