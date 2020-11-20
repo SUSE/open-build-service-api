@@ -22,6 +22,14 @@
 export { Account, addAccountToOscrc, readAccountsFromOscrc } from "./account";
 export { Arch, BaseRepository, Path } from "./api/base-types";
 export * from "./api/project-meta";
+export {
+  Binary,
+  BuildResult,
+  BuildStatusView,
+  fetchBuildResults,
+  PackageStatusCode,
+  RepositoryCode
+} from "./build-result";
 export * from "./configuration";
 export { Connection, normalizeUrl } from "./connection";
 export { Distribution, fetchHostedDistributions } from "./distributions";
