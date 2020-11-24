@@ -264,7 +264,7 @@ export function afterEachRecord(ctx: Mocha.Context): Promise<void> {
 export const haveMiniObs: () => boolean = () =>
   process.env.HAVE_MINI_OBS === "1";
 
-export function skipIfNoMiniObs(ctx: Context): void {
+export function skipIfNoMiniObs(ctx: Context): void | never {
   if (!haveMiniObs()) {
     ctx.skip();
   }
