@@ -20,11 +20,13 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-
 const readFileSync = require("fs").readFileSync;
 const inspect = require("util").inspect;
-const parseString = require("xml2js").parseString;
+const Parser = require("xml2js").Parser;
 
-parseString(readFileSync(0 /* = STDIN */), function (_err, result) {
-  console.log(inspect(result, { depth: null }));
-});
+new Parser({ explicitArray: false, async: false }).parseString(
+  readFileSync(0 /* = STDIN */),
+  function (_err, result) {
+    console.log(inspect(result, { depth: null }));
+  }
+);
