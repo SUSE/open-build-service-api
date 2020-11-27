@@ -178,6 +178,27 @@ export interface ApiCallMainOptions {
    * requests, as these are not idempotent)
    */
   maxRetries?: number;
+
+  /**
+   * Callback that is invoked every time that a chunk of data is received.
+   *
+   * Only use this callback for long running requests that continuously stream
+   * data, e.g. package build logs. In these cases, consider setting a very high
+   * `timeoutMs` and `maxRetries` to 0, as otherwise the request will timeout
+   * and you might receive the data again via the callback.
+   * The received data are returned once the request finishes in the same way as
+   * when the callback wasn't present.
+   *
+   * @param chunk  The currently received chunk of data
+   * @return The return value of the callback is ignored. It is especially
+   *     **not** awaited.
+   */
+  onDataReceived?: (chunk: Buffer) => any;
+
+  /**
+   * Optional `this` for the [[onDataReceived]] callback.
+   */
+  onDataReceivedThisArg?: any;
 }
 
 export interface ApiCallOptions extends ApiCallMainOptions {
@@ -664,10 +685,22 @@ export class Connection {
         }),
         (response) => {
           const body: any[] = [];
+          const onDataCb =
+            options.onDataReceived === undefined
+              ? (chunk: any) => {
+                  body.push(chunk);
+                }
+              : (chunk: any) => {
+                  body.push(chunk);
+                  if (Buffer.isBuffer(chunk)) {
+                    options.onDataReceived!.call(
+                      options.onDataReceivedThisArg,
+                      chunk
+                    );
+                  }
+                };
 
-          response.on("data", (chunk) => {
-            body.push(chunk);
-          });
+          response.on("data", onDataCb);
 
           response.on("error", (err) => {
             reject(err);

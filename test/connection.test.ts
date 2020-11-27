@@ -20,14 +20,16 @@
  */
 
 import { expect } from "chai";
+import { createServer } from "http";
 import { describe, it } from "mocha";
 import * as nock from "nock";
+import { createSandbox, SinonSpy } from "sinon";
 import { URL } from "url";
 import { Account } from "../src/account";
 import { Connection, normalizeUrl, RequestMethod } from "../src/connection";
 import { ApiError, TimeoutError } from "../src/error";
 import { TokenKind } from "../src/token";
-import { range } from "../src/util";
+import { range, sleep } from "../src/util";
 import {
   afterEachRecordHook,
   ApiType,
@@ -490,6 +492,71 @@ describe("Connection", () => {
 
         nock.isDone().should.equal(true);
       });
+    });
+  });
+
+  describe("onDataReceived callback", function () {
+    const chunks = range(10).map((i) => Buffer.from(i.toString()));
+    const server = createServer(async (req, res) => {
+      if (req.url === "/") {
+        for (let chunk of chunks) {
+          res.write(chunk);
+          await sleep(200);
+        }
+      } else {
+        res.write(Buffer.from("foo"));
+      }
+      res.end();
+    });
+
+    before(function () {
+      server.listen(8080);
+      this.sandbox = createSandbox();
+    });
+    after(function () {
+      server.close();
+      this.sandbox.restore();
+    });
+
+    this.timeout(5000);
+
+    const localhostCon = new Connection("irrelevant", "irrelevant", {
+      url: "http://localhost:8080",
+      forceHttps: false
+    });
+
+    const commonOpts = { maxRetries: 0 };
+
+    it("receives all the data that are eventually returned", async function () {
+      const onDataReceived: SinonSpy = this.sandbox.spy();
+      const response = await localhostCon.makeApiCall("/", {
+        onDataReceived,
+        decodeResponseFromXml: false,
+        ...commonOpts
+      });
+      response.should.deep.equal(Buffer.concat(chunks));
+      onDataReceived.should.have.callCount(10);
+      const calls = onDataReceived.getCalls();
+      range(10).forEach((i) => {
+        expect(calls[i].args).to.deep.equal([chunks[i]]);
+        expect(calls[i].thisValue).to.equal(undefined);
+      });
+    });
+
+    it("is called with the correct this arg", async function () {
+      const onDataReceived: SinonSpy = this.sandbox.spy();
+      const onDataReceivedThisArg = {};
+      const reply = Buffer.from("foo");
+      await localhostCon
+        .makeApiCall("/any", {
+          decodeResponseFromXml: false,
+          onDataReceived,
+          onDataReceivedThisArg,
+          ...commonOpts
+        })
+        .should.eventually.deep.equal(reply);
+      onDataReceived.should.have.been.calledOnceWithExactly(reply);
+      onDataReceived.should.have.been.calledOn(onDataReceivedThisArg);
     });
   });
 
