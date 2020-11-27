@@ -164,3 +164,53 @@ details: ${decodedStatus.details}
     Object.setPrototypeOf(this, ApiError.prototype);
   }
 }
+
+/** Type guard to verify that the passed `err` is a [[TimeoutError]] */
+export function isTimeoutError(err: Error): err is TimeoutError {
+  return (
+    (err as TimeoutError).method !== undefined &&
+    (err as TimeoutError).url !== undefined &&
+    typeof (err as TimeoutError).maxRetries === "number" &&
+    typeof (err as TimeoutError).durationMs === "number"
+  );
+}
+
+/** An Error indicating that the API call failed due to a timeout. */
+export class TimeoutError extends Error {
+  /** The method that was used to request the given url */
+  readonly method: RequestMethod;
+
+  /** The url which was requested */
+  readonly url: URL;
+
+  /** The number of retries that were attempted to fetch the URL */
+  readonly maxRetries: number;
+
+  /** Total duration of the request including retries */
+  readonly durationMs: number;
+
+  constructor(
+    method: RequestMethod,
+    url: URL,
+    maxRetries: number,
+    startTime: Date
+  ) {
+    const durationMs = new Date().getTime() - startTime.getTime();
+    let errMsg = `Could not make a ${method} request to ${url.href}, `;
+    if (maxRetries > 0) {
+      errMsg = errMsg.concat(
+        `retried unsuccessfully ${maxRetries} time${
+          maxRetries > 1 ? "s" : ""
+        } and `
+      );
+    }
+    errMsg = errMsg.concat(`took ${durationMs}ms in total.`);
+    super(errMsg);
+    this.url = url;
+    this.method = method;
+    this.maxRetries = maxRetries;
+    this.durationMs = durationMs;
+
+    Object.setPrototypeOf(this, TimeoutError.prototype);
+  }
+}

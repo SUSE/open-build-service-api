@@ -24,7 +24,7 @@ import * as http from "http";
 import * as https from "https";
 import { URL } from "url";
 import { Account } from "./account";
-import { ApiError } from "./error";
+import { ApiError, TimeoutError } from "./error";
 import { isToken, Token } from "./token";
 import { sleep } from "./util";
 import { newXmlBuilder, newXmlParser } from "./xml";
@@ -527,7 +527,7 @@ export class Connection {
    * @throw
    *     - [[ApiError]] if the API replied with a status code less than
    *       `200` or more than `299`.
-   *     - `Error` when no successful request was made after
+   *     - `TimeoutError` when no successful request was made after
    *       [[options.maxRetries]] requests.
    */
   public async makeApiCall(
@@ -557,6 +557,8 @@ export class Connection {
     const maxRetries =
       reqMethod === RequestMethod.GET ? options?.maxRetries ?? 10 : 1;
     let waitBetweenCallsMs = 1000;
+
+    const startTime = new Date();
 
     try {
       // do we have to limit the number of concurrent connections?
@@ -608,11 +610,7 @@ export class Connection {
         waitBetweenCallsMs *= 2;
       }
 
-      throw new Error(
-        `Could not make a ${reqMethod} request to ${url.toString()}, tried unsuccessfully ${maxRetries} time${
-          maxRetries > 1 ? "s" : ""
-        }.`
-      );
+      throw new TimeoutError(reqMethod, url, maxRetries, startTime);
     } finally {
       if (this.maxConcurrentConnections > 0) {
         assert(

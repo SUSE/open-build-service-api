@@ -25,7 +25,7 @@ import * as nock from "nock";
 import { URL } from "url";
 import { Account } from "../src/account";
 import { Connection, normalizeUrl, RequestMethod } from "../src/connection";
-import { ApiError } from "../src/error";
+import { ApiError, TimeoutError } from "../src/error";
 import { TokenKind } from "../src/token";
 import { range } from "../src/util";
 import {
@@ -291,9 +291,10 @@ describe("Connection", () => {
           .reply(200, "and neither this");
 
         await con
-          .makeApiCall("/", { timeoutMs: 1, maxRetries: 2 })
+          .makeApiCall("/", { timeoutMs: 1, maxRetries: 1 })
           .should.be.rejectedWith(
-            /Could not make a GET request to.*api\.foo\.org.*tried unsuccessfully 2 times/
+            TimeoutError,
+            /Could not make a GET request to.*api\.foo\.org.*retried unsuccessfully 1 time and took \d+ms in total./
           );
 
         nock.abortPendingRequests();
@@ -391,7 +392,8 @@ describe("Connection", () => {
             maxRetries: 100
           })
           .should.be.rejectedWith(
-            /Could not make a POST request.*tried unsuccessfully 1 time/
+            TimeoutError,
+            /Could not make a POST request.* took \d+ms in total./
           );
 
         scopes.isDone().should.equal(true);
