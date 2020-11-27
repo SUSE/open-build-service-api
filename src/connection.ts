@@ -555,7 +555,7 @@ export class Connection {
     assert(opts.timeoutMs !== undefined);
 
     const maxRetries =
-      reqMethod === RequestMethod.GET ? options?.maxRetries ?? 10 : 1;
+      reqMethod === RequestMethod.GET ? options?.maxRetries ?? 10 : 0;
     let waitBetweenCallsMs = 1000;
 
     const startTime = new Date();
@@ -579,7 +579,7 @@ export class Connection {
         );
       }
 
-      for (let i = 0; i < maxRetries; i++) {
+      for (let i = 0; i <= maxRetries; i++) {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const res = await this.doMakeApiCall(
           url,
@@ -596,7 +596,7 @@ export class Connection {
           opts.timeoutMs = 2 * opts.timeoutMs;
         }
 
-        if (i !== maxRetries - 1) {
+        if (i !== maxRetries) {
           if (
             res.retryAfterMs !== undefined ||
             res.status === 503 ||
