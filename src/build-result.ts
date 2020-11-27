@@ -19,6 +19,7 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import * as assert from "assert";
 import { URL } from "url";
 import { Arch } from "./api/base-types";
 import { Connection } from "./connection";
@@ -29,6 +30,7 @@ import {
   mapOrApply,
   mapOrApplyOptional,
   strToInt,
+  undefinedIfNoInput,
   withoutUndefinedMembers
 } from "./util";
 
@@ -314,7 +316,7 @@ export async function fetchBuildResults(
   } = {}
 ): Promise<BuildResult[]> {
   const url = new URL(
-    `${con.url}build/${
+    `${con.url.href}build/${
       typeof project === "string" ? project : project.name
     }/_result`
   );
@@ -340,4 +342,399 @@ export async function fetchBuildResults(
   const resList: ResultListApiReply = await con.makeApiCall(url);
 
   return mapOrApply(resList.resultlist.result, buildResultFromApi);
+}
+
+function createBuildRoute(
+  projectNameOrPkg: string | BasePackage | Omit<BasePackage, "apiUrl">,
+  packageNameOrArch: string | Arch,
+  archOrRepositoryName: Arch | string,
+  repositoryNameOrMultibuild?: string,
+  multibuildName?: string
+): string {
+  if (typeof projectNameOrPkg === "string") {
+    // this overload is used:
+    // (
+    //   con: Connection,
+    //   projectName: string,
+    //   packageName: string,
+    //   arch: Arch,
+    //   repositoryName: string,
+    //   multibuildName?: string
+    // )
+    assert(
+      typeof packageNameOrArch === "string" &&
+        repositoryNameOrMultibuild !== undefined
+    );
+    const pkgName =
+      multibuildName === undefined
+        ? packageNameOrArch
+        : `${packageNameOrArch}:${multibuildName}`;
+    return `/${projectNameOrPkg}/${repositoryNameOrMultibuild}/${archOrRepositoryName}/${pkgName}`;
+  } else {
+    // this overload is used:
+    // (
+    //   con: Connection,
+    //   pkg: BasePackage | Omit<BasePackage, "apiUrl">,
+    //   arch: Arch,
+    //   repositoryName: string,
+    //   multibuildName?: string
+    // )
+    assert(multibuildName === undefined);
+
+    const pkgName =
+      repositoryNameOrMultibuild === undefined
+        ? projectNameOrPkg.name
+        : `${projectNameOrPkg.name}:${repositoryNameOrMultibuild}`;
+
+    return `/${projectNameOrPkg.projectName}/${archOrRepositoryName}/${packageNameOrArch}/${pkgName}`;
+  }
+}
+
+interface BuildStatusApiReply {
+  status: {
+    $: { package: string; code: PackageStatusCode; dirty?: "true" | "false" };
+    details?: "" | string | string[];
+  };
+}
+
+/** Status of a package build */
+export interface BuildStatus {
+  /** Name of the package */
+  readonly packageName: string;
+  /** status of the build */
+  readonly code: PackageStatusCode;
+  /**
+   * Indicates whether the repository of this build job is in a dirty state
+   * (i.e. other build jobs are present).
+   */
+  readonly dirty: boolean;
+  /** Optional details about the build status */
+  readonly details?: string;
+}
+
+function buildStatusFromApi(buildStatus: BuildStatusApiReply): BuildStatus {
+  const { package: packageName, code, dirty } = buildStatus.status.$;
+  const details = buildStatus.status.details;
+  return withoutUndefinedMembers({
+    packageName,
+    code,
+    dirty: dirty === undefined ? false : dirty === "true",
+    details:
+      details === undefined || details === ""
+        ? undefined
+        : Array.isArray(details)
+        ? details.join("\n")
+        : details
+  });
+}
+
+export async function fetchBuildStatus(
+  con: Connection,
+  projectName: string,
+  packageName: string,
+  arch: Arch,
+  repositoryName: string,
+  multibuildName?: string
+): Promise<BuildStatus>;
+export async function fetchBuildStatus(
+  con: Connection,
+  pkg: BasePackage | Omit<BasePackage, "apiUrl">,
+  arch: Arch,
+  repositoryName: string,
+  multibuildName?: string
+): Promise<BuildStatus>;
+
+/**
+ * Fetch the status of the last or current build job.
+ *
+ * @throws [[ApiError]] if the package is invalid, if the repository does not
+ *     exist or if there is no such architecture for the supplied repository.
+ *
+ * **Caution:** An invalid `multibuildName` does **not** result in an Error!
+ * See: https://github.com/openSUSE/open-build-service/issues/10526
+ */
+export async function fetchBuildStatus(
+  con: Connection,
+  projectNameOrPkg: string | BasePackage | Omit<BasePackage, "apiUrl">,
+  packageNameOrArch: string | Arch,
+  archOrRepositoryName: Arch | string,
+  repositoryNameOrMultibuild?: string,
+  multibuildName?: string
+): Promise<BuildStatus> {
+  const route = `/build/${createBuildRoute(
+    projectNameOrPkg,
+    packageNameOrArch,
+    archOrRepositoryName,
+    repositoryNameOrMultibuild,
+    multibuildName
+  )}/_status`;
+
+  return buildStatusFromApi(await con.makeApiCall(route));
+}
+
+interface JobStatusApiReply {
+  jobstatus:
+    | {
+        $: { code: RepositoryCode; result?: JobResult; details?: string };
+        starttime: string;
+        endtime?: string;
+        lastduration?: string;
+        workerid: string;
+        hostarch: Arch;
+        arch?: Arch;
+        uri: string;
+        jobid: string;
+        job: string;
+        attempt?: string;
+      }
+    | "";
+}
+
+export const enum JobResult {
+  Succeeded = "succeeded",
+  Failed = "failed",
+  Unchanged = "unchanged"
+}
+
+/** The status of a build job */
+export interface JobStatus {
+  /** Status of this build job */
+  readonly code: RepositoryCode;
+
+  /** If the job finished, then its result is available in this field */
+  readonly result?: JobResult;
+
+  readonly details?: string;
+
+  /** Time at which the build job started */
+  readonly startTime: Date;
+  /**
+   * Time at which the build job ended, if it finished, otherwise it is not
+   * present.
+   */
+  readonly endTime?: Date;
+  /** Duration of the previous build job. */
+  readonly lastDuration?: number;
+  /** Internal id of the worker */
+  readonly workerId: string;
+
+  /** Architecture of the worker */
+  readonly hostArch: Arch;
+
+  /** Architecture of the build */
+  readonly arch?: Arch;
+
+  /** Internal uri to reach the worker */
+  readonly uri: string;
+
+  /** md5 hash of the job id */
+  readonly jobId: string;
+  /** internal name of the job */
+  readonly job?: string;
+  /** number of attempts that were done to finish this job */
+  readonly attempt?: number;
+}
+
+function jobStatusFromApi(jobStatus: JobStatusApiReply): JobStatus | undefined {
+  if (jobStatus.jobstatus === "") {
+    return undefined;
+  }
+
+  const {
+    starttime,
+    endtime,
+    lastduration,
+    workerid,
+    hostarch,
+    arch,
+    uri,
+    jobid,
+    job,
+    attempt
+  } = jobStatus.jobstatus;
+  return withoutUndefinedMembers({
+    code: jobStatus.jobstatus.$.code,
+    result: jobStatus.jobstatus.$.result,
+    details: jobStatus.jobstatus.$.details,
+    startTime: dateFromUnixTimeStamp(starttime),
+    endTime: undefinedIfNoInput(endtime, dateFromUnixTimeStamp),
+    lastDuration: undefinedIfNoInput(lastduration, strToInt),
+    workerId: workerid,
+    hostArch: hostarch,
+    arch,
+    uri,
+    job,
+    jobId: jobid,
+    attempt: undefinedIfNoInput(attempt, strToInt)
+  });
+}
+
+export async function fetchJobStatus(
+  con: Connection,
+  projectName: string,
+  packageName: string,
+  arch: Arch,
+  repositoryName: string,
+  multibuildName?: string
+): Promise<JobStatus | undefined>;
+
+export async function fetchJobStatus(
+  con: Connection,
+  pkg: BasePackage | Omit<BasePackage, "apiUrl">,
+  arch: Arch,
+  repositoryName: string,
+  multibuildName?: string
+): Promise<JobStatus | undefined>;
+
+/**
+ * Fetch the status of a running build job (if one exists).
+ *
+ * @return A promise resolving to a either a [[JobStatus]] or undefined if no
+ *     build job exists.
+ */
+export async function fetchJobStatus(
+  con: Connection,
+  projectNameOrPkg: string | BasePackage | Omit<BasePackage, "apiUrl">,
+  packageNameOrArch: string | Arch,
+  archOrRepositoryName: Arch | string,
+  repositoryNameOrMultibuild?: string,
+  multibuildName?: string
+): Promise<JobStatus | undefined> {
+  const route = `/build/${createBuildRoute(
+    projectNameOrPkg,
+    packageNameOrArch,
+    archOrRepositoryName,
+    repositoryNameOrMultibuild,
+    multibuildName
+  )}/_jobstatus`;
+
+  return jobStatusFromApi(await con.makeApiCall(route));
+}
+
+export const enum FetchFinishedLog {
+  Last,
+  LastSucceeded
+}
+
+/** Additional options for fetching build logs */
+export interface LogFetchOptions {
+  /**
+   * For multibuild packages, the multibuild suffix/name can be specified here
+   * to retrieve the appropriate logfile
+   */
+  multibuildName?: string;
+
+  /**
+   * When set to true, then the build service will send out the current log and
+   * terminate the connection immediately even if the build has not finished
+   * yet.
+   * Set this option to retrieve the current log in a reasonable amount of time,
+   * as [[fetchBuildLog]] will not resolve until the build has finished.
+   *
+   * Defaults to `false`.
+   */
+  noStream?: boolean;
+
+  /**
+   * Set this flag to retrieve either the log of the last build or the log of
+   * the last successful build. If unset, then the current log is retrieved.
+   */
+  fetchFinishedLog?: FetchFinishedLog;
+
+  /**
+   * A callback function that is invoked every time a new chunk of the log is
+   * received from the Build Service. If [[noStream]] is set to false, then
+   * providing a callback results in an error.
+   */
+  streamCallback?: (logChunk: Buffer) => void;
+  /** Optional `this` argument for [[streamCallback]] */
+  streamCallbackThisArg?: any;
+
+  /**
+   * Timeout for the whole request when [[noStream]] is `false`. Defaults to 1
+   * hour. This value is ignored when [[noStream]] is `true`.
+   */
+  streamTimeoutMs?: number;
+}
+
+export async function fetchBuildLog(
+  con: Connection,
+  projectName: string,
+  packageName: string,
+  arch: Arch,
+  repositoryName: string,
+  logFetchOptions?: LogFetchOptions
+): Promise<string>;
+export async function fetchBuildLog(
+  con: Connection,
+  pkg: BasePackage | Omit<BasePackage, "apiUrl">,
+  arch: Arch,
+  repositoryName: string,
+  logFetchOptions?: LogFetchOptions
+): Promise<string>;
+
+export async function fetchBuildLog(
+  con: Connection,
+  projectNameOrPkg: string | BasePackage | Omit<BasePackage, "apiUrl">,
+  packageNameOrArch: string | Arch,
+  archOrRepositoryName: Arch | string,
+  repositoryNameOrLogFetchOptions?: string | LogFetchOptions,
+  logFetchOptions?: LogFetchOptions
+): Promise<string> {
+  if (logFetchOptions?.noStream === true) {
+    if (logFetchOptions?.streamCallback !== undefined) {
+      throw new Error(
+        "Cannot provide a stream callback with noStream set to true"
+      );
+    }
+  }
+
+  const repositoryNameOrMultibuild =
+    typeof repositoryNameOrLogFetchOptions === "string"
+      ? repositoryNameOrLogFetchOptions
+      : repositoryNameOrLogFetchOptions?.multibuildName;
+  const logFetchOpts =
+    typeof repositoryNameOrLogFetchOptions === "string"
+      ? logFetchOptions
+      : repositoryNameOrLogFetchOptions;
+  const route = `/build/${createBuildRoute(
+    projectNameOrPkg,
+    packageNameOrArch,
+    archOrRepositoryName,
+    repositoryNameOrMultibuild,
+    logFetchOptions?.multibuildName
+  )}/_log`;
+
+  const url = new URL(route, con.url);
+
+  let maxRetries: number | undefined;
+  let timeoutMs: number | undefined;
+  if (logFetchOptions?.noStream === true) {
+    maxRetries = 0;
+    timeoutMs = logFetchOpts?.streamTimeoutMs ?? 3600 * 1000;
+  }
+
+  if (logFetchOpts?.noStream === true) {
+    url.searchParams.append("nostream", "1");
+  }
+  if (logFetchOpts?.fetchFinishedLog !== undefined) {
+    if (logFetchOpts.fetchFinishedLog === FetchFinishedLog.Last) {
+      url.searchParams.append("last", "1");
+    } else if (
+      logFetchOpts.fetchFinishedLog === FetchFinishedLog.LastSucceeded
+    ) {
+      url.searchParams.append("lastsucceeded", "1");
+    }
+  }
+
+  return (
+    await con.makeApiCall(url, {
+      decodeResponseFromXml: false,
+      timeoutMs,
+      maxRetries,
+      onDataReceived: logFetchOpts?.streamCallback,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      onDataReceivedThisArg: logFetchOpts?.streamCallbackThisArg
+    })
+  ).toString();
 }

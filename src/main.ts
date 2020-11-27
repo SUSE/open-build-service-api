@@ -26,7 +26,12 @@ export {
   Binary,
   BuildResult,
   BuildStatusView,
+  fetchBuildLog,
   fetchBuildResults,
+  fetchBuildStatus,
+  FetchFinishedLog,
+  fetchJobStatus,
+  LogFetchOptions,
   PackageStatusCode,
   RepositoryCode
 } from "./build-result";

@@ -24,10 +24,15 @@ import { Arch } from "../src/api/base-types";
 import {
   BuildResult,
   BuildStatusView,
+  fetchBuildLog,
   fetchBuildResults,
+  fetchBuildStatus,
+  FetchFinishedLog,
+  fetchJobStatus,
   PackageStatusCode,
   RepositoryCode
 } from "../src/build-result";
+import { ApiError } from "../src/error";
 import {
   afterEachRecordHook,
   ApiType,
@@ -588,5 +593,284 @@ describe("BuildResult", function () {
         multiBuild: false
       }).should.eventually.deep.equal(expectedWithoutMultibuild);
     });
+  });
+});
+
+describe("BuildLog", function () {
+  this.timeout(10000);
+  const con = getTestConnection(ApiType.Production);
+
+  beforeEach(beforeEachRecordHook);
+  afterEach(afterEachRecordHook);
+
+  describe("#fetchBuildLog", () => {
+    it("fetches the log of a build package", async () => {
+      const log = await fetchBuildLog(
+        con,
+        "openSUSE:Factory",
+        "jtc",
+        Arch.X86_64,
+        "standard"
+      );
+      log.should.include(
+        "Building jtc for project 'openSUSE:Factory' repository 'standard' arch 'x86_64' srcmd5"
+      );
+    });
+
+    it("fetches the build log of multibuilds", async () => {
+      const logLibvirt = await fetchBuildLog(
+        con,
+        "openSUSE:Factory",
+        "kiwi-images-vagrant",
+        Arch.X86_64,
+        "images",
+        { multibuildName: "libvirt" }
+      );
+      logLibvirt.should.include(
+        "Building kiwi-images-vagrant:libvirt for project 'openSUSE:Factory' repository 'images' arch 'x86_64' srcmd5"
+      );
+
+      await fetchBuildLog(
+        con,
+        "openSUSE:Factory",
+        "kiwi-images-vagrant",
+        Arch.X86_64,
+        "images"
+      ).should.be.rejectedWith(
+        ApiError,
+        /Failed to make a GET request to.*got a 404/
+      );
+    });
+
+    it("fetches the last build", async () => {
+      const log = await fetchBuildLog(
+        con,
+        "openSUSE:Factory",
+        "jtc",
+        Arch.I586,
+        "standard",
+        { fetchFinishedLog: FetchFinishedLog.Last }
+      );
+      log.should.include(
+        "Building jtc for project 'openSUSE:Factory' repository 'standard' arch 'i586' srcmd5"
+      );
+
+      await fetchBuildLog(
+        con,
+        "openSUSE:Factory",
+        "jtc",
+        Arch.I586,
+        "standard",
+        { fetchFinishedLog: FetchFinishedLog.LastSucceeded }
+      ).should.eventually.equal(log);
+    });
+
+    it("rejects a stream callback being provided when noStream is true", async () => {
+      await fetchBuildLog(
+        con,
+        "openSUSE:Factory",
+        "jtc",
+        Arch.I586,
+        "standard",
+        { noStream: true, streamCallback: (_c) => {} }
+      ).should.be.rejectedWith(
+        "Cannot provide a stream callback with noStream set to true"
+      );
+    });
+
+    it("only fetches the current part of the log with noStream: true", async () => {
+      const log = await fetchBuildLog(
+        con,
+        "devel:libraries:c_c++",
+        "libevent",
+        Arch.Armv7l,
+        "openSUSE_Factory_ARM",
+        { noStream: true }
+      );
+      log.should.not.match(/build: extracting built packages/);
+    });
+  });
+});
+
+describe("JobStatus", () => {
+  const con = getTestConnection(ApiType.Production);
+
+  beforeEach(beforeEachRecordHook);
+  afterEach(afterEachRecordHook);
+
+  it("fetches the job status of a building package", async () => {
+    await fetchJobStatus(
+      con,
+      "Virtualization:vagrant",
+      "rubygem-mime",
+      Arch.Aarch64,
+      "SLE_15_SP2"
+    ).should.eventually.deep.equal({
+      code: PackageStatusCode.Building,
+      hostArch: Arch.Aarch64,
+      startTime: new Date("Thu, 03 Dec 2020 15:49:32 +0100"),
+      jobId: "e3e43d501b72c049f5c172ec08bc990f",
+      uri: "http://192.168.240.1:45291",
+      workerId: "obs-arm-1:7"
+    });
+  });
+
+  it("fetches the job status of a package that just finished building", async () => {
+    await fetchJobStatus(
+      con,
+      "Virtualization:vagrant",
+      "rubygem-mime",
+      Arch.Aarch64,
+      "SLE_15_SP2"
+    ).should.eventually.deep.equal({
+      code: RepositoryCode.Finished,
+      result: PackageStatusCode.Succeeded,
+      hostArch: Arch.Aarch64,
+      startTime: new Date("Thu, 03 Dec 2020 15:49:32 +0100"),
+      endTime: new Date("Thu, 03 Dec 2020 15:53:03 +0100"),
+      jobId: "e3e43d501b72c049f5c172ec08bc990f",
+      uri: "http://192.168.240.1:45291",
+      workerId: "obs-arm-1:7"
+    });
+  });
+
+  it("fetches the job status of a package that is not building", async () => {
+    await fetchJobStatus(
+      con,
+      "Virtualization:vagrant",
+      "vagrant",
+      Arch.X86_64,
+      "openSUSE_Tumbleweed"
+    ).should.eventually.equal(undefined);
+  });
+
+  it("fetches the job status of a package with a set lastduration", async () => {
+    await fetchJobStatus(
+      con,
+      "Virtualization:vagrant",
+      "vagrant",
+      Arch.Aarch64,
+      "openSUSE_Factory_ARM"
+    ).should.eventually.deep.equal({
+      code: RepositoryCode.Building,
+      hostArch: Arch.Aarch64,
+      lastDuration: 6924,
+      startTime: new Date("Fri, 04 Dec 2020 10:16:58 +0100"),
+      uri: "http://192.168.240.9:46145",
+      jobId: "b66ee49a08461aa2dab7c13561c9bd40",
+      workerId: "obs-arm-9:40"
+    });
+  });
+});
+
+describe("BuildStatus", () => {
+  const con = getTestConnection(ApiType.Production);
+
+  beforeEach(beforeEachRecordHook);
+  afterEach(afterEachRecordHook);
+
+  it("fetches the build status of a package", async () => {
+    await fetchBuildStatus(
+      con,
+      {
+        projectName: "Virtualization:Appliances:Images:openSUSE-Tumbleweed",
+        name: "kiwi-images-vagrant"
+      },
+      Arch.X86_64,
+      "openSUSE_Tumbleweed",
+      "libvirt"
+    ).should.eventually.deep.equal({
+      code: PackageStatusCode.Succeeded,
+      packageName: "kiwi-images-vagrant:libvirt",
+      dirty: false
+    });
+  });
+
+  it("fetches the build status of a multibuild only package, but shows it as excluded", async () => {
+    await fetchBuildStatus(
+      con,
+      {
+        projectName: "Virtualization:Appliances:Images:openSUSE-Tumbleweed",
+        name: "kiwi-images-vagrant"
+      },
+      Arch.X86_64,
+      "openSUSE_Tumbleweed"
+    ).should.eventually.deep.equal({
+      code: PackageStatusCode.Excluded,
+      packageName: "kiwi-images-vagrant",
+      dirty: false
+    });
+  });
+
+  it("shows a package as dirty if the repo has not settled yet", async () => {
+    await fetchBuildStatus(
+      con,
+      {
+        projectName: "Virtualization:vagrant",
+        name: "vagrant"
+      },
+      Arch.X86_64,
+      "openSUSE_Tumbleweed"
+    ).should.eventually.deep.equal({
+      code: PackageStatusCode.Finished,
+      packageName: "vagrant",
+      dirty: true,
+      details: "succeeded"
+    });
+  });
+
+  it("throws an error for invalid project names", async () => {
+    await fetchBuildStatus(
+      con,
+      "Virtualization:vagranta",
+      "vagrant",
+      Arch.X86_64,
+      "openSUSE_Tumbleweed"
+    ).should.be.rejectedWith(ApiError, /project not found/i);
+  });
+
+  it("throws an error for invalid package names", async () => {
+    await fetchBuildStatus(
+      con,
+      "Virtualization:vagrant",
+      "vagranta",
+      Arch.X86_64,
+      "openSUSE_Tumbleweed"
+    ).should.be.rejectedWith(ApiError, /package not found/i);
+  });
+
+  it("throws an error for invalid repository names", async () => {
+    await fetchBuildStatus(
+      con,
+      "Virtualization:vagrant",
+      "vagrant",
+      Arch.X86_64,
+      "Debian_Buster"
+    ).should.be.rejectedWith(ApiError, /has no repository/i);
+  });
+
+  it("throws an error for invalid architectures and multibuild names", async () => {
+    await fetchBuildStatus(
+      con,
+      "Virtualization:vagrant",
+      "vagrant",
+      Arch.Aarch64,
+      "openSUSE_Tumbleweed"
+    ).should.be.rejectedWith(ApiError, /has no architecture.*aarch64/i);
+  });
+
+  xit("throws an error for invalid multibuild names", async () => {
+    // this should error out, but instead we get a success from OBS :(
+    // see: https://github.com/openSUSE/open-build-service/issues/10526
+    await fetchBuildStatus(
+      con,
+      {
+        projectName: "Virtualization:vagrant",
+        name: "vagrant"
+      },
+      Arch.X86_64,
+      "openSUSE_Tumbleweed",
+      "invalid"
+    ).should.be.rejectedWith(ApiError);
   });
 });
