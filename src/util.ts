@@ -300,9 +300,11 @@ function extractPropertyFromObjectAsArray<T>(
   return res;
 }
 
-// extract an array of elements with the given key
-//
-// Returns undefined if the element is not present
+/**
+ * extract an array of elements with the given key
+ *
+ * @return undefined if the element is not present
+ */
 export function extractElementAsArrayIfPresent<T>(
   data: any,
   key: string,
@@ -314,8 +316,10 @@ export function extractElementAsArrayIfPresent<T>(
   return extractPropertyFromObjectAsArray<T>(data, key, options);
 }
 
-// Extract an element with the given key from an object. If the key is not
-// present, then an empty array is returned.
+/**
+ * Extract an element with the given key from an object. If the key is not
+ * present, then an empty array is returned.
+ */
 export function extractElementAsArray<T>(
   data: any,
   key: string,
@@ -496,6 +500,7 @@ export async function createOrEnsureEmptyDir(path: string): Promise<void> {
     }
   }
 }
+
 /**
  * Remove the property with the given `key` from `obj` and return the result.
  */
@@ -505,8 +510,8 @@ export function dropProperty<T, K extends keyof T>(obj: T, key: K): Omit<T, K> {
 }
 
 /**
- * Returns undefined if obj is undefined, otherwise the result of `fn(obj)` is
- * returned.
+ * Returns `undefined` if `obj` is `undefined`, otherwise the result of
+ * `fn(obj)` is returned.
  */
 export function undefinedIfNoInput<T, U>(
   obj: T | undefined,
