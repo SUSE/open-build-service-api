@@ -11,7 +11,7 @@ module.exports = {
     "@typescript-eslint/no-floating-promises": "error",
     "@typescript-eslint/array-type": "error",
     "@typescript-eslint/consistent-type-definitions": ["error", "interface"],
-    "@typescript-eslint/restrict-template-expressions": "warn",
+    "@typescript-eslint/restrict-template-expressions": "error",
     "@typescript-eslint/no-unused-vars": [
       "error",
       { varsIgnorePattern: "_.*" }

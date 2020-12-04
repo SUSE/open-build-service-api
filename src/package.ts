@@ -22,6 +22,7 @@
 import * as assert from "assert";
 import { promises as fsPromises } from "fs";
 import { join, resolve } from "path";
+import { inspect } from "util";
 import {
   Directory,
   directoryFromApi,
@@ -369,7 +370,11 @@ export function fileListFromDirectory(
 
   if (fileDir.linkInfos !== undefined && fileDir.linkInfos.length > 1) {
     throw new Error(
-      `Invalid package ${pkg.projectName}/${pkg.name} received: it contains more than one <linkinfo> entry: ${fileDir.linkInfos}`
+      `Invalid package ${pkg.projectName}/${
+        pkg.name
+      } received: it contains more than one <linkinfo> entry: ${inspect(
+        fileDir.linkInfos
+      )}`
     );
   }
 
@@ -626,11 +631,13 @@ export async function deletePackage(
     typeof projNameOrPkg === "string"
       ? packageName !== undefined
       : packageName === undefined,
-    `Invalid overload usage: when projNameOrPkg (${projNameOrPkg}) is a string, then packageName (${packageName}) must be a string as well. Otherwise it must be undefined.`
+    `Invalid overload usage: when projNameOrPkg (${projNameOrPkg.toString()}) is a string, then packageName (${
+      packageName ?? "undefined"
+    }) must be a string as well. Otherwise it must be undefined.`
   );
   const route =
     typeof projNameOrPkg === "string"
-      ? `/source/${projNameOrPkg}/${packageName}`
+      ? `/source/${projNameOrPkg}/${packageName!}`
       : `/source/${projNameOrPkg.projectName}/${projNameOrPkg.name}`;
   return statusReplyFromApi(
     await con.makeApiCall<StatusReplyApiReply>(route, {
@@ -773,7 +780,7 @@ export async function checkOutPackage(
 
   assert(
     packageName !== undefined && path !== undefined,
-    `Invalid overload usage: packageName and path must both be defined when conOrFrozenPkg (${conOrFrozenPkg}) is a Connection.`
+    `Invalid overload usage: packageName and path must both be defined when conOrFrozenPkg is a Connection.`
   );
 
   const frzPkg = await fetchPackage(

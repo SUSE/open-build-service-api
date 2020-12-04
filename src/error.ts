@@ -147,11 +147,21 @@ export class ApiError extends Error {
 
     let errMsg = `Failed to make a ${method} request to ${url.href}, got a ${statusCode}`;
     if (decodedStatus !== undefined) {
-      errMsg = errMsg.concat(`:
-status: ${decodedStatus.code}
-summary: ${decodedStatus.summary}
-details: ${decodedStatus.details}
+      const extraErrMsg = [
+        `status: ${decodedStatus.code}
+`
+      ];
+      [
+        { name: "summary", value: decodedStatus.summary },
+        { name: "details", value: decodedStatus.details }
+      ].forEach(({ name, value }) => {
+        if (value !== undefined) {
+          extraErrMsg.push(`${name}: ${value}
 `);
+        }
+      });
+
+      errMsg = errMsg.concat(...extraErrMsg);
     }
 
     super(errMsg);

@@ -254,7 +254,9 @@ export function applyDefaultSetting(
       ),
       `All values of the repositorySetting must be defined, but got ${[
         ...repoSettings.values()
-      ]}`
+      ]
+        .map((v) => v ?? "undefined")
+        .join(", ")}`
     );
 
     return repoSettings as Map<Arch, boolean>;

@@ -560,7 +560,9 @@ export async function commit(
   const newDir = directoryFromApi(newDirectoryApiReply);
   assert(
     newDir.name === pkg.name,
-    `Invalid reply received from OBS: replied package as a different name, expected ${pkg.name} but got ${newDir.name}`
+    `Invalid reply received from OBS: replied package as a different name, expected ${
+      pkg.name
+    } but got ${newDir.name ?? "undefined"}`
   );
 
   const {
