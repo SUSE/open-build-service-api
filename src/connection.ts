@@ -401,7 +401,7 @@ export class Connection {
     if (typeof usernameOrToken === "string") {
       assert(
         typeof passwordOrOptions === "string",
-        `invalid Overloaded call of the Connection constructor, 2nd parameter must be a string, but got a ${typeof passwordOrOptions} instead`
+        `invalid overloaded call of the Connection constructor, 2nd parameter must be a string, but got a ${typeof passwordOrOptions} instead`
       );
       this.authSource = {
         username: usernameOrToken,
