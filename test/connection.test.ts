@@ -27,7 +27,7 @@ import { createSandbox, SinonSpy } from "sinon";
 import { URL } from "url";
 import { Account } from "../src/account";
 import { Connection, normalizeUrl, RequestMethod } from "../src/connection";
-import { ApiError, TimeoutError } from "../src/error";
+import { ApiError, isXmlParseError, TimeoutError } from "../src/error";
 import { TokenKind } from "../src/token";
 import { range, sleep } from "../src/util";
 import {
@@ -146,12 +146,19 @@ describe("Connection", () => {
     });
 
     it("throws an exception the payload is not XML", async () => {
-      const conn = new Connection("don'tCare", "neitherHere", {
+      const con = new Connection("don'tCare", "neitherHere", {
         url: "https://jsonplaceholder.typicode.com"
       });
-      await conn
-        .makeApiCall("todos/1")
-        .should.be.rejectedWith(Error, /char.*{/i);
+
+      let exceptionCaught = false;
+      try {
+        await con.makeApiCall("todos/1");
+      } catch (err) {
+        isXmlParseError(err).should.equal(true);
+        JSON.parse(err.payload.toString()).should.deep.equal(todo1);
+        exceptionCaught = true;
+      }
+      exceptionCaught.should.equal(true);
     });
 
     it("does not parse the reply when decodeReply is false", async () => {

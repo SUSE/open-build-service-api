@@ -224,3 +224,17 @@ export class TimeoutError extends Error {
     Object.setPrototypeOf(this, TimeoutError.prototype);
   }
 }
+
+/**
+ * Error thrown by [[Connection.makeApiCall]] if a reply is successfully
+ * received, but parsing it from XML fails.
+ */
+export interface XmlParseError extends Error {
+  /** The received data */
+  payload: any;
+}
+
+/** Type guard for a [[XmlParseError]] */
+export function isXmlParseError(err: Error): err is XmlParseError {
+  return (err as XmlParseError).payload !== undefined;
+}

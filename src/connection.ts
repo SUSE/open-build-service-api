@@ -24,7 +24,7 @@ import * as http from "http";
 import * as https from "https";
 import { URL } from "url";
 import { Account } from "./account";
-import { ApiError, TimeoutError } from "./error";
+import { ApiError, TimeoutError, XmlParseError } from "./error";
 import { isToken, Token } from "./token";
 import { sleep } from "./util";
 import { newXmlBuilder, newXmlParser } from "./xml";
@@ -510,6 +510,9 @@ export class Connection {
    * Perform a request to the API and convert replies' body from XML into a JS
    * object.
    *
+   * @throw
+   *     [[XmlParseError]] if a payload is received but parsing the XML fails.
+   *
    * @return The body of the reply, decoded from XML via xml2js'
    *     [parseString](https://github.com/Leonidas-from-XIV/node-xml2js#usage).
    *     The reply is only decoded when the request succeeds.
@@ -717,6 +720,10 @@ export class Connection {
 
             const finish = (err: Error | null, payload: any): void => {
               if (err) {
+                // payload that is passed to finish in the error case is
+                // null/undefined, as the parsing failed, so we just grab the
+                // body and pass it down the line
+                (err as XmlParseError).payload = body.join("");
                 reject(err);
               }
 
