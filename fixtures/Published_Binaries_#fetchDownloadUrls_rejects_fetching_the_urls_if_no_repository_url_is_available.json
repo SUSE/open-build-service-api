@@ -1,0 +1,43 @@
+[
+    {
+        "scope": "http://localhost:3000",
+        "method": "GET",
+        "path": "/configuration.xml",
+        "body": "",
+        "status": 200,
+        "response": "<configuration>\n  <title>Open Build Service</title>\n  <description>  &lt;p class=\"description\"&gt;\n    The &lt;a href=\"http://openbuildservice.org\"&gt;Open Build Service (OBS)&lt;/a&gt;\n    is an open and complete distribution development platform that provides a transparent\n    infrastructure for development of Linux distributions, used by openSUSE, MeeGo and other distributions.\n    Supporting also Fedora, Debian, Ubuntu, RedHat and other Linux distributions.\n  &lt;/p&gt;\n  &lt;p class=\"description\"&gt;\n    The OBS is developed under the umbrella of the &lt;a href=\"http://www.opensuse.org\"&gt;openSUSE project&lt;/a&gt;.\n    Please find further informations on the\n    &lt;a href=\"http://wiki.opensuse.org/openSUSE:Build_Service\"&gt;openSUSE Project wiki pages&lt;/a&gt;.\n  &lt;/p&gt;\n\n  &lt;p class=\"description\"&gt;\n    The Open Build Service developer team is greeting you. In case you use your OBS productive in your facility,\n    please do us a favor and add yourself at\n    &lt;a href=\"http://wiki.opensuse.org/openSUSE:Build_Service_installations\"&gt;this wiki page&lt;/a&gt;.\n    Have fun and fast build times!\n  &lt;/p&gt;\n</description>\n  <name>private</name>\n  <download_on_demand>on</download_on_demand>\n  <enforce_project_keys>on</enforce_project_keys>\n  <anonymous>on</anonymous>\n  <registration>allow</registration>\n  <default_access_disabled>off</default_access_disabled>\n  <allow_user_to_create_home_project>on</allow_user_to_create_home_project>\n  <disallow_group_creation>off</disallow_group_creation>\n  <change_password>on</change_password>\n  <obs_url>https://unconfigured.openbuildservice.org</obs_url>\n  <hide_private_options>off</hide_private_options>\n  <gravatar>on</gravatar>\n  <cleanup_empty_projects>on</cleanup_empty_projects>\n  <disable_publish_for_branches>on</disable_publish_for_branches>\n  <admin_email>unconfigured@openbuildservice.org</admin_email>\n  <unlisted_projects_filter>^home:.+</unlisted_projects_filter>\n  <unlisted_projects_filter_description>home projects</unlisted_projects_filter_description>\n  <schedulers>\n    <arch>armv7l</arch>\n    <arch>i586</arch>\n    <arch>x86_64</arch>\n  </schedulers>\n</configuration>\n",
+        "rawHeaders": [
+            "X-Frame-Options",
+            "SAMEORIGIN",
+            "X-XSS-Protection",
+            "1; mode=block",
+            "X-Content-Type-Options",
+            "nosniff",
+            "X-Download-Options",
+            "noopen",
+            "X-Permitted-Cross-Domain-Policies",
+            "none",
+            "Referrer-Policy",
+            "strict-origin-when-cross-origin",
+            "X-Opensuse-APIVersion",
+            "2.10.50",
+            "Content-Type",
+            "application/xml; charset=utf-8",
+            "X-Opensuse-Runtimes",
+            "{\"view\":0.0743950076866895,\"db\":1.7880800005514175,\"backend\":0}",
+            "ETag",
+            "W/\"e3c55676d6fdec0a3119fbb9c5d44e5f\"",
+            "Cache-Control",
+            "max-age=0, private, must-revalidate",
+            "X-Request-Id",
+            "850843c2-6f00-4159-b8bd-670ebe9724b4",
+            "X-Runtime",
+            "0.202588",
+            "Connection",
+            "close",
+            "Transfer-Encoding",
+            "chunked"
+        ],
+        "responseIsBinary": false
+    }
+]

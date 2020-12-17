@@ -57,6 +57,14 @@ export {
 } from "./package";
 export * from "./project";
 export {
+  fetchDownloadUrls,
+  fetchProjectsRepositoryConfigFile,
+  fetchPublishedFile,
+  fetchPublishedProjects,
+  fetchPublishedRepositories,
+  fetchPublishedRepositoryContents
+} from "./published-binaries";
+export {
   fetchRequest,
   fetchRequestDiff,
   requestDeletion,
