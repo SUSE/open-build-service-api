@@ -65,6 +65,10 @@ export {
   fetchPublishedRepositoryContents
 } from "./published-binaries";
 export {
+  fetchProjectsPathsRecursively,
+  repositoryWithFlagsFromMeta
+} from "./repository";
+export {
   fetchRequest,
   fetchRequestDiff,
   requestDeletion,

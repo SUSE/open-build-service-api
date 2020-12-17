@@ -20,16 +20,18 @@
  */
 
 import * as assert from "assert";
-import { Arch, BaseRepository, CommonMeta } from "./api/base-types";
+import { Arch, BaseRepository, CommonMeta, Path } from "./api/base-types";
 import {
-  RepositorySettingWithoutDefaults,
-  repositorySettingFromFlag,
-  simplifyRepositorySetting,
+  applyDefaultSetting,
   RepositorySetting,
-  applyDefaultSetting
+  repositorySettingFromFlag,
+  RepositorySettingWithoutDefaults,
+  simplifyRepositorySetting
 } from "./api/flag";
 import { PackageMeta } from "./api/package-meta";
-import { ProjectMeta } from "./api/project-meta";
+import { fetchProjectMeta, ProjectMeta } from "./api/project-meta";
+import { Connection } from "./connection";
+import { BaseProject } from "./project";
 import { withoutUndefinedMembers, zip } from "./util";
 
 const DEBUG_INFO_DEFAULT = false;
@@ -56,9 +58,7 @@ type RepositoryWithFlagType<T> = BaseRepository & {
  */
 export type RepositoryWithFlags = RepositoryWithFlagType<RepositorySetting>;
 
-type RepositoryWithNonDefaultFlags = RepositoryWithFlagType<
-  RepositorySettingWithoutDefaults
->;
+type RepositoryWithNonDefaultFlags = RepositoryWithFlagType<RepositorySettingWithoutDefaults>;
 
 interface SetDefaultsOption {
   setDefaults: boolean;
@@ -225,6 +225,49 @@ export function repositoryWithFlagsFromMeta(
     });
   }
   return repos;
+}
+
+/**
+ * Fetch the paths of the specified project and repository and recursively
+ * expand the last path entry in the same way as OBS does.
+ *
+ * When specifying repository paths, OBS will automatically include all
+ * repositories of the **last** path in the repository in your current project
+ * (this recurses until there are no more paths to be included). This function
+ * performs the same expansion and returns the recursively expanded paths.
+ *
+ * If the project has no defined repositories or no repository that has the
+ * supplied `repositoryName`, then an empty array is returned.
+ */
+export async function fetchProjectsPathsRecursively(
+  con: Connection,
+  project: string | BaseProject,
+  repositoryName: string
+): Promise<Path[]> {
+  const projectName = typeof project === "string" ? project : project.name;
+  const meta = await fetchProjectMeta(con, projectName);
+  const foundRepo = meta.repository?.find(
+    (repo) => repo.name === repositoryName
+  );
+  if (foundRepo === undefined) {
+    return [];
+  }
+
+  const paths: Path[] = [{ project: projectName, repository: repositoryName }];
+
+  if (foundRepo.path === undefined || foundRepo.path.length === 0) {
+    return paths;
+  }
+  paths.push(...foundRepo.path.slice(0, foundRepo.path.length - 1));
+  const lastPath = foundRepo.path[foundRepo.path.length - 1];
+  paths.push(
+    ...(await fetchProjectsPathsRecursively(
+      con,
+      lastPath.project,
+      lastPath.repository
+    ))
+  );
+  return paths;
 }
 
 // export function repositoryWithFlagsFromMeta(
