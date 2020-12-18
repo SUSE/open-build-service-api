@@ -263,6 +263,46 @@ baz
         .should.be.rejectedWith(Error, new RegExp(`${nonExistentCmd}.*ENOENT`));
     }
   );
+
+  describe("ProcessError", () => {
+    myIt("contains the stderr of the failed process", async () => {
+      let exceptionCaught = false;
+      try {
+        await util.runProcess("sh", { stdin: "echo 'bar' >&2 ; exit 1;" });
+      } catch (err) {
+        util.isProcessError(err).should.equal(true);
+        (err as util.ProcessError).stderr.join("\n").should.match(/bar/);
+        exceptionCaught = true;
+      }
+      exceptionCaught.should.equal(true);
+    });
+
+    myIt("contains the stdout of the failed process", async () => {
+      let exceptionCaught = false;
+      try {
+        await util.runProcess("sh", { stdin: "echo 'foo'; exit 1;" });
+      } catch (err) {
+        util.isProcessError(err).should.equal(true);
+        (err as util.ProcessError).stdout.join("\n").should.match(/foo/);
+        exceptionCaught = true;
+      }
+      exceptionCaught.should.equal(true);
+    });
+  });
+
+  describe("#isProcessError", () => {
+    it("does not recognize Errors as ProcessErrors", () => {
+      util
+        .isProcessError(new Error("foo exited with 1, got stderr: "))
+        .should.equal(false);
+    });
+
+    it("recognizes ProcessErrors with no stdout or stderr", () => {
+      util
+        .isProcessError(new util.ProcessError("bar", 1, [], []))
+        .should.equal(true);
+    });
+  });
 });
 
 describe("#pathExists", () => {

@@ -85,6 +85,7 @@ export {
 export { Group, GroupWithRole, User, UserWithRole } from "./user";
 export {
   dropUndefined,
+  isProcessError,
   pathExists,
   PathType,
   ProcessError,

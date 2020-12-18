@@ -332,11 +332,20 @@ export function extractElementAsArray<T>(
   return res === undefined ? [] : res;
 }
 
+/** Type guard for distinguishing a [[ProcessError]]. */
+export function isProcessError(err: Error): err is ProcessError {
+  return (
+    typeof (err as ProcessError).command === "string" &&
+    typeof (err as ProcessError).exitCode === "number"
+  );
+}
+
 /** An Error class for a failed process execution. */
 export class ProcessError extends Error {
   constructor(
     public readonly command: string,
     public readonly exitCode: number,
+    public readonly stdout: any[],
     public readonly stderr: any[]
   ) {
     super(`${command} exited with ${exitCode}, got stderr: ${stderr.join("")}`);
@@ -374,16 +383,16 @@ export function runProcess(
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, { cwd, env: env ?? process.env });
 
-    const output: any[] = [];
+    const stdout: any[] = [];
     const stderr: any[] = [];
 
-    child.stdout.on("data", (data) => output.push(data));
+    child.stdout.on("data", (data) => stdout.push(data));
     child.stderr.on("data", (data) => stderr.push(data));
     child.on("close", (code) => {
       if (code === 0) {
-        resolve(output.join(""));
+        resolve(stdout.join(""));
       } else {
-        reject(new ProcessError(command, code, stderr));
+        reject(new ProcessError(command, code, stdout, stderr));
       }
     });
     child.on("error", (err) => reject(err));
