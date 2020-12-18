@@ -261,6 +261,42 @@ export interface HostSystem {
 }
 
 /**
+ * A remote repository that is not hosted on OBS itself, but fetched from a
+ * remote host.
+ */
+export interface DownloadOnDemand {
+  /** scheduler architecture for which this repository is valid */
+  arch: Arch;
+
+  /**
+   * Url to the repository.
+   *
+   * For rpm-md repositories it is just the URL.
+   * For Debian it can be an URL to a "flat repo". But usually it is a
+   * distribution URL following the `${baseurl}/${dist}/${components}` schema
+   * (Note: this is not a working URL).
+   */
+  url: string;
+  /** Type of the repository meta data */
+  repositoryType: string;
+
+  /**
+   * Only import the architectures in this array. If omitted, all of them are
+   * made available.
+   */
+  architectureFilter?: Arch[];
+
+  /**
+   * Verify the metadata against this host via ssl instead. This does not use a
+   * CA, so a fingerprint **must** be supplied.
+   */
+  sslMaster?: { url: string; fingerprint: string };
+
+  /** GPG public key for metadata signature verification */
+  publicKey?: string;
+}
+
+/**
  * Base interface of a repository (= build target) on OBS
  *
  * This interface contains the common members of the repository that is
@@ -289,6 +325,9 @@ export interface BaseRepository {
   path?: Path[];
 
   hostSystem?: HostSystem;
+
+  /** Remote repositories that are hosted elsewhere */
+  downloadOnDemand?: DownloadOnDemand[];
 }
 
 /**

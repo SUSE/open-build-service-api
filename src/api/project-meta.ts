@@ -21,12 +21,13 @@
 
 import * as assert from "assert";
 import { Connection, RequestMethod } from "../connection";
-import { StatusReply, statusReplyFromApi, StatusReplyApiReply } from "../error";
+import { StatusReply, StatusReplyApiReply, statusReplyFromApi } from "../error";
 import {
   deleteUndefinedAndEmptyMembers,
-  withoutUndefinedMembers,
   extractElementAsArray,
-  extractElementIfPresent
+  extractElementIfPresent,
+  mapOrApplyOptional,
+  withoutUndefinedMembers
 } from "../util";
 import * as baseTypes from "./base-types";
 import * as flag from "./flag";
@@ -39,6 +40,13 @@ export enum Kind {
   MaintenanceRelease = "maintenance_release"
 }
 
+interface DownloadOnDemandApiReply {
+  $: { arch: baseTypes.Arch; repotype: string; url: string };
+  archfilter?: string;
+  pubkey?: string;
+  master?: { $: { url: string; sslfingerprint: string } };
+}
+
 /** Layout of a repository element as converted from OBS' API via xml2js */
 interface BaseRepositoryApiReply {
   $: {
@@ -47,6 +55,7 @@ interface BaseRepositoryApiReply {
     block?: string;
     linkedbuild?: string;
   };
+  download?: DownloadOnDemandApiReply[];
   arch?: string[];
   releaseTarget?: baseTypes.ReleaseTargetApiReply[];
   path?: baseTypes.PathApiReply[];
@@ -69,7 +78,23 @@ function baseRepositoryFromApi(
     rebuild: extractElementIfPresent<baseTypes.RebuildMode>(data.$, "rebuild"),
     releaseTarget: extractElementAsArray(data, "releasetarget", {
       construct: baseTypes.releaseTargetFromApi
-    })
+    }),
+    downloadOnDemand: mapOrApplyOptional(data.download, (dod) =>
+      withoutUndefinedMembers({
+        arch: dod.$.arch,
+        url: dod.$.url,
+        repositoryType: dod.$.repotype,
+        architectureFilter: dod.archfilter?.split(",") as baseTypes.Arch[],
+        publicKey: dod.pubkey,
+        sslMaster:
+          dod.master === undefined
+            ? undefined
+            : {
+                url: dod.master.$.url,
+                fingerprint: dod.master.$.sslfingerprint
+              }
+      })
+    )
   });
 }
 
@@ -87,6 +112,26 @@ function baseRepositoryToApi(
     path: repo.path?.map((pth) => baseTypes.pathToApi(pth)),
     releasetarget: repo.releaseTarget?.map((relTgt) =>
       baseTypes.releaseTargetToApi(relTgt)
+    ),
+    download: repo.downloadOnDemand?.map((dod) =>
+      withoutUndefinedMembers({
+        $: { arch: dod.arch, url: dod.url, repotype: dod.repositoryType },
+        pubkey: dod.publicKey,
+        master:
+          dod.sslMaster === undefined
+            ? undefined
+            : {
+                $: {
+                  url: dod.sslMaster.url,
+                  sslfingerprint: dod.sslMaster.fingerprint
+                }
+              },
+        archfilter:
+          dod.architectureFilter === undefined ||
+          dod.architectureFilter.length === 0
+            ? undefined
+            : dod.architectureFilter.join(",")
+      })
     )
   });
 }
@@ -182,7 +227,7 @@ export function projectMetaToApi(proj: ProjectMeta): ProjectMetaApiReply {
 }
 
 /**
- *
+ * Fetch the meta (= configuration) of a project from the Build Service.
  */
 export async function fetchProjectMeta(
   con: Connection,
@@ -196,17 +241,20 @@ export async function fetchProjectMeta(
   return projectMetaFromApi(res);
 }
 
+/**
+ * Set the project's configuration (the meta) to the provided value.
+ *
+ * **Note:** If the project with the name in [[ProjMeta.name]] does not exist,
+ * then it is created!
+ */
 export async function modifyProjectMeta(
   con: Connection,
   proj: ProjectMeta
 ): Promise<StatusReply> {
   return statusReplyFromApi(
-    await con.makeApiCall<StatusReplyApiReply>(
-      "/source/".concat(proj.name, "/_meta"),
-      {
-        method: RequestMethod.PUT,
-        payload: projectMetaToApi(proj)
-      }
-    )
+    await con.makeApiCall<StatusReplyApiReply>(metaRoute(proj.name), {
+      method: RequestMethod.PUT,
+      payload: projectMetaToApi(proj)
+    })
   );
 }

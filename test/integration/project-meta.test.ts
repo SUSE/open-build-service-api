@@ -23,7 +23,9 @@ import { expect } from "chai";
 import { afterEach, beforeEach, describe, it } from "mocha";
 import {
   Arch,
+  BaseRepository,
   BlockMode,
+  DownloadOnDemand,
   LinkedBuildMode,
   RebuildMode,
   ReleaseTrigger,
@@ -37,21 +39,83 @@ import {
   ProjectMeta
 } from "../../src/api/project-meta";
 import { ApiError } from "../../src/error";
-import { deleteProject } from "../../src/project";
+import { createProject, deleteProject } from "../../src/project";
 import { LocalRole } from "../../src/user";
 import {
   afterEachRecordHook,
   ApiType,
   beforeEachRecordHook,
   getTestConnection,
+  miniObsAdminCon,
+  miniObsOnlyHook,
   miniObsUsername,
   skipIfNoMiniObsHook,
-  miniObsOnlyHook,
   swallowException
 } from "./../test-setup";
 
 const findRepoByNameBuilder = (proj: ProjectMeta) => (repoName: string) =>
   proj.repository?.find((elem) => elem.name === repoName);
+
+const fedora33StandardDoD: DownloadOnDemand[] = [
+  {
+    arch: Arch.X86_64,
+    url: "http://ftp.fau.de/fedora/linux/releases/33/Everything/x86_64/os",
+    repositoryType: "rpmmd",
+    sslMaster: {
+      url:
+        "https://dl.fedoraproject.org/pub/fedora/linux/releases/33/Everything/x86_64/os",
+      fingerprint:
+        "sha256:65a9f760749609c590387157e58a308b0d55d7f343da82bbe5ea945d2f0e338a"
+    }
+  },
+  {
+    arch: Arch.Armv7l,
+    url: "http://ftp.fau.de/fedora/linux/releases/33/Everything/armhfp/os",
+    repositoryType: "rpmmd",
+    sslMaster: {
+      url:
+        "https://dl.fedoraproject.org/pub/fedora/linux/releases/33/Everything/armhfp/os",
+      fingerprint:
+        "sha256:65a9f760749609c590387157e58a308b0d55d7f343da82bbe5ea945d2f0e338a"
+    }
+  },
+  {
+    arch: Arch.Ppc64le,
+    url:
+      "http://ftp-stud.hs-esslingen.de/pub/fedora-secondary/releases/33/Everything/ppc64le/os/",
+    repositoryType: "rpmmd",
+    sslMaster: {
+      url:
+        "https://dl.fedoraproject.org/pub/fedora-secondary/releases/33/Everything/ppc64le/os/",
+      fingerprint:
+        "sha256:65a9f760749609c590387157e58a308b0d55d7f343da82bbe5ea945d2f0e338a"
+    }
+  },
+  {
+    arch: Arch.S390x,
+    url:
+      "http://ftp-stud.hs-esslingen.de/pub/fedora-secondary/releases/33/Everything/s390x/os/",
+    repositoryType: "rpmmd",
+    sslMaster: {
+      url:
+        "https://dl.fedoraproject.org/pub/fedora-secondary/releases/33/Everything/s390x/os/",
+      fingerprint:
+        "sha256:65a9f760749609c590387157e58a308b0d55d7f343da82bbe5ea945d2f0e338a"
+    }
+  },
+  {
+    arch: Arch.Aarch64,
+    url:
+      "https://dl.fedoraproject.org/pub/fedora/linux/releases/33/Everything/aarch64/os/",
+    repositoryType: "rpmmd",
+    sslMaster: {
+      url:
+        "https://dl.fedoraproject.org/pub/fedora/linux/releases/33/Everything/aarch64/os/",
+      fingerprint:
+        "sha256:65a9f760749609c590387157e58a308b0d55d7f343da82bbe5ea945d2f0e338a"
+    }
+  }
+];
 
 describe("#fetchProjectMeta", () => {
   const prodCon = getTestConnection(ApiType.Production);
@@ -291,6 +355,366 @@ describe("#fetchProjectMeta", () => {
       arch: ["i586", "x86_64"]
     });
   });
+
+  describe("download on demand repositories", () => {
+    it("should correctly parse openSUSE:Tumbleweed", async () => {
+      const name = "openSUSE:Tumbleweed";
+      const twMeta = await fetchProjectMeta(prodCon, name);
+      twMeta.name.should.deep.equal(name);
+
+      expect(twMeta.repository).to.deep.equal([
+        {
+          name: "standard",
+          path: [
+            {
+              project: "openSUSE:Tumbleweed",
+              repository: "dod"
+            },
+            {
+              project: "openSUSE:Tumbleweed",
+              repository: "dod_debug"
+            },
+            { project: "openSUSE:Factory", repository: "ports" }
+          ],
+          arch: [
+            Arch.I586,
+            Arch.X86_64,
+            Arch.Aarch64,
+            Arch.Armv7l,
+            Arch.Armv6l,
+            Arch.Riscv64
+          ]
+        },
+        {
+          name: "dod_debug",
+          downloadOnDemand: [
+            {
+              arch: Arch.I586,
+              url: "https://download.opensuse.org/debug/tumbleweed/repo/oss",
+              repositoryType: "rpmmd",
+              architectureFilter: [Arch.I686, Arch.I586],
+              publicKey: `
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+Version: GnuPG v2.0.15 (GNU/Linux)
+
+mQENBEkUTD8BCADWLy5d5IpJedHQQSXkC1VK/oAZlJEeBVpSZjMCn8LiHaI9Wq3G
+3Vp6wvsP1b3kssJGzVFNctdXt5tjvOLxvrEfRJuGfqHTKILByqLzkeyWawbFNfSQ
+93/8OunfSTXC1Sx3hgsNXQuOrNVKrDAQUqT620/jj94xNIg09bLSxsjN6EeTvyiO
+mtE9H1J03o9tY6meNL/gcQhxBvwuo205np0JojYBP0pOfN8l9hnIOLkA0yu4ZXig
+oKOVmf4iTjX4NImIWldT+UaWTO18NWcCrujtgHueytwYLBNV5N0oJIP2VYuLZfSD
+VYuPllv7c6O2UEOXJsdbQaVuzU1HLocDyipnABEBAAG0NG9wZW5TVVNFIFByb2pl
+Y3QgU2lnbmluZyBLZXkgPG9wZW5zdXNlQG9wZW5zdXNlLm9yZz6JATwEEwECACYC
+GwMGCwkIBwMCBBUCCAMEFgIDAQIeAQIXgAUCU2dN1AUJHR8ElQAKCRC4iy/UPb3C
+hGQrB/9teCZ3Nt8vHE0SC5NmYMAE1Spcjkzx6M4r4C70AVTMEQh/8BvgmwkKP/qI
+CWo2vC1hMXRgLg/TnTtFDq7kW+mHsCXmf5OLh2qOWCKi55Vitlf6bmH7n+h34Sha
+Ei8gAObSpZSF8BzPGl6v0QmEaGKM3O1oUbbB3Z8i6w21CTg7dbU5vGR8Yhi9rNtr
+hqrPS+q2yftjNbsODagaOUb85ESfQGx/LqoMePD+7MqGpAXjKMZqsEDP0TbxTwSk
+4UKnF4zFCYHPLK3y/hSH5SEJwwPY11l6JGdC1Ue8Zzaj7f//axUs/hTC0UZaEE+a
+5v4gbqOcigKaFs9Lc3Bj8b/lE10Y
+=i2TA
+-----END PGP PUBLIC KEY BLOCK-----
+            `
+            },
+            {
+              arch: Arch.X86_64,
+              url: "https://download.opensuse.org/debug/tumbleweed/repo/oss",
+              repositoryType: "rpmmd",
+              architectureFilter: [Arch.X86_64],
+              publicKey: `
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+Version: GnuPG v2.0.15 (GNU/Linux)
+
+mQENBEkUTD8BCADWLy5d5IpJedHQQSXkC1VK/oAZlJEeBVpSZjMCn8LiHaI9Wq3G
+3Vp6wvsP1b3kssJGzVFNctdXt5tjvOLxvrEfRJuGfqHTKILByqLzkeyWawbFNfSQ
+93/8OunfSTXC1Sx3hgsNXQuOrNVKrDAQUqT620/jj94xNIg09bLSxsjN6EeTvyiO
+mtE9H1J03o9tY6meNL/gcQhxBvwuo205np0JojYBP0pOfN8l9hnIOLkA0yu4ZXig
+oKOVmf4iTjX4NImIWldT+UaWTO18NWcCrujtgHueytwYLBNV5N0oJIP2VYuLZfSD
+VYuPllv7c6O2UEOXJsdbQaVuzU1HLocDyipnABEBAAG0NG9wZW5TVVNFIFByb2pl
+Y3QgU2lnbmluZyBLZXkgPG9wZW5zdXNlQG9wZW5zdXNlLm9yZz6JATwEEwECACYC
+GwMGCwkIBwMCBBUCCAMEFgIDAQIeAQIXgAUCU2dN1AUJHR8ElQAKCRC4iy/UPb3C
+hGQrB/9teCZ3Nt8vHE0SC5NmYMAE1Spcjkzx6M4r4C70AVTMEQh/8BvgmwkKP/qI
+CWo2vC1hMXRgLg/TnTtFDq7kW+mHsCXmf5OLh2qOWCKi55Vitlf6bmH7n+h34Sha
+Ei8gAObSpZSF8BzPGl6v0QmEaGKM3O1oUbbB3Z8i6w21CTg7dbU5vGR8Yhi9rNtr
+hqrPS+q2yftjNbsODagaOUb85ESfQGx/LqoMePD+7MqGpAXjKMZqsEDP0TbxTwSk
+4UKnF4zFCYHPLK3y/hSH5SEJwwPY11l6JGdC1Ue8Zzaj7f//axUs/hTC0UZaEE+a
+5v4gbqOcigKaFs9Lc3Bj8b/lE10Y
+=i2TA
+-----END PGP PUBLIC KEY BLOCK-----
+            `
+            }
+          ],
+          arch: [Arch.I586, Arch.X86_64]
+        },
+        {
+          name: "dod",
+          downloadOnDemand: [
+            {
+              arch: Arch.I586,
+              url: "https://download.opensuse.org/tumbleweed/repo/oss",
+              repositoryType: "rpmmd",
+              architectureFilter: [Arch.I686, Arch.I586],
+              publicKey: `
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+Version: GnuPG v2.0.15 (GNU/Linux)
+
+mQENBEkUTD8BCADWLy5d5IpJedHQQSXkC1VK/oAZlJEeBVpSZjMCn8LiHaI9Wq3G
+3Vp6wvsP1b3kssJGzVFNctdXt5tjvOLxvrEfRJuGfqHTKILByqLzkeyWawbFNfSQ
+93/8OunfSTXC1Sx3hgsNXQuOrNVKrDAQUqT620/jj94xNIg09bLSxsjN6EeTvyiO
+mtE9H1J03o9tY6meNL/gcQhxBvwuo205np0JojYBP0pOfN8l9hnIOLkA0yu4ZXig
+oKOVmf4iTjX4NImIWldT+UaWTO18NWcCrujtgHueytwYLBNV5N0oJIP2VYuLZfSD
+VYuPllv7c6O2UEOXJsdbQaVuzU1HLocDyipnABEBAAG0NG9wZW5TVVNFIFByb2pl
+Y3QgU2lnbmluZyBLZXkgPG9wZW5zdXNlQG9wZW5zdXNlLm9yZz6JATwEEwECACYC
+GwMGCwkIBwMCBBUCCAMEFgIDAQIeAQIXgAUCU2dN1AUJHR8ElQAKCRC4iy/UPb3C
+hGQrB/9teCZ3Nt8vHE0SC5NmYMAE1Spcjkzx6M4r4C70AVTMEQh/8BvgmwkKP/qI
+CWo2vC1hMXRgLg/TnTtFDq7kW+mHsCXmf5OLh2qOWCKi55Vitlf6bmH7n+h34Sha
+Ei8gAObSpZSF8BzPGl6v0QmEaGKM3O1oUbbB3Z8i6w21CTg7dbU5vGR8Yhi9rNtr
+hqrPS+q2yftjNbsODagaOUb85ESfQGx/LqoMePD+7MqGpAXjKMZqsEDP0TbxTwSk
+4UKnF4zFCYHPLK3y/hSH5SEJwwPY11l6JGdC1Ue8Zzaj7f//axUs/hTC0UZaEE+a
+5v4gbqOcigKaFs9Lc3Bj8b/lE10Y
+=i2TA
+-----END PGP PUBLIC KEY BLOCK-----
+            `
+            },
+            {
+              arch: Arch.X86_64,
+              url: "https://download.opensuse.org/tumbleweed/repo/oss",
+              repositoryType: "rpmmd",
+              architectureFilter: [Arch.X86_64],
+              publicKey: `
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+Version: GnuPG v2.0.15 (GNU/Linux)
+
+mQENBEkUTD8BCADWLy5d5IpJedHQQSXkC1VK/oAZlJEeBVpSZjMCn8LiHaI9Wq3G
+3Vp6wvsP1b3kssJGzVFNctdXt5tjvOLxvrEfRJuGfqHTKILByqLzkeyWawbFNfSQ
+93/8OunfSTXC1Sx3hgsNXQuOrNVKrDAQUqT620/jj94xNIg09bLSxsjN6EeTvyiO
+mtE9H1J03o9tY6meNL/gcQhxBvwuo205np0JojYBP0pOfN8l9hnIOLkA0yu4ZXig
+oKOVmf4iTjX4NImIWldT+UaWTO18NWcCrujtgHueytwYLBNV5N0oJIP2VYuLZfSD
+VYuPllv7c6O2UEOXJsdbQaVuzU1HLocDyipnABEBAAG0NG9wZW5TVVNFIFByb2pl
+Y3QgU2lnbmluZyBLZXkgPG9wZW5zdXNlQG9wZW5zdXNlLm9yZz6JATwEEwECACYC
+GwMGCwkIBwMCBBUCCAMEFgIDAQIeAQIXgAUCU2dN1AUJHR8ElQAKCRC4iy/UPb3C
+hGQrB/9teCZ3Nt8vHE0SC5NmYMAE1Spcjkzx6M4r4C70AVTMEQh/8BvgmwkKP/qI
+CWo2vC1hMXRgLg/TnTtFDq7kW+mHsCXmf5OLh2qOWCKi55Vitlf6bmH7n+h34Sha
+Ei8gAObSpZSF8BzPGl6v0QmEaGKM3O1oUbbB3Z8i6w21CTg7dbU5vGR8Yhi9rNtr
+hqrPS+q2yftjNbsODagaOUb85ESfQGx/LqoMePD+7MqGpAXjKMZqsEDP0TbxTwSk
+4UKnF4zFCYHPLK3y/hSH5SEJwwPY11l6JGdC1Ue8Zzaj7f//axUs/hTC0UZaEE+a
+5v4gbqOcigKaFs9Lc3Bj8b/lE10Y
+=i2TA
+-----END PGP PUBLIC KEY BLOCK-----
+            `
+            },
+            {
+              arch: Arch.Armv6l,
+              url:
+                "https://download.opensuse.org/ports/armv6hl/tumbleweed/repo/oss",
+              repositoryType: "rpmmd",
+              publicKey: `
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+Version: GnuPG v2.0.15 (GNU/Linux)
+
+mQENBEkUTD8BCADWLy5d5IpJedHQQSXkC1VK/oAZlJEeBVpSZjMCn8LiHaI9Wq3G
+3Vp6wvsP1b3kssJGzVFNctdXt5tjvOLxvrEfRJuGfqHTKILByqLzkeyWawbFNfSQ
+93/8OunfSTXC1Sx3hgsNXQuOrNVKrDAQUqT620/jj94xNIg09bLSxsjN6EeTvyiO
+mtE9H1J03o9tY6meNL/gcQhxBvwuo205np0JojYBP0pOfN8l9hnIOLkA0yu4ZXig
+oKOVmf4iTjX4NImIWldT+UaWTO18NWcCrujtgHueytwYLBNV5N0oJIP2VYuLZfSD
+VYuPllv7c6O2UEOXJsdbQaVuzU1HLocDyipnABEBAAG0NG9wZW5TVVNFIFByb2pl
+Y3QgU2lnbmluZyBLZXkgPG9wZW5zdXNlQG9wZW5zdXNlLm9yZz6JATwEEwECACYC
+GwMGCwkIBwMCBBUCCAMEFgIDAQIeAQIXgAUCU2dN1AUJHR8ElQAKCRC4iy/UPb3C
+hGQrB/9teCZ3Nt8vHE0SC5NmYMAE1Spcjkzx6M4r4C70AVTMEQh/8BvgmwkKP/qI
+CWo2vC1hMXRgLg/TnTtFDq7kW+mHsCXmf5OLh2qOWCKi55Vitlf6bmH7n+h34Sha
+Ei8gAObSpZSF8BzPGl6v0QmEaGKM3O1oUbbB3Z8i6w21CTg7dbU5vGR8Yhi9rNtr
+hqrPS+q2yftjNbsODagaOUb85ESfQGx/LqoMePD+7MqGpAXjKMZqsEDP0TbxTwSk
+4UKnF4zFCYHPLK3y/hSH5SEJwwPY11l6JGdC1Ue8Zzaj7f//axUs/hTC0UZaEE+a
+5v4gbqOcigKaFs9Lc3Bj8b/lE10Y
+=i2TA
+-----END PGP PUBLIC KEY BLOCK-----
+            `
+            },
+            {
+              arch: Arch.Armv7l,
+              url:
+                "https://download.opensuse.org/ports/armv7hl/tumbleweed/repo/oss",
+              repositoryType: "rpmmd",
+              publicKey: `
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+Version: GnuPG v2.0.15 (GNU/Linux)
+
+mQENBEkUTD8BCADWLy5d5IpJedHQQSXkC1VK/oAZlJEeBVpSZjMCn8LiHaI9Wq3G
+3Vp6wvsP1b3kssJGzVFNctdXt5tjvOLxvrEfRJuGfqHTKILByqLzkeyWawbFNfSQ
+93/8OunfSTXC1Sx3hgsNXQuOrNVKrDAQUqT620/jj94xNIg09bLSxsjN6EeTvyiO
+mtE9H1J03o9tY6meNL/gcQhxBvwuo205np0JojYBP0pOfN8l9hnIOLkA0yu4ZXig
+oKOVmf4iTjX4NImIWldT+UaWTO18NWcCrujtgHueytwYLBNV5N0oJIP2VYuLZfSD
+VYuPllv7c6O2UEOXJsdbQaVuzU1HLocDyipnABEBAAG0NG9wZW5TVVNFIFByb2pl
+Y3QgU2lnbmluZyBLZXkgPG9wZW5zdXNlQG9wZW5zdXNlLm9yZz6JATwEEwECACYC
+GwMGCwkIBwMCBBUCCAMEFgIDAQIeAQIXgAUCU2dN1AUJHR8ElQAKCRC4iy/UPb3C
+hGQrB/9teCZ3Nt8vHE0SC5NmYMAE1Spcjkzx6M4r4C70AVTMEQh/8BvgmwkKP/qI
+CWo2vC1hMXRgLg/TnTtFDq7kW+mHsCXmf5OLh2qOWCKi55Vitlf6bmH7n+h34Sha
+Ei8gAObSpZSF8BzPGl6v0QmEaGKM3O1oUbbB3Z8i6w21CTg7dbU5vGR8Yhi9rNtr
+hqrPS+q2yftjNbsODagaOUb85ESfQGx/LqoMePD+7MqGpAXjKMZqsEDP0TbxTwSk
+4UKnF4zFCYHPLK3y/hSH5SEJwwPY11l6JGdC1Ue8Zzaj7f//axUs/hTC0UZaEE+a
+5v4gbqOcigKaFs9Lc3Bj8b/lE10Y
+=i2TA
+-----END PGP PUBLIC KEY BLOCK-----
+            `
+            },
+            {
+              arch: Arch.Aarch64,
+              url:
+                "https://download.opensuse.org/ports/aarch64/tumbleweed/repo/oss",
+              repositoryType: "rpmmd",
+              publicKey: `
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+Version: GnuPG v2.0.15 (GNU/Linux)
+
+mQENBEkUTD8BCADWLy5d5IpJedHQQSXkC1VK/oAZlJEeBVpSZjMCn8LiHaI9Wq3G
+3Vp6wvsP1b3kssJGzVFNctdXt5tjvOLxvrEfRJuGfqHTKILByqLzkeyWawbFNfSQ
+93/8OunfSTXC1Sx3hgsNXQuOrNVKrDAQUqT620/jj94xNIg09bLSxsjN6EeTvyiO
+mtE9H1J03o9tY6meNL/gcQhxBvwuo205np0JojYBP0pOfN8l9hnIOLkA0yu4ZXig
+oKOVmf4iTjX4NImIWldT+UaWTO18NWcCrujtgHueytwYLBNV5N0oJIP2VYuLZfSD
+VYuPllv7c6O2UEOXJsdbQaVuzU1HLocDyipnABEBAAG0NG9wZW5TVVNFIFByb2pl
+Y3QgU2lnbmluZyBLZXkgPG9wZW5zdXNlQG9wZW5zdXNlLm9yZz6JATwEEwECACYC
+GwMGCwkIBwMCBBUCCAMEFgIDAQIeAQIXgAUCU2dN1AUJHR8ElQAKCRC4iy/UPb3C
+hGQrB/9teCZ3Nt8vHE0SC5NmYMAE1Spcjkzx6M4r4C70AVTMEQh/8BvgmwkKP/qI
+CWo2vC1hMXRgLg/TnTtFDq7kW+mHsCXmf5OLh2qOWCKi55Vitlf6bmH7n+h34Sha
+Ei8gAObSpZSF8BzPGl6v0QmEaGKM3O1oUbbB3Z8i6w21CTg7dbU5vGR8Yhi9rNtr
+hqrPS+q2yftjNbsODagaOUb85ESfQGx/LqoMePD+7MqGpAXjKMZqsEDP0TbxTwSk
+4UKnF4zFCYHPLK3y/hSH5SEJwwPY11l6JGdC1Ue8Zzaj7f//axUs/hTC0UZaEE+a
+5v4gbqOcigKaFs9Lc3Bj8b/lE10Y
+=i2TA
+-----END PGP PUBLIC KEY BLOCK-----
+            `
+            },
+            {
+              arch: Arch.Riscv64,
+              url:
+                "https://download.opensuse.org/ports/riscv/tumbleweed/repo/oss",
+              repositoryType: "rpmmd",
+              publicKey: `
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+Version: GnuPG v2.0.15 (GNU/Linux)
+
+mQENBEkUTD8BCADWLy5d5IpJedHQQSXkC1VK/oAZlJEeBVpSZjMCn8LiHaI9Wq3G
+3Vp6wvsP1b3kssJGzVFNctdXt5tjvOLxvrEfRJuGfqHTKILByqLzkeyWawbFNfSQ
+93/8OunfSTXC1Sx3hgsNXQuOrNVKrDAQUqT620/jj94xNIg09bLSxsjN6EeTvyiO
+mtE9H1J03o9tY6meNL/gcQhxBvwuo205np0JojYBP0pOfN8l9hnIOLkA0yu4ZXig
+oKOVmf4iTjX4NImIWldT+UaWTO18NWcCrujtgHueytwYLBNV5N0oJIP2VYuLZfSD
+VYuPllv7c6O2UEOXJsdbQaVuzU1HLocDyipnABEBAAG0NG9wZW5TVVNFIFByb2pl
+Y3QgU2lnbmluZyBLZXkgPG9wZW5zdXNlQG9wZW5zdXNlLm9yZz6JATwEEwECACYC
+GwMGCwkIBwMCBBUCCAMEFgIDAQIeAQIXgAUCU2dN1AUJHR8ElQAKCRC4iy/UPb3C
+hGQrB/9teCZ3Nt8vHE0SC5NmYMAE1Spcjkzx6M4r4C70AVTMEQh/8BvgmwkKP/qI
+CWo2vC1hMXRgLg/TnTtFDq7kW+mHsCXmf5OLh2qOWCKi55Vitlf6bmH7n+h34Sha
+Ei8gAObSpZSF8BzPGl6v0QmEaGKM3O1oUbbB3Z8i6w21CTg7dbU5vGR8Yhi9rNtr
+hqrPS+q2yftjNbsODagaOUb85ESfQGx/LqoMePD+7MqGpAXjKMZqsEDP0TbxTwSk
+4UKnF4zFCYHPLK3y/hSH5SEJwwPY11l6JGdC1Ue8Zzaj7f//axUs/hTC0UZaEE+a
+5v4gbqOcigKaFs9Lc3Bj8b/lE10Y
+=i2TA
+-----END PGP PUBLIC KEY BLOCK-----
+            `
+            }
+          ],
+          arch: [
+            Arch.I586,
+            Arch.X86_64,
+            Arch.Aarch64,
+            Arch.Armv7l,
+            Arch.Armv6l,
+            Arch.Riscv64
+          ]
+        }
+      ]);
+    });
+
+    it("should correctly parse Fedora:33's ssl verfication elements", async () => {
+      const meta = await fetchProjectMeta(prodCon, "Fedora:33");
+      const fedora33UpdateDoD: DownloadOnDemand[] = [
+        {
+          arch: Arch.X86_64,
+          url:
+            "http://ftp-stud.hs-esslingen.de/pub/fedora/linux/updates/33/Everything/x86_64/",
+          repositoryType: "rpmmd",
+          sslMaster: {
+            url:
+              "https://dl.fedoraproject.org/pub/fedora/linux/updates/33/Everything/x86_64/",
+            fingerprint:
+              "sha256:65a9f760749609c590387157e58a308b0d55d7f343da82bbe5ea945d2f0e338a"
+          }
+        },
+        {
+          arch: Arch.I586,
+          url:
+            "https://kojipkgs.fedoraproject.org/repos/f33-build/latest/i386/",
+          repositoryType: "rpmmd",
+          sslMaster: {
+            url:
+              "https://kojipkgs.fedoraproject.org/repos/f33-build/latest/i386/",
+            fingerprint:
+              "sha256:65a9f760749609c590387157e58a308b0d55d7f343da82bbe5ea945d2f0e338a"
+          }
+        },
+        {
+          arch: Arch.Armv7l,
+          url:
+            "http://ftp-stud.hs-esslingen.de/pub/fedora/linux/updates/33/Everything/armhfp/",
+          repositoryType: "rpmmd",
+          sslMaster: {
+            url:
+              "https://dl.fedoraproject.org/pub/fedora/linux/updates/33/Everything/armhfp/",
+            fingerprint:
+              "sha256:65a9f760749609c590387157e58a308b0d55d7f343da82bbe5ea945d2f0e338a"
+          }
+        },
+        {
+          arch: Arch.Ppc64le,
+          url:
+            "http://ftp-stud.hs-esslingen.de/pub/fedora-secondary/updates/33/Everything/ppc64le/",
+          repositoryType: "rpmmd",
+          sslMaster: {
+            url:
+              "https://dl.fedoraproject.org/pub/fedora/updates/33/Everything/ppc64le/",
+            fingerprint:
+              "sha256:65a9f760749609c590387157e58a308b0d55d7f343da82bbe5ea945d2f0e338a"
+          }
+        },
+        {
+          arch: Arch.Aarch64,
+          url: "http://ftp.fau.de/fedora/linux/updates/33/Everything/aarch64/",
+          repositoryType: "rpmmd",
+          sslMaster: {
+            url:
+              "https://dl.fedoraproject.org/pub/fedora/linux/updates/33/Everything/aarch64/",
+            fingerprint:
+              "sha256:65a9f760749609c590387157e58a308b0d55d7f343da82bbe5ea945d2f0e338a"
+          }
+        }
+      ];
+
+      expect(meta.repository).to.deep.equal([
+        {
+          name: "update",
+          downloadOnDemand: fedora33UpdateDoD,
+          path: [{ project: "Fedora:33", repository: "standard" }],
+          arch: [
+            Arch.X86_64,
+            Arch.I586,
+            Arch.Armv7l,
+            Arch.Aarch64,
+            Arch.Ppc64le
+          ]
+        },
+        {
+          name: "standard",
+          downloadOnDemand: fedora33StandardDoD,
+          arch: [
+            Arch.X86_64,
+            Arch.I586,
+            Arch.Armv7l,
+            Arch.Aarch64,
+            Arch.S390x,
+            Arch.Ppc64le
+          ]
+        }
+      ]);
+    });
+  });
 });
 
 describe("#modifyOrCreateProject", function () {
@@ -305,9 +729,11 @@ describe("#modifyOrCreateProject", function () {
     )
   );
 
+  const dodProjectName = `home:${miniObsUsername}:test_dod_project`;
   const projNames = [
     `home:${miniObsUsername}:obs_ts_test`,
-    `home:${miniObsUsername}:set_as_many_properties_as_we_can`
+    `home:${miniObsUsername}:set_as_many_properties_as_we_can`,
+    dodProjectName
   ];
 
   this.timeout(10000);
@@ -437,6 +863,79 @@ Here we just try to set as many different options as possible, to check that the
     await fetchProjectMeta(con, name).should.be.rejectedWith(
       ApiError,
       "unknown_project"
+    );
+  });
+
+  it("creates dod repositories as an admin", async () => {
+    const proj = await createProject(con, dodProjectName);
+    const dodRepos: BaseRepository[] = [
+      {
+        name: "dod",
+        downloadOnDemand: [
+          {
+            arch: Arch.X86_64,
+            url: "https://download.opensuse.org/tumbleweed/repo/oss",
+            repositoryType: "rpmmd",
+            architectureFilter: [Arch.X86_64],
+            publicKey: `
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+Version: GnuPG v2.0.15 (GNU/Linux)
+
+mQENBEkUTD8BCADWLy5d5IpJedHQQSXkC1VK/oAZlJEeBVpSZjMCn8LiHaI9Wq3G
+3Vp6wvsP1b3kssJGzVFNctdXt5tjvOLxvrEfRJuGfqHTKILByqLzkeyWawbFNfSQ
+93/8OunfSTXC1Sx3hgsNXQuOrNVKrDAQUqT620/jj94xNIg09bLSxsjN6EeTvyiO
+mtE9H1J03o9tY6meNL/gcQhxBvwuo205np0JojYBP0pOfN8l9hnIOLkA0yu4ZXig
+oKOVmf4iTjX4NImIWldT+UaWTO18NWcCrujtgHueytwYLBNV5N0oJIP2VYuLZfSD
+VYuPllv7c6O2UEOXJsdbQaVuzU1HLocDyipnABEBAAG0NG9wZW5TVVNFIFByb2pl
+Y3QgU2lnbmluZyBLZXkgPG9wZW5zdXNlQG9wZW5zdXNlLm9yZz6JATwEEwECACYC
+GwMGCwkIBwMCBBUCCAMEFgIDAQIeAQIXgAUCU2dN1AUJHR8ElQAKCRC4iy/UPb3C
+hGQrB/9teCZ3Nt8vHE0SC5NmYMAE1Spcjkzx6M4r4C70AVTMEQh/8BvgmwkKP/qI
+CWo2vC1hMXRgLg/TnTtFDq7kW+mHsCXmf5OLh2qOWCKi55Vitlf6bmH7n+h34Sha
+Ei8gAObSpZSF8BzPGl6v0QmEaGKM3O1oUbbB3Z8i6w21CTg7dbU5vGR8Yhi9rNtr
+hqrPS+q2yftjNbsODagaOUb85ESfQGx/LqoMePD+7MqGpAXjKMZqsEDP0TbxTwSk
+4UKnF4zFCYHPLK3y/hSH5SEJwwPY11l6JGdC1Ue8Zzaj7f//axUs/hTC0UZaEE+a
+5v4gbqOcigKaFs9Lc3Bj8b/lE10Y
+=i2TA
+-----END PGP PUBLIC KEY BLOCK-----
+            `
+          }
+        ],
+        arch: [
+          Arch.I586,
+          Arch.X86_64,
+          Arch.Aarch64,
+          Arch.Armv7l,
+          Arch.Armv6l,
+          Arch.Riscv64
+        ]
+      },
+      {
+        name: "standard",
+        downloadOnDemand: fedora33StandardDoD,
+        arch: [
+          Arch.X86_64,
+          Arch.I586,
+          Arch.Armv7l,
+          Arch.Aarch64,
+          Arch.S390x,
+          Arch.Ppc64le
+        ]
+      }
+    ];
+
+    const newMeta = { ...proj.meta, repository: dodRepos };
+    await modifyProjectMeta(miniObsAdminCon, newMeta);
+
+    const { repository, ...restOfMeta } = await fetchProjectMeta(
+      con,
+      proj.name
+    );
+    restOfMeta.should.deep.equal(proj.meta);
+
+    // obs reorders the repositories...
+    expect(repository).to.have.length(dodRepos.length);
+    dodRepos.forEach((dodRepo) =>
+      expect(repository).to.include.a.thing.that.deep.equals(dodRepo)
     );
   });
 });
