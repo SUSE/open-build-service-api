@@ -21,6 +21,7 @@
 
 import { Arch } from "./api/base-types";
 import { fetchDirectory } from "./api/directory";
+import { fetchProjectMeta } from "./api/project-meta";
 import { Configuration, fetchConfiguration } from "./configuration";
 import { Connection } from "./connection";
 import { isXmlParseError } from "./error";
@@ -248,9 +249,50 @@ export async function fetchDownloadUrls(
   );
 }
 
+async function createRepositoryConfigFromDod(
+  con: Connection,
+  projectName: string,
+  repositoryName: string
+): Promise<string | undefined> {
+  const projMeta = await fetchProjectMeta(con, projectName);
+  const matchingRepo = projMeta.repository?.find(
+    (repo) => repo.name === repositoryName
+  );
+  if (
+    matchingRepo === undefined ||
+    matchingRepo.downloadOnDemand === undefined ||
+    matchingRepo.downloadOnDemand.length === 0
+  ) {
+    return undefined;
+  }
+  const rpmMdRepos = dropUndefined(
+    matchingRepo.downloadOnDemand.map((dod) =>
+      dod.repositoryType === "rpmmd"
+        ? `[${projectName}]
+enabled=1
+name=${projectName}
+baseurl=${dod.url}
+type=rpm-md
+autorefresh=1
+gpgcheck=1
+`
+        : undefined
+    )
+  );
+
+  return rpmMdRepos.length > 0 ? rpmMdRepos.join("\n") : undefined;
+}
+
 /**
  * Fetch the contents of the .repo file that can be used by package managers
  * like zypper, dnf and yum to download packages from the published repository.
+ *
+ * This function will try to retrieve a published `.repo` file from the
+ * backend. If this fails, it will fetch the projects' metadata and construct a
+ * `.repo` file if the project has download on demand entries in its
+ * repositories.
+ *
+ * **CAUTION:** This function only works for rpm-md repositories.
  *
  * @param project  The name of the project
  * @param repositoryName  The name of the repository for which the configuration
@@ -264,28 +306,36 @@ export async function fetchDownloadUrls(
  *     `undefined` if the specified `project` has no repository with the
  *     supplied name instead of an exception!
  */
-export async function fetchProjectsRepositoryConfigFile(
+export async function fetchProjectsRpmRepositoryConfigFile(
   con: Connection,
   project: ProjectName,
   repositoryName: string
 ): Promise<string | undefined> {
+  const projectName = typeof project === "string" ? project : project.name;
+
   const folderContents = await fetchPublishedRepositoryContents(
     con,
-    project,
+    projectName,
     repositoryName
   );
 
   if (folderContents === undefined || folderContents.length === 0) {
-    return undefined;
+    return createRepositoryConfigFromDod(con, projectName, repositoryName);
   }
 
   const repoFile = folderContents.find(
     (f) => f.slice(f.length - 5) === ".repo"
   );
-  if (repoFile === undefined) {
-    return undefined;
-  }
 
-  const repo = await fetchPublishedFile(con, project, repositoryName, repoFile);
-  return repo.toString();
+  if (repoFile !== undefined) {
+    // we got a published .repo file => return that one
+    const repo = await fetchPublishedFile(
+      con,
+      projectName,
+      repositoryName,
+      repoFile
+    );
+    return repo.toString();
+  }
+  return createRepositoryConfigFromDod(con, projectName, repositoryName);
 }

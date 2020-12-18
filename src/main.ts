@@ -58,7 +58,7 @@ export {
 export * from "./project";
 export {
   fetchDownloadUrls,
-  fetchProjectsRepositoryConfigFile,
+  fetchProjectsRpmRepositoryConfigFile,
   fetchPublishedFile,
   fetchPublishedProjects,
   fetchPublishedRepositories,

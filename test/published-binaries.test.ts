@@ -28,7 +28,7 @@ import {
   fetchPublishedProjects,
   fetchPublishedRepositories,
   fetchPublishedRepositoryContents,
-  fetchProjectsRepositoryConfigFile
+  fetchProjectsRpmRepositoryConfigFile
 } from "../src/published-binaries";
 import {
   afterEachRecordHook,
@@ -282,7 +282,7 @@ describe("Published Binaries", function () {
 
   describe("#fetchRepositoryConfig", () => {
     it("fetches the repository config file of devel:tools", async () => {
-      await fetchProjectsRepositoryConfigFile(
+      await fetchProjectsRpmRepositoryConfigFile(
         con,
         "devel:tools",
         "openSUSE_Tumbleweed"
@@ -299,19 +299,74 @@ enabled=1
     });
 
     it("returns nothing if this repository does not exist", async () => {
-      await fetchProjectsRepositoryConfigFile(
+      await fetchProjectsRpmRepositoryConfigFile(
         con,
         "devel:tools",
         "I_don_t_exist"
       ).should.eventually.equal(undefined);
     });
 
-    it("returns nothing if there's not .repo file present", async () => {
-      await fetchProjectsRepositoryConfigFile(
+    it("returns nothing if there's not .repo file present and the repository has no dod entry", async () => {
+      await fetchProjectsRpmRepositoryConfigFile(
         con,
         "Virtualization:Appliances:Images:Testing_x86:fedora",
         "images"
       ).should.eventually.equal(undefined);
+    });
+
+    it("creates a valid entry for openSUSE_Tumbleweed from the dod entry", async () => {
+      await fetchProjectsRpmRepositoryConfigFile(
+        con,
+        "openSUSE:Tumbleweed",
+        "dod"
+      ).should.eventually.deep.equal(`[openSUSE:Tumbleweed]
+enabled=1
+name=openSUSE:Tumbleweed
+baseurl=https://download.opensuse.org/tumbleweed/repo/oss
+type=rpm-md
+autorefresh=1
+gpgcheck=1
+
+[openSUSE:Tumbleweed]
+enabled=1
+name=openSUSE:Tumbleweed
+baseurl=https://download.opensuse.org/tumbleweed/repo/oss
+type=rpm-md
+autorefresh=1
+gpgcheck=1
+
+[openSUSE:Tumbleweed]
+enabled=1
+name=openSUSE:Tumbleweed
+baseurl=https://download.opensuse.org/ports/armv6hl/tumbleweed/repo/oss
+type=rpm-md
+autorefresh=1
+gpgcheck=1
+
+[openSUSE:Tumbleweed]
+enabled=1
+name=openSUSE:Tumbleweed
+baseurl=https://download.opensuse.org/ports/armv7hl/tumbleweed/repo/oss
+type=rpm-md
+autorefresh=1
+gpgcheck=1
+
+[openSUSE:Tumbleweed]
+enabled=1
+name=openSUSE:Tumbleweed
+baseurl=https://download.opensuse.org/ports/aarch64/tumbleweed/repo/oss
+type=rpm-md
+autorefresh=1
+gpgcheck=1
+
+[openSUSE:Tumbleweed]
+enabled=1
+name=openSUSE:Tumbleweed
+baseurl=https://download.opensuse.org/ports/riscv/tumbleweed/repo/oss
+type=rpm-md
+autorefresh=1
+gpgcheck=1
+`);
     });
   });
 });
