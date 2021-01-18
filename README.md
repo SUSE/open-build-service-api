@@ -106,7 +106,7 @@ password via the environment variables `OBS_USERNAME` and `OBS_PASSWORD`,
 respectively.
 
 In case you want to refresh the fixtures, delete **all** json files belonging to
-that test suite (= the `describe()` block** and run the tests again.
+that test suite (= the `describe()` block) and run the tests again.
 
 **Note:** If you need to perform additional setup in `beforeEach`, then use
 `beforeEachRecord` instead (and `afterEachRecord` for `afterEach`):
