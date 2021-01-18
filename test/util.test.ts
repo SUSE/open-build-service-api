@@ -288,6 +288,18 @@ baz
       }
       exceptionCaught.should.equal(true);
     });
+
+    myIt("contains the stderr of a process killed by a signal", async () => {
+      let exceptionCaught = false;
+      try {
+        await util.runProcess("sh", { stdin: "kill -9 $$" });
+      } catch (err) {
+        util.isProcessError(err).should.equal(true);
+        err.toString().should.match(/killed by a signal/i);
+        exceptionCaught = true;
+      }
+      exceptionCaught.should.equal(true);
+    });
   });
 
   describe("#isProcessError", () => {

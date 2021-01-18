@@ -336,7 +336,8 @@ export function extractElementAsArray<T>(
 export function isProcessError(err: Error): err is ProcessError {
   return (
     typeof (err as ProcessError).command === "string" &&
-    typeof (err as ProcessError).exitCode === "number"
+    (typeof (err as ProcessError).exitCode === "number" ||
+      (err as ProcessError).exitCode === null)
   );
 }
 
@@ -344,11 +345,16 @@ export function isProcessError(err: Error): err is ProcessError {
 export class ProcessError extends Error {
   constructor(
     public readonly command: string,
-    public readonly exitCode: number,
+    public readonly exitCode: number | null,
     public readonly stdout: any[],
     public readonly stderr: any[]
   ) {
-    super(`${command} exited with ${exitCode}, got stderr: ${stderr.join("")}`);
+    super(
+      (exitCode === null
+        ? `${command} was killed by a signal`
+        : `${command} exited with ${exitCode}`
+      ).concat(`, got stderr: ${stderr.join("")}`)
+    );
     assert(exitCode !== 0, "A ProcessError was created with zero exit code.");
   }
 }
