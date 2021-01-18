@@ -503,6 +503,7 @@ describe("Connection", () => {
   });
 
   describe("onDataReceived callback", function () {
+    const port = 9090;
     const chunks = range(10).map((i) => Buffer.from(i.toString()));
     const server = createServer(async (req, res) => {
       if (req.url === "/") {
@@ -517,7 +518,7 @@ describe("Connection", () => {
     });
 
     before(function () {
-      server.listen(8080);
+      server.listen(port);
       this.sandbox = createSandbox();
     });
     after(function () {
@@ -528,7 +529,7 @@ describe("Connection", () => {
     this.timeout(5000);
 
     const localhostCon = new Connection("irrelevant", "irrelevant", {
-      url: "http://localhost:8080",
+      url: `http://localhost:${port}`,
       forceHttps: false
     });
 
