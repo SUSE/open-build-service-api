@@ -36,6 +36,7 @@ import { createToken, deleteToken, Token } from "../../src/token";
 import {
   ApiType,
   castToAsyncFunc,
+  getMiniObsUrl,
   getTestConnection,
   miniObsOnlyHook,
   miniObsUsername,
@@ -54,7 +55,7 @@ describe("Service", function () {
       skipIfNoMiniObs(this);
       this.token = await createToken(con, miniObsUsername);
       this.tokenCon = new Connection(this.token, {
-        url: ApiType.MiniObs,
+        url: getMiniObsUrl(),
         forceHttps: false
       });
     })

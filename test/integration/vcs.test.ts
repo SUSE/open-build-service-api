@@ -48,6 +48,7 @@ import {
   ApiType,
   castToAsyncFunc,
   createTemporaryDirectory,
+  getMiniObsUrl,
   getTestConnection,
   miniObsUsername,
   skipIfNoMiniObsHook
@@ -70,7 +71,7 @@ describe("ModifiedPackage", function () {
     this.tmpPath = await createTemporaryDirectory();
 
     this.testPkg = Object.freeze({
-      apiUrl: ApiType.MiniObs,
+      apiUrl: getMiniObsUrl(),
       name: "test_package",
       projectName: `home:${miniObsUsername}:test`,
       files: [],

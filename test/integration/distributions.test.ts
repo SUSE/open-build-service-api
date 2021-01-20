@@ -200,7 +200,9 @@ describe("Distribution", () => {
 
     it("fetches the empty distributions from mini-obs", async () => {
       await fetchHostedDistributions(
-        getTestConnection(ApiType.MiniObs)
+        // this test does not support remote obs instances properly as this
+        // fixture has been modified manually
+        getTestConnection(ApiType.MiniObs).clone({ url: ApiType.MiniObs })
       ).should.eventually.deep.equal([]);
     });
   });

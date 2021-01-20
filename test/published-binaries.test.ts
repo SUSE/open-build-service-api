@@ -20,15 +20,16 @@
  */
 
 import * as nock from "nock";
-import { Configuration } from "../src/configuration";
 import { URL } from "url";
+import { Arch } from "../src/api/base-types";
+import { Configuration } from "../src/configuration";
 import { ApiError } from "../src/error";
 import {
   fetchDownloadUrls,
+  fetchProjectsRpmRepositoryConfigFile,
   fetchPublishedProjects,
   fetchPublishedRepositories,
-  fetchPublishedRepositoryContents,
-  fetchProjectsRpmRepositoryConfigFile
+  fetchPublishedRepositoryContents
 } from "../src/published-binaries";
 import {
   afterEachRecordHook,
@@ -37,36 +38,34 @@ import {
   getTestConnection,
   skipIfNoMiniObs
 } from "./test-setup";
-import { Arch } from "../src/api/base-types";
 
 describe("Published Binaries", function () {
   this.timeout(10000);
 
-  beforeEach(beforeEachRecordHook);
-  afterEach(afterEachRecordHook);
-
   const con = getTestConnection(ApiType.Production);
-  const miniObsCon = getTestConnection(ApiType.MiniObs);
 
   describe("#fetchPublishedProjects", () => {
     it("fetches all published repositories", async function () {
-      // actually only necessary when creating the fixtures, but having it in
-      // here won't kill anyone
       skipIfNoMiniObs(this);
 
-      await fetchPublishedProjects(miniObsCon).should.eventually.deep.equal([
+      const projects = await fetchPublishedProjects(
+        getTestConnection(ApiType.MiniObs)
+      );
+
+      [
         "deleted",
         "home:obsTestUser",
-        "home:obsTestUser:branches:home:obsTestUser:devel:tools",
-        "home:obsTestUser:vscode_obs_test",
         "openSUSE.org",
         "openSUSE:Factory",
         "openSUSE:Tumbleweed"
-      ]);
+      ].forEach((expectedProj) => projects.should.include(expectedProj));
     });
   });
 
   describe("#fetchPublishedRepositories", () => {
+    beforeEach(beforeEachRecordHook);
+    afterEach(afterEachRecordHook);
+
     it("retrieves the published repositories of Virtualization:vagrant", async () => {
       await fetchPublishedRepositories(
         con,
@@ -101,6 +100,9 @@ describe("Published Binaries", function () {
   });
 
   describe("#fetchPublishedRepositoryContents", () => {
+    beforeEach(beforeEachRecordHook);
+    afterEach(afterEachRecordHook);
+
     it("fetches the present files and directories in Virtualization:vagrant for the Tumbleweed repository", async () => {
       await fetchPublishedRepositoryContents(
         con,
@@ -152,6 +154,9 @@ describe("Published Binaries", function () {
   });
 
   describe("#fetchDownloadUrls", () => {
+    beforeEach(beforeEachRecordHook);
+    afterEach(afterEachRecordHook);
+
     const url = "https://download.bar.baz/";
     const conf: Configuration = {
       disableBranchPublishing: false,
@@ -256,17 +261,6 @@ describe("Published Binaries", function () {
       ]);
     });
 
-    it("rejects fetching the urls if no repository url is available", async function () {
-      // actually only necessary when creating the fixtures, but having it in
-      // here won't kill anyone
-      skipIfNoMiniObs(this);
-
-      await fetchDownloadUrls(miniObsCon, "foo", "bar").should.be.rejectedWith(
-        Error,
-        /cannot construct download urls/
-      );
-    });
-
     it("does not connect to the network if the binaries and conf parameter are present", async () => {
       nock.disableNetConnect();
 
@@ -280,7 +274,22 @@ describe("Published Binaries", function () {
     });
   });
 
+  describe("#fetchDownloadUrls live", () => {
+    it("rejects fetching the urls if no repository url is available", async function () {
+      skipIfNoMiniObs(this);
+
+      await fetchDownloadUrls(
+        getTestConnection(ApiType.MiniObs),
+        "foo",
+        "bar"
+      ).should.be.rejectedWith(Error, /cannot construct download urls/);
+    });
+  });
+
   describe("#fetchRepositoryConfig", () => {
+    beforeEach(beforeEachRecordHook);
+    afterEach(afterEachRecordHook);
+
     it("fetches the repository config file of devel:tools", async () => {
       await fetchProjectsRpmRepositoryConfigFile(
         con,

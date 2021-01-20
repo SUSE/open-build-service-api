@@ -28,7 +28,7 @@ import { tmpdir } from "os";
 import { join, sep } from "path";
 import { directoryToApi } from "../src/api/directory";
 import { fetchProjectMeta, modifyProjectMeta } from "../src/api/project-meta";
-import { Connection } from "../src/connection";
+import { Connection, normalizeUrl } from "../src/connection";
 import { fileListToDirectory, FrozenPackage } from "../src/package";
 import { createUnderscorePackages, Project } from "../src/project";
 import { pathExists, PathType } from "../src/util";
@@ -160,18 +160,21 @@ export const enum ApiType {
   MiniObs = "http://localhost:3000"
 }
 
+export const getMiniObsUrl = (): string =>
+  normalizeUrl(process.env.OBS_URL || ApiType.MiniObs);
+
 export const miniObsUsername = "obsTestUser";
 export const miniObsPassword = "nots3cr3t";
 
 export const miniObsAdminCon = new Connection("Admin", "opensuse", {
-  url: ApiType.MiniObs,
+  url: getMiniObsUrl(),
   forceHttps: false
 });
 
 export function getTestConnection(apiType: ApiType): Connection {
   return apiType === ApiType.MiniObs
     ? new Connection(miniObsUsername, miniObsPassword, {
-        url: apiType,
+        url: getMiniObsUrl(),
         forceHttps: false
       })
     : new Connection(

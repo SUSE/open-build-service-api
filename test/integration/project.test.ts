@@ -26,7 +26,6 @@ import { promises as fsPromises } from "fs";
 import { afterEach, beforeEach, describe, it } from "mocha";
 import { dirname, join } from "path";
 import { createSandbox } from "sinon";
-import { normalizeUrl } from "../../src/connection";
 import { createPackage, readInCheckedOutPackage } from "../../src/package";
 import {
   checkOutProject,
@@ -44,6 +43,7 @@ import {
   afterEachRecordHook,
   ApiType,
   beforeEachRecordHook,
+  getMiniObsUrl,
   getTestConnection,
   miniObsUsername,
   skipIfNoMiniObs,
@@ -114,7 +114,7 @@ describe("#checkOut", function () {
   this.timeout(15000);
 
   const projectName = `home:${miniObsUsername}:testProjectWithPackages`;
-  const apiUrl = normalizeUrl(ApiType.MiniObs);
+  const apiUrl = getMiniObsUrl();
   const meta = {
     description: "a test project with a _meta",
     title: projectName.toLocaleUpperCase(),

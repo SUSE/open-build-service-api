@@ -124,13 +124,20 @@ In case you want to write tests that modify contents on OBS, then this cannot be
 done on a live instance. For that we use the official development environment
 from the Open Build Service (see:
 https://github.com/openSUSE/open-build-service/blob/master/CONTRIBUTING.md#how-to-setup-an-obs-development-environment). To
-launch it install docker and docker-compose, use the wrapper script
-`start-mini-obs.sh` and run the tests with the environment variable
-`HAVE_MINI_OBS` set to any value:
+launch it install docker and docker-compose, use the wrapper scripts
+`start-mini-obs.sh` and `configure-mini-obs.sh` and run the tests with the
+environment variable `HAVE_MINI_OBS` set to any value:
 ```ShellSession
 $ ./start-mini-obs.sh
+$ ./configure-mini-obs.sh
 $ HAVE_MINI_OBS=1 yarn run coverage
 ```
+
+The setup also supports running OBS on a different machine:
+- run `./start-mini-obs.sh` on the machine hosting OBS
+- set the environment variable `OBS_URL` to `http://IP_of_the_worker:3000` on
+  the machine executing the tests
+- run your tests as usual
 
 For writing the actual tests, use the test connection type `ApiType.MiniObs` and
 add the function `skipIfNoMiniObsHook` as a `before()` mocha-hook and ensure

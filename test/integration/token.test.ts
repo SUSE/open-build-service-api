@@ -21,9 +21,7 @@
 
 import { describe, it } from "mocha";
 import {
-  afterEachRecordHook,
   ApiType,
-  beforeEachRecordHook,
   getTestConnection,
   miniObsUsername,
   skipIfNoMiniObsHook
@@ -46,9 +44,6 @@ describe("Token", function () {
   before(skipIfNoMiniObsHook);
 
   describe("#fetchTokens", () => {
-    beforeEach(beforeEachRecordHook);
-    afterEach(afterEachRecordHook);
-
     it("fetches the empty token list correctly", async () => {
       await fetchTokens(con, miniObsUsername).should.eventually.deep.equal([]);
     });
