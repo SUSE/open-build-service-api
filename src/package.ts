@@ -74,6 +74,9 @@ export interface BasePackage {
   readonly projectName: string;
 }
 
+/** Package without a `apiUrl` */
+type BasePkg = Omit<BasePackage, "apiUrl">;
+
 /** A package in the Open Build Service with optional additional fields */
 export interface Package extends BasePackage {
   /** md5 hash of the package contents */
@@ -348,7 +351,7 @@ export interface FrozenFileListAndLinkAndHash extends HashAndLink {
 
 // FIXME: this should maybe not be exported
 export function fileListFromDirectory(
-  pkg: BasePackage,
+  pkg: BasePkg,
   fileDir: Directory
 ): FileListAndLinkAndHash {
   const files: PackageFile[] =
@@ -397,15 +400,16 @@ export function fileListFromDirectory(
     md5Hash: fileDir.sourceMd5 ?? EMPTY_STRING_MD5HASH
   });
 }
+
 export async function fetchFileList(
   con: Connection,
-  pkg: Package,
+  pkg: BasePackage,
   options?: FetchFileListBaseOptions & { retrieveFileContents: true }
 ): Promise<FrozenFileListAndLinkAndHash>;
 
 export async function fetchFileList(
   con: Connection,
-  pkg: Package,
+  pkg: BasePkg,
   options?: FetchFileListBaseOptions & {
     retrieveFileContents: false | undefined;
   }
@@ -413,7 +417,7 @@ export async function fetchFileList(
 
 export async function fetchFileList(
   con: Connection,
-  pkg: Package,
+  pkg: BasePkg,
   options?: FetchFileListBaseOptions & { retrieveFileContents?: boolean }
 ): Promise<FrozenFileListAndLinkAndHash | FileListAndLinkAndHash> {
   const expand = options?.expandLinks === undefined || options.expandLinks;
