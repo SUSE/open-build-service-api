@@ -374,7 +374,7 @@ export async function checkOutProject(
     }
   }
 
-  const cleanup = async () => {
+  const cleanup = async (): Promise<void> => {
     await rmRf(path);
     await fsPromises.mkdir(path, { recursive: false });
   };

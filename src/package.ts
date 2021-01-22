@@ -269,7 +269,7 @@ export async function readInUnifiedPackage(
 ): Promise<UnifiedPackage> {
   const [pkg, proj] = await Promise.all([
     readInCheckedOutPackage(path),
-    (async () => {
+    (async (): Promise<Project | undefined> => {
       try {
         const proj = await readInCheckedOutProject(resolve(path, ".."));
         return proj;

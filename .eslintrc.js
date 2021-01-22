@@ -18,7 +18,28 @@ module.exports = {
     ],
     "@typescript-eslint/no-extra-non-null-assertion": ["error"],
     "@typescript-eslint/no-explicit-any": "off",
-    "@typescript-eslint/no-unnecessary-condition": ["error"]
+    "@typescript-eslint/no-unnecessary-condition": ["error"],
+    "@typescript-eslint/ban-tslint-comment": ["error"],
+    "@typescript-eslint/class-literal-property-style": ["error"],
+    "@typescript-eslint/consistent-type-assertions": [
+      "error",
+      { assertionStyle: "as", objectLiteralTypeAssertions: "never" }
+    ],
+    "@typescript-eslint/consistent-type-definitions": ["error", "interface"],
+    "@typescript-eslint/explicit-function-return-type": ["error"],
+    "@typescript-eslint/explicit-member-accessibility": [
+      "error",
+      {
+        accessibility: "explicit",
+        overrides: {
+          constructors: "no-public"
+        }
+      }
+    ],
+    "@typescript-eslint/member-delimiter-style": ["error"],
+    "@typescript-eslint/no-confusing-void-expression": ["error"],
+    "@typescript-eslint/non-nullable-type-assertion-style": ["error"],
+    "@typescript-eslint/switch-exhaustiveness-check": ["error"]
   },
   extends: [
     "eslint:recommended",

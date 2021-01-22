@@ -325,9 +325,15 @@ export async function fetchBuildResults(
     const pkgName = typeof pkg === "string" ? pkg : pkg.name;
     url.searchParams.append("package", pkgName);
   });
-  architectures?.forEach((arch) => url.searchParams.append("arch", arch));
-  repositories?.forEach((repo) => url.searchParams.append("repository", repo));
-  views?.forEach((view) => url.searchParams.append("view", view.toString()));
+  architectures?.forEach((arch) => {
+    url.searchParams.append("arch", arch);
+  });
+  repositories?.forEach((repo) => {
+    url.searchParams.append("repository", repo);
+  });
+  views?.forEach((view) => {
+    url.searchParams.append("view", view.toString());
+  });
   const buildOpts: [string, boolean?][] = [
     ["lastbuild", lastBuild],
     ["locallink", localLink],

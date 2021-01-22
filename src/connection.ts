@@ -686,10 +686,10 @@ export class Connection {
           const body: any[] = [];
           const onDataCb =
             options.onDataReceived === undefined
-              ? (chunk: any) => {
+              ? (chunk: any): void => {
                   body.push(chunk);
                 }
-              : (chunk: any) => {
+              : (chunk: any): void => {
                   body.push(chunk);
                   if (Buffer.isBuffer(chunk)) {
                     options.onDataReceived!.call(
@@ -757,7 +757,9 @@ export class Connection {
         resolve(retryInfoOnTimeout(options.timeoutMs));
       });
 
-      req.on("error", (err) => reject(err));
+      req.on("error", (err) => {
+        reject(err);
+      });
 
       if (payload !== undefined) {
         // obs expects that if it receives data, that the content type is

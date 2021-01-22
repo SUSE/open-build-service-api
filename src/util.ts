@@ -134,7 +134,7 @@ function makeConstruct<T>(
   type?: new (data: any) => T
 ): (data: any) => T {
   if (construct === undefined && type === undefined) {
-    return (data: any) => data as T;
+    return (data: any): T => data as T;
   }
   if (construct !== undefined) {
     return construct;
@@ -143,7 +143,7 @@ function makeConstruct<T>(
       type !== undefined,
       "makeConstruct: type must not be undefined as construct is undefined"
     );
-    return (data: any) => new type(data);
+    return (data: any): T => new type(data);
   }
 }
 
@@ -401,7 +401,9 @@ export function runProcess(
         reject(new ProcessError(command, code, stdout, stderr));
       }
     });
-    child.on("error", (err) => reject(err));
+    child.on("error", (err) => {
+      reject(err);
+    });
 
     if (stdin !== undefined) {
       child.stdin.write(stdin);

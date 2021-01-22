@@ -91,7 +91,7 @@ export function packageFileFromBuffer(
     md5Hash: calculateHash(contBuf, "md5"),
     modifiedTime:
       modifiedTime ??
-      (() => {
+      ((): Date => {
         const now = new Date();
         now.setMilliseconds(0);
         return now;

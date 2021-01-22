@@ -146,7 +146,7 @@ interface RevisionListApiReply {
   revisionlist: { revision: RevisionApiReply | RevisionApiReply[] };
 }
 
-const valueOrUndefined = (value: string) =>
+const valueOrUndefined = (value: string): string | undefined =>
   value === "unknown" ? undefined : value;
 
 /** Converts a the revision as received directly from OBS to a [[Revision]] */
@@ -375,9 +375,9 @@ function insertIntoCommitCache(
   commitCache.set(getCommitKey(commit), commit);
 
   if (commit.parentCommits !== undefined) {
-    commit.parentCommits.forEach((parent) =>
-      insertIntoCommitCache(parent, commitCache)
-    );
+    commit.parentCommits.forEach((parent) => {
+      insertIntoCommitCache(parent, commitCache);
+    });
   }
 }
 

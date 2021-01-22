@@ -192,16 +192,16 @@ export function isTimeoutError(err: Error): err is TimeoutError {
 /** An Error indicating that the API call failed due to a timeout. */
 export class TimeoutError extends Error {
   /** The method that was used to request the given url */
-  readonly method: RequestMethod;
+  public readonly method: RequestMethod;
 
   /** The url which was requested */
-  readonly url: URL;
+  public readonly url: URL;
 
   /** The number of retries that were attempted to fetch the URL */
-  readonly maxRetries: number;
+  public readonly maxRetries: number;
 
   /** Total duration of the request including retries */
-  readonly durationMs: number;
+  public readonly durationMs: number;
 
   constructor(
     method: RequestMethod,

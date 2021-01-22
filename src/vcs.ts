@@ -371,13 +371,6 @@ export async function readInModifiedPackageFromDir(
   dir: string
 ): Promise<ModifiedPackage> {
   const pkg = await readInCheckedOutPackage(dir);
-  assert(
-    pkg.files.reduce(
-      (accum, curVal) => accum && curVal.md5Hash !== undefined,
-      true
-    ),
-    "readInCheckedOutPackage must set the md5 sum of all files, but it didn't"
-  );
 
   const [toBeAdded, toBeDeleted] = await Promise.all([
     readFileListFromDir(dir, FileListType.ToBeAdded),
@@ -421,8 +414,6 @@ export async function readInModifiedPackageFromDir(
             notSeenFiles.findIndex((fname) => fname === dentry.name),
             1
           );
-
-          assert(matchingPkgFile.md5Hash !== undefined);
 
           // file is marked as deleted but still there => mark it as ToBeDeleted
           // otherwise: check the md5 hashes if the file is modified or not
