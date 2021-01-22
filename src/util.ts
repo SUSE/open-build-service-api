@@ -171,7 +171,7 @@ export function withoutUndefinedMembers<T>(obj: T): RetT<T> {
   const res: any = {};
 
   Object.keys(obj).forEach((key) => {
-    if (obj[key as keyof T] !== undefined) {
+    if ((obj[key as keyof T] as T[keyof T] | undefined) !== undefined) {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       res[key] = obj[key as keyof T];
     }
@@ -187,7 +187,7 @@ export function deleteUndefinedAndEmptyMembers<T>(obj: T): T {
   const res: any = {};
 
   Object.keys(obj).forEach((key) => {
-    const elem = obj[key as keyof T];
+    const elem = obj[key as keyof T] as T[keyof T] | undefined;
     if (elem !== undefined) {
       if (!Array.isArray(elem) || ((elem as unknown) as any[]).length > 0) {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access

@@ -763,7 +763,7 @@ export async function fetchRequest(
     await con.makeApiCall<RequestApiReply>(`/request/${id}`)
   );
   const { id: idFromObs, creatorUserId, ...rest } = req;
-  if (id === undefined || idFromObs !== id) {
+  if (idFromObs !== id) {
     throw new Error(
       `received an invalid reply from OBS: expected request ${id} but got ${
         idFromObs ?? "undefined"
@@ -909,6 +909,7 @@ export function requestDeletion(
       description ??
       "Requesting deletion of ".concat(
         tgt.projectName,
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         (tgt as PackageTarget).packageName !== undefined
           ? `/${(tgt as PackageTarget).packageName}`
           : ""

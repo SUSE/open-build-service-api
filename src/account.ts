@@ -74,7 +74,7 @@ async function readOsrc(oscrcLocation?: string): Promise<string | undefined> {
     const oscrc = await fsPromises.readFile(
       oscrcLocation === undefined ? getDefaultOscrcLocation() : oscrcLocation
     );
-    return oscrc === undefined ? undefined : oscrc.toString();
+    return oscrc.toString();
   } catch (err) {
     // TODO: log the error
     return undefined;
@@ -141,7 +141,7 @@ export async function addAccountToOscrc(
 ): Promise<void> {
   let oscrc = await readOsrc(oscrcLocation);
 
-  if (oscrc === undefined || (oscrc !== undefined && oscrc.length === 0)) {
+  if (oscrc === undefined || oscrc.length === 0) {
     oscrc = `
 [general]
 `;

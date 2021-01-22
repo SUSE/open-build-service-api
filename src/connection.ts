@@ -109,10 +109,9 @@ function retryInfoFromIncommingMessage(
         retryAfterMs = retryAfterDate.getTime() - new Date().getTime();
       }
     }
-  } else if (
-    response.statusCode === 301 &&
-    response.headers.location !== undefined
-  ) {
+  } else if (response.headers.location !== undefined) {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    assert(response.statusCode === 301);
     try {
       location = new URL(response.headers.location);
     } catch (_err) {
@@ -564,10 +563,6 @@ export class Connection {
     );
     const reqMethod =
       options?.method === undefined ? RequestMethod.GET : options.method;
-    assert(
-      reqMethod !== undefined,
-      "request method in reqMethod must not be undefined"
-    );
 
     const opts =
       options !== undefined
@@ -576,6 +571,7 @@ export class Connection {
     if (opts.timeoutMs === undefined) {
       opts.timeoutMs = DEFAULT_TIMEOUT_MS;
     }
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     assert(opts.timeoutMs !== undefined);
 
     const maxRetries =
@@ -658,7 +654,7 @@ export class Connection {
 
     if (
       options.payload !== undefined &&
-      (options.sendPayloadAsRaw !== undefined || options.sendPayloadAsRaw) &&
+      !!options.sendPayloadAsRaw &&
       !Buffer.isBuffer(options.payload)
     ) {
       throw new Error(
@@ -670,7 +666,7 @@ export class Connection {
     const payload: Buffer | undefined =
       options.payload === undefined
         ? undefined
-        : options.sendPayloadAsRaw !== undefined || options.sendPayloadAsRaw
+        : options.sendPayloadAsRaw
         ? options.payload
         : Buffer.from(newXmlBuilder().buildObject(options.payload));
 

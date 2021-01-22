@@ -682,7 +682,7 @@ export async function fetchBuildLog(
   logFetchOptions?: LogFetchOptions
 ): Promise<string> {
   if (logFetchOptions?.noStream === true) {
-    if (logFetchOptions?.streamCallback !== undefined) {
+    if (logFetchOptions.streamCallback !== undefined) {
       throw new Error(
         "Cannot provide a stream callback with noStream set to true"
       );
@@ -720,9 +720,9 @@ export async function fetchBuildLog(
   if (logFetchOpts?.fetchFinishedLog !== undefined) {
     if (logFetchOpts.fetchFinishedLog === FetchFinishedLog.Last) {
       url.searchParams.append("last", "1");
-    } else if (
-      logFetchOpts.fetchFinishedLog === FetchFinishedLog.LastSucceeded
-    ) {
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      assert(logFetchOpts.fetchFinishedLog === FetchFinishedLog.LastSucceeded);
       url.searchParams.append("lastsucceeded", "1");
     }
   }

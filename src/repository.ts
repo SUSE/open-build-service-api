@@ -121,12 +121,12 @@ function mergeFlags(
 ): RepositorySetting {
   // the project has no preference? use the package's or the default
   if (projFlags === undefined) {
-    return applyDefaultSetting(pkgFlags, defaultSetting) ?? defaultSetting;
+    return applyDefaultSetting(pkgFlags, defaultSetting);
   }
 
   // same as the above, but ensure that the package's setting has preference
   if (pkgFlags === undefined) {
-    return applyDefaultSetting(projFlags, defaultSetting) ?? defaultSetting;
+    return applyDefaultSetting(projFlags, defaultSetting);
   }
 
   // if the package flags are a boolean, then they override anything that could

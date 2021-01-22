@@ -539,8 +539,7 @@ async function cachedFetchHistoryAcrossLinks(
       const nextLink = validLinkFromDir(reversedExpandedPackageContents[i + 1]);
       if (
         nextLink === undefined ||
-        (nextLink !== undefined &&
-          nextLink.baserev !== undefined &&
+        (nextLink.baserev !== undefined &&
           nextLink.baserev !== validLink.baserev)
       ) {
         const commitsOfLink = await cachedFetchHistoryAcrossLinks(
@@ -686,7 +685,7 @@ export function historyToGraphviz(commit: Commit): string {
     const myNode = `  "${commitKey}" [
     label = "<f0> ${cmt.revisionHash} | ${formatTime(cmt.commitTime)} | ${
       cmt.projectName
-    }/${cmt.packageName} | revision: ${cmt.revision ?? cmt.revisionHash} | ${
+    }/${cmt.packageName} | revision: ${cmt.revision} | ${
       cmt.commitMessage?.split(/\r?\n/)[0] ?? "no commit message"
     } "
     shape = "record"

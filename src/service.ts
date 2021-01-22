@@ -368,7 +368,7 @@ export class ObsScmService implements Service {
       }
     );
 
-    if (this.package_meta !== undefined || this.package_meta) {
+    if (this.package_meta) {
       param.push(createParamXml("package-meta", "yes"));
     }
 

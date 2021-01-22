@@ -56,7 +56,7 @@ export interface StatusReply {
    * }
    * ```
    */
-  data?: Record<string, string>;
+  data?: Record<string, string | undefined>;
 }
 
 /** [[StatusReply]] as decoded via xml2js when received from the API */
@@ -91,9 +91,11 @@ export function statusReplyFromApi(status: StatusReplyApiReply): StatusReply {
 /** Typeguard for the custom [[ApiError]] type */
 export function isApiError(err: Error): err is ApiError {
   return (
+    /* eslint-disable @typescript-eslint/no-unnecessary-condition */
     (err as ApiError).statusCode !== undefined &&
     (err as ApiError).url !== undefined &&
     (err as ApiError).method !== undefined
+    /* eslint-enable @typescript-eslint/no-unnecessary-condition */
   );
 }
 
@@ -178,8 +180,10 @@ export class ApiError extends Error {
 /** Type guard to verify that the passed `err` is a [[TimeoutError]] */
 export function isTimeoutError(err: Error): err is TimeoutError {
   return (
+    /* eslint-disable @typescript-eslint/no-unnecessary-condition */
     (err as TimeoutError).method !== undefined &&
     (err as TimeoutError).url !== undefined &&
+    /* eslint-enable @typescript-eslint/no-unnecessary-condition */
     typeof (err as TimeoutError).maxRetries === "number" &&
     typeof (err as TimeoutError).durationMs === "number"
   );

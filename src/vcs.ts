@@ -182,7 +182,9 @@ export async function addAndDeleteFilesFromPackage(
       filesInWorkdir.push(newFile);
       matchingFile = newFile;
     }
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     assert(matchingFile !== undefined);
+
     if (matchingFile.state !== FileState.Untracked) {
       throw new Error(
         `Cannot add file ${toAddFname}, it is not untracked, got state '${matchingFile.state}' instead.`

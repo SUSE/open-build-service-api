@@ -418,17 +418,11 @@ export function repositorySettingToFlag(
     enableDisable: boolean
   ): void => {
     if (enableDisable) {
-      if (
-        defaultSetting === undefined ||
-        (defaultSetting !== undefined && !defaultSetting)
-      ) {
+      if (defaultSetting === undefined || !defaultSetting) {
         enable.push(flagSwitch);
       }
     } else {
-      if (
-        defaultSetting === undefined ||
-        (defaultSetting !== undefined && defaultSetting)
-      ) {
+      if (defaultSetting === undefined || defaultSetting) {
         disable.push(flagSwitch);
       }
     }

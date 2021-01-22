@@ -17,7 +17,8 @@ module.exports = {
       { varsIgnorePattern: "_.*" }
     ],
     "@typescript-eslint/no-extra-non-null-assertion": ["error"],
-    "@typescript-eslint/no-explicit-any": "off"
+    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/no-unnecessary-condition": ["error"]
   },
   extends: [
     "eslint:recommended",
