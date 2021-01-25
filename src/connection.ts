@@ -753,7 +753,7 @@ export class Connection {
       );
 
       req.on("timeout", () => {
-        req.abort();
+        req.destroy();
         resolve(retryInfoOnTimeout(options.timeoutMs));
       });
 
