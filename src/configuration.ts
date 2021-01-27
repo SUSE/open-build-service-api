@@ -19,11 +19,18 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import * as assert from "assert";
+import { ADDRCONFIG, ALL, lookup, LookupAddress, V4MAPPED } from "dns";
+import { createConnection } from "net";
 import { URL } from "url";
+import { promisify } from "util";
 import { Arch } from "./api/base-types";
 import { ChoiceOption, choiceToBoolean } from "./api/choice";
 import { Connection } from "./connection";
-import { withoutUndefinedMembers, extractElementIfPresent } from "./util";
+import { isApiError } from "./error";
+import { extractElementIfPresent, withoutUndefinedMembers } from "./util";
+
+const lookupPromise = promisify(lookup);
 
 /**
  * Publicly readable configuration of this OBS instance.
@@ -290,4 +297,138 @@ export async function fetchConfiguration(
       schedulers: confReply.configuration.schedulers.arch
     })
   );
+}
+/** Possible states of the connection to OBS */
+export const enum ConnectionState {
+  /** Everything appears to be working */
+  Ok,
+
+  /** Cannot reach OBS at all */
+  Unreachable,
+
+  /** The API appears to be broken */
+  ApiBroken,
+
+  /** Got a SSL error when connecting */
+  SslError,
+
+  /** Authentication failure */
+  AuthError
+}
+
+/** Status of the Connection to OBS */
+export interface ConnectionStatus {
+  /** The connection state */
+  readonly state: ConnectionState;
+
+  /**
+   * If the state is [[ConnectionState.SslError]], then this field contains the
+   * caught error.
+   */
+  readonly err?: Error;
+}
+
+/**
+ * Error codes extracted from node's source code and submitted to the docs:
+ * https://github.com/nodejs/node/pull/37096
+ */
+const CERT_ERROR_CODES = [
+  "UNABLE_TO_GET_ISSUER_CERT",
+  "UNABLE_TO_GET_CRL",
+  "UNABLE_TO_DECRYPT_CERT_SIGNATURE",
+  "UNABLE_TO_DECRYPT_CRL_SIGNATURE",
+  "UNABLE_TO_DECODE_ISSUER_PUBLIC_KEY",
+  "CERT_SIGNATURE_FAILURE",
+  "CRL_SIGNATURE_FAILURE",
+  "CERT_NOT_YET_VALID",
+  "CERT_HAS_EXPIRED",
+  "CRL_NOT_YET_VALID",
+  "CRL_HAS_EXPIRED",
+  "ERROR_IN_CERT_NOT_BEFORE_FIELD",
+  "ERROR_IN_CERT_NOT_AFTER_FIELD",
+  "ERROR_IN_CRL_LAST_UPDATE_FIELD",
+  "ERROR_IN_CRL_NEXT_UPDATE_FIELD",
+  "OUT_OF_MEM",
+  "DEPTH_ZERO_SELF_SIGNED_CERT",
+  "SELF_SIGNED_CERT_IN_CHAIN",
+  "UNABLE_TO_GET_ISSUER_CERT_LOCALLY",
+  "UNABLE_TO_VERIFY_LEAF_SIGNATURE",
+  "CERT_CHAIN_TOO_LONG",
+  "CERT_REVOKED",
+  "INVALID_CA",
+  "PATH_LENGTH_EXCEEDED",
+  "INVALID_PURPOSE",
+  "CERT_UNTRUSTED",
+  "CERT_REJECTED",
+  "HOSTNAME_MISMATCH",
+  // this one is from somewhere else…
+  "ERR_TLS_CERT_ALTNAME_INVALID"
+];
+
+/**
+ * Checks whether the supplied connection works
+ *
+ * @throw This function will never throw.
+ *
+ * @return A [[ConnectionStatus]] that has the [[ConnectionStatus.state]] field
+ *     set accordingly. If a SSL/TLS error occurred, then the caught exception
+ *     is available via the [[ConnectionStatus.err]] field so that it can be
+ *     reported to the user.
+ */
+export async function checkConnection(
+  con: Connection
+): Promise<ConnectionStatus> {
+  try {
+    await fetchConfiguration(con);
+    return { state: ConnectionState.Ok };
+  } catch (err) {
+    if (isApiError(err)) {
+      if (err.statusCode === 401) {
+        return { state: ConnectionState.AuthError };
+      }
+    }
+
+    // did we get a cert error? => SSL issue
+    if (CERT_ERROR_CODES.find((c) => c === err.code) !== undefined) {
+      return { state: ConnectionState.SslError, err };
+    }
+
+    // check if the url's host can be resolved
+    let addr: LookupAddress;
+    try {
+      addr = await lookupPromise(con.url.hostname, {
+        family: 6,
+        hints: ADDRCONFIG | V4MAPPED | ALL
+      });
+    } catch (err) {
+      // dns lookup error
+      return { state: ConnectionState.Unreachable };
+    }
+
+    // resolution worked, but can we actually open a connection?
+    try {
+      await new Promise((resolve, reject) => {
+        assert(addr !== undefined);
+        const port =
+          con.url.port === ""
+            ? con.url.protocol === "https:"
+              ? 443
+              : 80
+            : parseInt(con.url.port);
+        const sock = createConnection(port, addr.address, () => {
+          sock.destroy();
+          resolve(undefined);
+        });
+
+        sock.on("error", (err) => {
+          reject(err);
+        });
+      });
+    } catch (err) {
+      return { state: ConnectionState.Unreachable };
+    }
+
+    // raw TCP connection works => the server is busted
+    return { state: ConnectionState.ApiBroken };
+  }
 }

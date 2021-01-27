@@ -19,11 +19,15 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import { expect } from "chai";
 import { afterEach, beforeEach, describe, it } from "mocha";
 import { URL } from "url";
 import { Arch } from "../../src/api/base-types";
+import { Connection } from "../../src/connection";
 import {
+  checkConnection,
   Configuration,
+  ConnectionState,
   fetchConfiguration,
   UserRegistration
 } from "./../../src/configuration";
@@ -32,6 +36,7 @@ import {
   ApiType,
   beforeEachRecordHook,
   getTestConnection,
+  skipIfNoMiniObs,
   unixToDos
 } from "./../test-setup";
 
@@ -143,6 +148,78 @@ describe("Configuration", () => {
       await fetchConfiguration(
         getTestConnection(ApiType.Staging)
       ).should.eventually.deep.equal(ObsTestConfiguration);
+    });
+  });
+});
+describe("#checkConnection", function () {
+  this.timeout(10000);
+
+  describe("recorded", () => {
+    beforeEach(beforeEachRecordHook);
+    afterEach(afterEachRecordHook);
+
+    it("reports that the connection was successful", async () => {
+      await checkConnection(
+        getTestConnection(ApiType.Production)
+      ).should.eventually.deep.equal({ state: ConnectionState.Ok });
+    });
+
+    it("tells us that the authentication is broken when using a wrong password", async () => {
+      await checkConnection(
+        new Connection("fooUser", "fooPassword")
+      ).should.eventually.deep.equal({ state: ConnectionState.AuthError });
+    });
+  });
+
+  describe("live", () => {
+    it("reports certificate errors as such", async () => {
+      for (let url of [
+        "https://expired.badssl.com/",
+        "https://wrong.host.badssl.com",
+        "https://self-signed.badssl.com/",
+        "https://untrusted-root.badssl.com/"
+      ]) {
+        const status = await checkConnection(
+          new Connection("fooUser", "fooPassword", { url })
+        );
+        status.state.should.equal(ConnectionState.SslError);
+        expect(status.err).should.not.equal(undefined);
+      }
+    });
+
+    it("reports unreachable for an unresolvable host", async () => {
+      await checkConnection(
+        new Connection("fooUser", "fooPassword", {
+          url: "https://thisUrlShould.notExist.asdf.fooooooo.blllllldtugriniae"
+        })
+      ).should.eventually.deep.equal({ state: ConnectionState.Unreachable });
+    });
+
+    it("reports unreachable for truly unreachable hosts", async () => {
+      // let's just assume we don't have anything running on localhost:443
+      await checkConnection(
+        new Connection("fooUser", "fooPassword", {
+          url: "https://localhost"
+        })
+      ).should.eventually.deep.equal({ state: ConnectionState.Unreachable });
+    });
+
+    it("reports a broken API when we don't target OBS", async () => {
+      await checkConnection(
+        new Connection("fooUser", "fooPassword", {
+          url: "https://jsonplaceholder.typicode.com"
+        })
+      ).should.eventually.deep.equal({ state: ConnectionState.ApiBroken });
+    });
+
+    it("correctly identifies miniObs as working", async function () {
+      skipIfNoMiniObs(this);
+
+      await checkConnection(
+        getTestConnection(ApiType.MiniObs)
+      ).should.eventually.deep.equal({
+        state: ConnectionState.Ok
+      });
     });
   });
 });

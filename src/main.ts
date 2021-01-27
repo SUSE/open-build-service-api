@@ -35,7 +35,13 @@ export {
   PackageStatusCode,
   RepositoryCode
 } from "./build-result";
-export * from "./configuration";
+export {
+  checkConnection,
+  Configuration,
+  ConnectionState,
+  ConnectionStatus,
+  fetchConfiguration
+} from "./configuration";
 export { Connection, normalizeUrl } from "./connection";
 export { Distribution, fetchHostedDistributions } from "./distributions";
 export * from "./file";
