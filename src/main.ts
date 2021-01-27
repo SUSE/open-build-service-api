@@ -45,7 +45,12 @@ export {
   fetchConfiguration,
   UserRegistration
 } from "./configuration";
-export { Connection, normalizeUrl } from "./connection";
+export {
+  certificateToPem,
+  Connection,
+  fetchServerCaCertificate,
+  normalizeUrl
+} from "./connection";
 export { Distribution, fetchHostedDistributions } from "./distributions";
 export * from "./file";
 export {

@@ -26,7 +26,13 @@ import * as nock from "nock";
 import { createSandbox, SinonSpy } from "sinon";
 import { URL } from "url";
 import { Account } from "../src/account";
-import { Connection, normalizeUrl, RequestMethod } from "../src/connection";
+import {
+  certificateToPem,
+  Connection,
+  fetchServerCaCertificate,
+  normalizeUrl,
+  RequestMethod
+} from "../src/connection";
 import { ApiError, isXmlParseError, TimeoutError } from "../src/error";
 import { TokenKind } from "../src/token";
 import { range, sleep } from "../src/util";
@@ -34,7 +40,8 @@ import {
   afterEachRecordHook,
   ApiType,
   beforeEachRecordHook,
-  getTestConnection
+  getTestConnection,
+  skipIfNoMiniObs
 } from "./test-setup";
 
 const badSslComCertificate = `-----BEGIN CERTIFICATE-----
@@ -693,6 +700,63 @@ describe("Connection", () => {
         Error,
         /does not use https/i
       );
+    });
+  });
+});
+
+describe("#fetchServerCaCertificate", function () {
+  this.timeout(10000);
+
+  it("fetches the cert of badssl.com", async () => {
+    const cert = await fetchServerCaCertificate(
+      "https://self-signed.badssl.com/"
+    );
+
+    certificateToPem(cert).should.deep.equal(badSslComCertificate);
+  });
+
+  it("throws an error when the remote is not supporting TLS", async function () {
+    skipIfNoMiniObs(this);
+    await fetchServerCaCertificate(
+      getTestConnection(ApiType.MiniObs)
+    ).should.be.rejectedWith(/ssl/);
+  });
+
+  it("throws an error when the remote is not reachable", async () => {
+    await fetchServerCaCertificate(
+      new Connection("foo", "bar", {
+        url:
+          "https://thisUrlShouldNotExist.pleaseDontRegisterit.foo.xyz.dtruüiöaqf"
+      })
+    ).should.be.rejectedWith(/ENOTFOUND/);
+  });
+
+  it("retrieves the correct certificate to be passed to the Connection constructor", async () => {
+    const url = "https://www.cacert.org/";
+    const cert = await fetchServerCaCertificate(url);
+
+    cert.fingerprint256.should.equal(
+      "07:ED:BD:82:4A:49:88:CF:EF:42:15:DA:20:D4:8C:2B:41:D7:15:29:D7:C9:00:F5:70:92:6F:27:7C:C2:30:C5"
+    );
+
+    const con = new Connection("user", "password", {
+      url,
+      serverCaCertificate: certificateToPem(cert)
+    });
+
+    await con.makeApiCall("/", { decodeResponseFromXml: false });
+  });
+
+  it("retrieves the correct certificate for OBS", async () => {
+    const cert = await fetchServerCaCertificate(
+      getTestConnection(ApiType.Production)
+    );
+
+    // certificate is signed by letsencrypt, whose root cert is signed by this:
+    // https://letsencrypt.org/certs/isrg-root-x1-cross-signed.txt
+    expect(cert.issuer).to.deep.include({
+      O: "Digital Signature Trust Co.",
+      CN: "DST Root CA X3"
     });
   });
 });

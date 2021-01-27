@@ -19,14 +19,13 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import * as assert from "assert";
 import { ADDRCONFIG, ALL, lookup, LookupAddress, V4MAPPED } from "dns";
 import { createConnection } from "net";
 import { URL } from "url";
 import { promisify } from "util";
 import { Arch } from "./api/base-types";
 import { ChoiceOption, choiceToBoolean } from "./api/choice";
-import { Connection } from "./connection";
+import { Connection, getPortFromUrl } from "./connection";
 import { isApiError } from "./error";
 import { extractElementIfPresent, withoutUndefinedMembers } from "./util";
 
@@ -405,6 +404,19 @@ const CERT_ERROR_CODES = [
   "ERR_TLS_CERT_ALTNAME_INVALID"
 ];
 
+/** An error that is thrown by node's net/http/tls module */
+interface NetConnectError extends Error {
+  /**
+   * A short form of the TLS/network error code,
+   * e.g. `SELF_SIGNED_CERT_IN_CHAIN`.
+   */
+  readonly code: string;
+}
+
+function isNetConnectError(err: any): err is NetConnectError {
+  return typeof err.code === "string";
+}
+
 /**
  * Checks whether the supplied connection works
  *
@@ -429,7 +441,10 @@ export async function checkConnection(
     }
 
     // did we get a cert error? => SSL issue
-    if (CERT_ERROR_CODES.find((c) => c === err.code) !== undefined) {
+    if (
+      isNetConnectError(err) &&
+      CERT_ERROR_CODES.find((c) => c === err.code) !== undefined
+    ) {
       return { state: ConnectionState.SslError, err };
     }
 
@@ -448,17 +463,14 @@ export async function checkConnection(
     // resolution worked, but can we actually open a connection?
     try {
       await new Promise((resolve, reject) => {
-        assert(addr !== undefined);
-        const port =
-          con.url.port === ""
-            ? con.url.protocol === "https:"
-              ? 443
-              : 80
-            : parseInt(con.url.port);
-        const sock = createConnection(port, addr.address, () => {
-          sock.destroy();
-          resolve(undefined);
-        });
+        const sock = createConnection(
+          getPortFromUrl(con.url),
+          addr.address,
+          () => {
+            sock.destroy();
+            resolve(undefined);
+          }
+        );
 
         sock.on("error", (err) => {
           reject(err);

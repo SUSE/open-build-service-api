@@ -22,6 +22,7 @@
 import * as assert from "assert";
 import * as http from "http";
 import * as https from "https";
+import { connect, DetailedPeerCertificate, PeerCertificate } from "tls";
 import { URL } from "url";
 import { Account } from "./account";
 import { ApiError, TimeoutError, XmlParseError } from "./error";
@@ -776,3 +777,76 @@ export class Connection {
     });
   }
 }
+
+export const getPortFromUrl = (url: URL): number =>
+  url.port === "" ? (url.protocol === "https:" ? 443 : 80) : parseInt(url.port);
+
+export async function fetchServerCaCertificate(
+  con: Connection
+): Promise<DetailedPeerCertificate>;
+export async function fetchServerCaCertificate(
+  url: string
+): Promise<DetailedPeerCertificate>;
+
+/**
+ * Fetch the certificate of the certificate authority that signed the host
+ * belonging to this url or [[Connection]].
+ *
+ * This function will **not** verify certificates in the chain and thus you can
+ * use it to retrieve a self signed root certificate. Be aware that doing this
+ * can be very dangerous!
+ *
+ * @throw When no SSL/TLS connection can be established to the remote.
+ */
+export async function fetchServerCaCertificate(
+  urlOrCon: Connection | string
+): Promise<DetailedPeerCertificate> {
+  const url = typeof urlOrCon === "string" ? new URL(urlOrCon) : urlOrCon.url;
+  if (url.protocol !== "https:" && url.protocol !== "http:") {
+    throw new Error(`invalid protocol ${url.protocol}`);
+  }
+
+  return new Promise((resolve, reject) => {
+    const sock = connect(
+      {
+        host: url.hostname,
+        port: getPortFromUrl(url),
+        rejectUnauthorized: false,
+        // need to set the servername here as TLS supports serving multiple
+        // servers on the same port via SNI
+        servername: url.hostname
+      },
+      () => {
+        let cert = sock.getPeerCertificate(true);
+        // we reach the "root" certificate by getting each issuer's issuer until
+        // they all match
+        while (cert.issuerCertificate != cert) {
+          cert = cert.issuerCertificate;
+        }
+
+        sock.destroy();
+        resolve(cert);
+      }
+    );
+
+    sock.on("error", (err) => {
+      reject(err);
+    });
+  });
+}
+
+/**
+ * Convert a peer certificate object to the PEM format.
+ *
+ * This function can be used to convert the certificate that is retrieved by
+ * [[fetchServerCaCertificate]] into the format that is expected by the
+ * constructor of a [[Connection]].
+ */
+export const certificateToPem = (
+  cert: DetailedPeerCertificate | PeerCertificate
+): string => `-----BEGIN CERTIFICATE-----
+${cert.raw
+  .toString("base64")
+  .match(/.{0,64}/g)!
+  .join("\n")}-----END CERTIFICATE-----
+`;
