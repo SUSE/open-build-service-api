@@ -63,7 +63,7 @@ const ObsConfiguration: Configuration = {
   changePassword: false,
   hidePrivateOptions: true,
   gravatar: true,
-  ympUrl: new URL("http://software.opensuse.org/ymp"),
+  ympUrl: new URL("https://software.opensuse.org/ymp"),
   bugzillaUrl: new URL("https://bugzilla.opensuse.org"),
   noProxyFilter: "",
   autoCleanupAfterDays: 30,
