@@ -32,6 +32,24 @@ import { extractElementIfPresent, withoutUndefinedMembers } from "./util";
 
 const lookupPromise = promisify(lookup);
 
+/** General information about this OBS instance */
+export interface About {
+  /** Title of the API */
+  readonly title: string;
+
+  /** Description this API */
+  readonly description: string;
+
+  /** Version of OBS that is running */
+  readonly revision: string;
+
+  /** Commit from which OBS is deployed */
+  readonly commit?: string;
+
+  /** The last time this instance was deployed */
+  readonly lastDeployment?: Date;
+}
+
 /**
  * Publicly readable configuration of this OBS instance.
  */
@@ -209,6 +227,16 @@ interface ConfigurationApiReply {
   };
 }
 
+interface AboutApiReply {
+  about: {
+    title: string;
+    description: string;
+    revision: string;
+    commit?: string;
+    last_deployment?: string;
+  };
+}
+
 const constructUrlOpt = {
   construct: (u: string): URL => new URL(u)
 };
@@ -298,6 +326,18 @@ export async function fetchConfiguration(
     })
   );
 }
+
+/** Fetch the /about route */
+export async function fetchAboutApi(con: Connection): Promise<About> {
+  const aboutReply: AboutApiReply = await con.makeApiCall("/about");
+  const { last_deployment, ...rest } = aboutReply.about;
+  return withoutUndefinedMembers({
+    ...rest,
+    lastDeployment:
+      last_deployment === undefined ? undefined : new Date(last_deployment)
+  });
+}
+
 /** Possible states of the connection to OBS */
 export const enum ConnectionState {
   /** Everything appears to be working */

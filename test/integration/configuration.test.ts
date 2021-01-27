@@ -28,6 +28,7 @@ import {
   checkConnection,
   Configuration,
   ConnectionState,
+  fetchAboutApi,
   fetchConfiguration,
   UserRegistration
 } from "./../../src/configuration";
@@ -37,6 +38,7 @@ import {
   beforeEachRecordHook,
   getTestConnection,
   skipIfNoMiniObs,
+  skipIfNoMiniObsHook,
   unixToDos
 } from "./../test-setup";
 
@@ -151,6 +153,36 @@ describe("Configuration", () => {
     });
   });
 });
+
+describe("#fetchAboutApi", () => {
+  describe("recorded", () => {
+    beforeEach(beforeEachRecordHook);
+    afterEach(afterEachRecordHook);
+
+    it("fetches the about of OBS", async () => {
+      await fetchAboutApi(
+        getTestConnection(ApiType.Production)
+      ).should.eventually.deep.equal({
+        title: "Open Build Service API",
+        description: "API to the Open Build Service",
+        revision: "2.11~alpha.20210125T214343.95605a1437",
+        lastDeployment: new Date("2021-01-26 09:50:47 +0000"),
+        commit: "95605a143731a5c62a9ceec3ec6d6347b1368435"
+      });
+    });
+  });
+
+  describe("live", () => {
+    before(skipIfNoMiniObsHook);
+
+    it("fetches about of mini OBS that has no lastDeployment", async () => {
+      const about = await fetchAboutApi(getTestConnection(ApiType.MiniObs));
+      expect(about.lastDeployment).to.equal(undefined);
+      expect(about.commit).to.not.equal(undefined);
+    });
+  });
+});
+
 describe("#checkConnection", function () {
   this.timeout(10000);
 

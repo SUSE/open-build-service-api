@@ -36,11 +36,14 @@ export {
   RepositoryCode
 } from "./build-result";
 export {
+  About,
   checkConnection,
   Configuration,
   ConnectionState,
   ConnectionStatus,
-  fetchConfiguration
+  fetchAboutApi,
+  fetchConfiguration,
+  UserRegistration
 } from "./configuration";
 export { Connection, normalizeUrl } from "./connection";
 export { Distribution, fetchHostedDistributions } from "./distributions";
