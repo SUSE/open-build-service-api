@@ -7,6 +7,7 @@ module.exports = {
   },
   plugins: ["@typescript-eslint"],
   rules: {
+    "@typescript-eslint/no-unsafe-member-access": "off",
     "@typescript-eslint/no-inferrable-types": "off",
     "@typescript-eslint/no-floating-promises": "error",
     "@typescript-eslint/array-type": "error",

@@ -98,12 +98,10 @@ export interface Token {
 /** Type check whether an object is a [[Token]] */
 export function isToken(obj: any): obj is Token {
   return (
-    /* eslint-disable @typescript-eslint/no-unsafe-member-access */
     obj.kind !== undefined &&
     typeof obj.id === "number" &&
     typeof obj.userId === "string" &&
     typeof obj.string === "string"
-    /* eslint-enable @typescript-eslint/no-unsafe-member-access */
   );
 }
 
@@ -122,10 +120,8 @@ function isPackageTokenDentryAttributes(
   dentryAttrs: TokenDentryAttributes | PackageTokenDentryAttributes
 ): dentryAttrs is PackageTokenDentryAttributes {
   return (
-    /* eslint-disable @typescript-eslint/no-unsafe-member-access */
     (dentryAttrs as any).package !== undefined &&
     (dentryAttrs as any).project !== undefined
-    /* eslint-enable @typescript-eslint/no-unsafe-member-access */
   );
 }
 

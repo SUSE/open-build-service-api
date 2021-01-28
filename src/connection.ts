@@ -74,7 +74,6 @@ interface RetryInfo {
 }
 
 function isRetryInfo(obj: any): obj is RetryInfo {
-  /* eslint-disable @typescript-eslint/no-unsafe-member-access */
   return (
     obj.status !== undefined &&
     (obj.status === 503 ||
@@ -82,7 +81,6 @@ function isRetryInfo(obj: any): obj is RetryInfo {
       obj.status === 301 ||
       obj.status === "timeout")
   );
-  /* eslint-enable @typescript-eslint/no-unsafe-member-access */
 }
 
 function retryInfoOnTimeout(retryAfterMs?: number): RetryInfo {
@@ -264,13 +262,11 @@ type CloneOptions =
 function isCloneOptionsWithToken(
   opts: CloneOptions
 ): opts is CloneOptionsWithToken {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
   return (opts as any).token !== undefined;
 }
 function isCloneOptionsWithUsername(
   opts: CloneOptions
 ): opts is CloneOptionsWithUsername {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
   return typeof (opts as any).username === "string";
 }
 

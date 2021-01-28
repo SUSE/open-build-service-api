@@ -110,7 +110,7 @@ export interface SourcePackage extends SourceProject {
 function isSourcePackage(
   src: SourcePackage | SourceProject
 ): src is SourcePackage {
-  /* eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access */
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   return (src as any).packageName !== undefined;
 }
 
@@ -511,12 +511,12 @@ export type RequestedReviewer =
   | ProjectTarget;
 
 function isUserReviewer(rev: RequestedReviewer): rev is UserReviewer {
-  /* eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access */
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   return (rev as any).userId !== undefined;
 }
 
 function isGroupReviewer(rev: RequestedReviewer): rev is GroupReviewer {
-  /* eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access */
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   return (rev as any).groupId !== undefined;
 }
 
@@ -816,9 +816,9 @@ function isProject(
   proj: PackageTarget | ProjectTarget | Project | Package
 ): proj is Project {
   return (
-    /* eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access */
+    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
     (proj as any).apiUrl !== undefined &&
-    /* eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access */
+    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
     (proj as any).projectName === undefined
   );
 }
@@ -827,7 +827,7 @@ function isPackage(
   pkg: PackageTarget | ProjectTarget | Project | Package
 ): pkg is Package {
   return (
-    /* eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access */
+    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
     (pkg as any).apiUrl !== undefined && (pkg as any).projectName !== undefined
   );
 }

@@ -20,7 +20,7 @@
  */
 
 // ignore these rules as config-ini-parser has no type annotations
-/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment */
 
 import { promises as fsPromises } from "fs";
 import { homedir } from "os";
