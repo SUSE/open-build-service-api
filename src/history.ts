@@ -663,7 +663,7 @@ export function historyToGraphviz(commit: Commit): string {
   const visited = new Map<string, boolean>();
 
   const formatTime = (time: Date): string => {
-    const options = {
+    const options: Intl.DateTimeFormatOptions = {
       year: "numeric",
       month: "short",
       day: "numeric",
