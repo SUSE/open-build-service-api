@@ -67,7 +67,8 @@ export {
   createPackage,
   deletePackage,
   fetchPackage,
-  Package
+  Package,
+  readInUnifiedPackage
 } from "./package";
 export * from "./project";
 export {
