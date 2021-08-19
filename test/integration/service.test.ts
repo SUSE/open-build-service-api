@@ -111,7 +111,7 @@ describe("Service", function () {
       castToAsyncFunc<ServiceCtx>(async function () {
         await triggerServiceRun(con, testPkg).should.be.rejectedWith(
           ApiError,
-          /no valid token found/i
+          /(couldn\'t find token)|(no valid token found)/i
         );
       })
     );
