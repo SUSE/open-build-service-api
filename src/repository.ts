@@ -190,7 +190,6 @@ export function repositoryWithFlagsFromMeta(
     setDefaults
   });
 
-  assert(pkgMeta !== undefined);
   const pkgRepos = getRepositoryWithFlags(pkgMeta, repository);
 
   const repos: RepositoryWithFlags[] = [];

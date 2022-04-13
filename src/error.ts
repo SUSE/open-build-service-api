@@ -89,7 +89,7 @@ export function statusReplyFromApi(status: StatusReplyApiReply): StatusReply {
 }
 
 /** Typeguard for the custom [[ApiError]] type */
-export function isApiError(err: Error): err is ApiError {
+export function isApiError(err: any): err is ApiError {
   return (
     /* eslint-disable @typescript-eslint/no-unnecessary-condition */
     (err as ApiError).statusCode !== undefined &&
@@ -239,6 +239,6 @@ export interface XmlParseError extends Error {
 }
 
 /** Type guard for a [[XmlParseError]] */
-export function isXmlParseError(err: Error): err is XmlParseError {
+export function isXmlParseError(err: any): err is XmlParseError {
   return (err as XmlParseError).payload !== undefined;
 }
