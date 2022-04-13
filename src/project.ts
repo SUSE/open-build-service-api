@@ -422,28 +422,26 @@ export async function checkOutProject(
  *     files in the `.osc` subdirectory.
  */
 export async function readInCheckedOutProject(path: string): Promise<Project> {
-  const [
-    apiUrl,
-    name,
-    underscorePackagesContents,
-    projMetaContents
-  ] = await Promise.all(
-    PROJECT_UNDERSCORE_FILES.map(async (fname) =>
-      (await fsPromises.readFile(join(path, ".osc", fname))).toString().trim()
-    ).concat(
-      OBS_TS_PROJECT_UNDERSCORE_FILES.map(async (fname) => {
-        try {
-          return (
-            await fsPromises.readFile(join(path, DOT_OSC_PLUGIN_SUBDIR, fname))
-          )
-            .toString()
-            .trim();
-        } catch {
-          return "";
-        }
-      })
-    )
-  );
+  const [apiUrl, name, underscorePackagesContents, projMetaContents] =
+    await Promise.all(
+      PROJECT_UNDERSCORE_FILES.map(async (fname) =>
+        (await fsPromises.readFile(join(path, ".osc", fname))).toString().trim()
+      ).concat(
+        OBS_TS_PROJECT_UNDERSCORE_FILES.map(async (fname) => {
+          try {
+            return (
+              await fsPromises.readFile(
+                join(path, DOT_OSC_PLUGIN_SUBDIR, fname)
+              )
+            )
+              .toString()
+              .trim();
+          } catch {
+            return "";
+          }
+        })
+      )
+    );
 
   const meta: ProjectMeta | undefined =
     projMetaContents !== ""

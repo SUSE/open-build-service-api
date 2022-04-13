@@ -150,7 +150,8 @@ Thu Mar 14 14:51:58 UTC 2019 - Dan Čermák <dcermak@suse.com>
 - Initial package version
 `;
 
-const dotChangesRev3 = `-------------------------------------------------------------------
+const dotChangesRev3 =
+  `-------------------------------------------------------------------
 Fri Sep 27 20:34:04 UTC 2019 - Dan Čermák <dcermak@suse.com>
 
 - Fix in testsuite.sh:
@@ -159,21 +160,24 @@ Fri Sep 27 20:34:04 UTC 2019 - Dan Čermák <dcermak@suse.com>
 
 `.concat(dotChangesRev1);
 
-const dotChangesRev5 = `-------------------------------------------------------------------
+const dotChangesRev5 =
+  `-------------------------------------------------------------------
 Wed Oct  9 10:12:50 UTC 2019 - Dan Čermák <dcermak@suse.com>
 
 - Fix vagrant box name in testsuite.sh
 
 `.concat(dotChangesRev3);
 
-const dotChangesRev7 = `-------------------------------------------------------------------
+const dotChangesRev7 =
+  `-------------------------------------------------------------------
 Thu Nov  7 21:05:53 UTC 2019 - Dan Čermák <dcermak@suse.com>
 
 - Add missing sshfs dependency
 
 `.concat(dotChangesRev5);
 
-const dotChangesRev9 = `-------------------------------------------------------------------
+const dotChangesRev9 =
+  `-------------------------------------------------------------------
 Wed Jan 29 08:51:07 UTC 2020 - Dan Čermák <dcermak@suse.com>
 
 - New upstream release 1.3.3
@@ -205,7 +209,8 @@ Wed Jan 29 08:51:07 UTC 2020 - Dan Čermák <dcermak@suse.com>
 
 `.concat(dotChangesRev7);
 
-const dotChangesRev11 = `-------------------------------------------------------------------
+const dotChangesRev11 =
+  `-------------------------------------------------------------------
 Mon Mar 16 12:01:33 UTC 2020 - Dan Čermák <dcermak@suse.com>
 
 - New upstream release 1.3.4
@@ -219,21 +224,23 @@ Mon Mar 16 12:01:33 UTC 2020 - Dan Čermák <dcermak@suse.com>
 
 `.concat(dotChangesRev9);
 
-const dotChangesRev13 = `-------------------------------------------------------------------
+const dotChangesRev13 =
+  `-------------------------------------------------------------------
 Tue Mar 31 06:49:51 UTC 2020 - Guillaume GARDET <guillaume.gardet@opensuse.org>
 
 - Fix vagrant-ssh-testsuite for aarch64 by using`.concat(
-  // there is a trailing whitespace that prettier will apparently always remove -.-
-  " ",
-  `
+    // there is a trailing whitespace that prettier will apparently always remove -.-
+    " ",
+    `
   opensuse/Tumbleweed.$(uname -m) instead of fedora box which is
   for x86_64 only
 
 `,
-  dotChangesRev11
-);
+    dotChangesRev11
+  );
 
-const dotChangesRev15 = `-------------------------------------------------------------------
+const dotChangesRev15 =
+  `-------------------------------------------------------------------
 Wed Apr  1 20:38:10 UTC 2020 - Dan Čermák <dcermak@suse.com>
 
 - Fix test suite failures (boo#1168371)
@@ -252,7 +259,8 @@ Wed Apr  1 20:38:10 UTC 2020 - Dan Čermák <dcermak@suse.com>
 
 `.concat(dotChangesRev13);
 
-const dotChangesRev17 = `-------------------------------------------------------------------
+const dotChangesRev17 =
+  `-------------------------------------------------------------------
 Tue May 12 15:31:27 UTC 2020 - Dan Čermák <dcermak@suse.com>
 
 - Switch to Ruby 2.6 for Tumbleweed

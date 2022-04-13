@@ -329,44 +329,40 @@ export class ObsScmService implements Service {
       createParamXml("scm", this.scmType.toString())
     ];
 
-    ([
-      ["user", this.user],
-      ["version", this.version],
-      ["versionformat", this.versionformat],
-      ["versionrewrite-pattern", this.versionrewrite_pattern],
-      ["versionrewrite-replacement", this.versionrewrite_replacement],
-      ["versionprefix", this.versionprefix],
-      ["match-tag", this.match_tag],
-      ["parent_tag", this.parent_tag],
-      ["revision", this.revision],
-      ["filename", this.filename],
-      ["extension", this.extension],
-      ["exclude", this.exclude],
-      ["include", this.include],
-      ["extract", this.extract],
-      ["history-depth", this.history_depth],
-      ["submodules", this.submodules],
-      ["lfs", this.lfs],
-      ["sslverify", this.sslverify],
-      ["changesgenerate", this.changesgenerate],
-      ["changesauthor", this.changesauthor],
-      ["encoding", this.encoding]
-    ] as [string, string | Submodules | boolean | undefined][]).forEach(
-      ([name, value]) => {
-        if (value !== undefined) {
-          param.push(
-            createParamXml(
-              name,
-              typeof value === "boolean"
-                ? value
-                  ? "enable"
-                  : "disable"
-                : value
-            )
-          );
-        }
+    (
+      [
+        ["user", this.user],
+        ["version", this.version],
+        ["versionformat", this.versionformat],
+        ["versionrewrite-pattern", this.versionrewrite_pattern],
+        ["versionrewrite-replacement", this.versionrewrite_replacement],
+        ["versionprefix", this.versionprefix],
+        ["match-tag", this.match_tag],
+        ["parent_tag", this.parent_tag],
+        ["revision", this.revision],
+        ["filename", this.filename],
+        ["extension", this.extension],
+        ["exclude", this.exclude],
+        ["include", this.include],
+        ["extract", this.extract],
+        ["history-depth", this.history_depth],
+        ["submodules", this.submodules],
+        ["lfs", this.lfs],
+        ["sslverify", this.sslverify],
+        ["changesgenerate", this.changesgenerate],
+        ["changesauthor", this.changesauthor],
+        ["encoding", this.encoding]
+      ] as [string, string | Submodules | boolean | undefined][]
+    ).forEach(([name, value]) => {
+      if (value !== undefined) {
+        param.push(
+          createParamXml(
+            name,
+            typeof value === "boolean" ? (value ? "enable" : "disable") : value
+          )
+        );
       }
-    );
+    });
 
     if (this.package_meta) {
       param.push(createParamXml("package-meta", "yes"));

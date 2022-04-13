@@ -805,17 +805,12 @@ export async function checkOutPackage(
 export async function readInCheckedOutPackage(
   path: string
 ): Promise<FrozenPackage> {
-  const [
-    osclibVersion,
-    apiUrlRaw,
-    nameRaw,
-    projectNameRaw,
-    fileDirectoryXml
-  ] = await Promise.all(
-    mandatoryPkgUnderscoreFiles.map(async (fname) =>
-      (await fsPromises.readFile(join(path, ".osc", fname))).toString()
-    )
-  );
+  const [osclibVersion, apiUrlRaw, nameRaw, projectNameRaw, fileDirectoryXml] =
+    await Promise.all(
+      mandatoryPkgUnderscoreFiles.map(async (fname) =>
+        (await fsPromises.readFile(join(path, ".osc", fname))).toString()
+      )
+    );
 
   const apiUrl = apiUrlRaw.trim();
   const name = nameRaw.trim();
@@ -853,10 +848,11 @@ export async function readInCheckedOutPackage(
   );
 
   const basePkg = { apiUrl, name, projectName };
-  const { sourceLink, md5Hash, files: emptyFiles } = fileListFromDirectory(
-    basePkg,
-    dir
-  );
+  const {
+    sourceLink,
+    md5Hash,
+    files: emptyFiles
+  } = fileListFromDirectory(basePkg, dir);
 
   const files = await Promise.all(
     emptyFiles.map(async (f) => {

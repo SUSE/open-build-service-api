@@ -58,7 +58,8 @@ type RepositoryWithFlagType<T> = BaseRepository & {
  */
 export type RepositoryWithFlags = RepositoryWithFlagType<RepositorySetting>;
 
-type RepositoryWithNonDefaultFlags = RepositoryWithFlagType<RepositorySettingWithoutDefaults>;
+type RepositoryWithNonDefaultFlags =
+  RepositoryWithFlagType<RepositorySettingWithoutDefaults>;
 
 interface SetDefaultsOption {
   setDefaults: boolean;

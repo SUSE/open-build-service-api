@@ -44,7 +44,7 @@ export const enum TokenOperation {
 type TokenKindHelper = TokenOperation | TokenKindOnly;
 
 const operationToKind = (operation: TokenOperation): TokenKind =>
-  (operation as unknown) as TokenKind;
+  operation as unknown as TokenKind;
 
 /** Possible token types */
 export const enum TokenKind {

@@ -464,12 +464,8 @@ export class Connection {
    * @throw Same errors as the constructor.
    */
   public clone(cloneOptions: CloneOptions = {}): Connection {
-    const {
-      url,
-      serverCaCertificate,
-      forceHttps,
-      maxConcurrentConnections
-    } = cloneOptions;
+    const { url, serverCaCertificate, forceHttps, maxConcurrentConnections } =
+      cloneOptions;
     const opts = {
       url: url ?? this.url.href,
       serverCaCertificate: serverCaCertificate ?? this.serverCaCertificate,

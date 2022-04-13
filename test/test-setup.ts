@@ -286,7 +286,7 @@ export function miniObsOnlyHook(hook: HookFunction): HookFunction {
 }
 
 export const castToFuncT = <FC, FT>(func: (this: FC) => void): FT =>
-  (func as any) as FT;
+  func as any as FT;
 
 export const castToAsyncFunc = <FC>(func: (this: FC) => void): AsyncFunc =>
   castToFuncT<FC, AsyncFunc>(func);

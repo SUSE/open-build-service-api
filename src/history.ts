@@ -418,10 +418,8 @@ async function cachedFetchHistoryAcrossLinks(
     return pkgHistoryCache.get(pkgKey);
   }
 
-  const {
-    headCommit,
-    reversedExpandedPackageContents
-  } = await fetchExpandedRevisions(con, pkg);
+  const { headCommit, reversedExpandedPackageContents } =
+    await fetchExpandedRevisions(con, pkg);
 
   // console.log(reversedExpandedPackageContents);
 

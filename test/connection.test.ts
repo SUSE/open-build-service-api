@@ -725,8 +725,7 @@ describe("#fetchServerCaCertificate", function () {
   it("throws an error when the remote is not reachable", async () => {
     await fetchServerCaCertificate(
       new Connection("foo", "bar", {
-        url:
-          "https://thisUrlShouldNotExist.pleaseDontRegisterit.foo.xyz.dtruüiöaqf"
+        url: "https://thisUrlShouldNotExist.pleaseDontRegisterit.foo.xyz.dtruüiöaqf"
       })
     ).should.be.rejectedWith(/ENOTFOUND/);
   });

@@ -41,9 +41,9 @@ describe("RepositoryWithFlags", () => {
   beforeEach(beforeEachRecordHook);
   afterEach(afterEachRecordHook);
 
-  const getRepoByNameBuilder = (repos: RepositoryWithFlags[] | undefined) => (
-    name: string
-  ) => repos!.find((repo) => repo.name === name);
+  const getRepoByNameBuilder =
+    (repos: RepositoryWithFlags[] | undefined) => (name: string) =>
+      repos!.find((repo) => repo.name === name);
 
   describe("#repositoryWithFlagsFromMeta", () => {
     it("correctly parses the project flags of home:tkb", async () => {
