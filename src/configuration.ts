@@ -433,7 +433,7 @@ export async function checkConnection(
   try {
     await fetchConfiguration(con);
     return { state: ConnectionState.Ok };
-  } catch (err) {
+  } catch (err: any) {
     if (isApiError(err)) {
       if (err.statusCode === 401) {
         return { state: ConnectionState.AuthError };

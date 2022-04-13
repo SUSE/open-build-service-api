@@ -300,7 +300,7 @@ export async function swallowException(
 ): Promise<void> {
   try {
     await func.apply(undefined, args);
-  } catch (err) {
+  } catch (err: any) {
     console.error(err.toString());
   }
 }

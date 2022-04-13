@@ -160,7 +160,7 @@ describe("Connection", () => {
       let exceptionCaught = false;
       try {
         await con.makeApiCall("todos/1");
-      } catch (err) {
+      } catch (err: any) {
         isXmlParseError(err).should.equal(true);
         JSON.parse(err.payload.toString()).should.deep.equal(todo1);
         exceptionCaught = true;

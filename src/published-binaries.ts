@@ -138,7 +138,7 @@ export async function fetchPublishedRepositoryContents(
   try {
     const binaryNames = await fetchDirectoryNames(con, route);
     return binaryNames;
-  } catch (err) {
+  } catch (err: any) {
     if (isXmlParseError(err)) {
       return undefined;
     } else {
