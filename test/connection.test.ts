@@ -244,7 +244,7 @@ describe("Connection", () => {
         .makeApiCall("/", {
           decodeResponseFromXml: false
         })
-        .should.be.rejectedWith(/self signed certificate/i);
+        .should.be.rejectedWith(/self( |-)signed certificate/i);
     });
 
     it("throws an exception when the request fails", async () => {
