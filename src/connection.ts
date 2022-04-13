@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2019-2020 SUSE LLC
+ * Copyright (c) 2019-2022 SUSE LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -464,12 +464,8 @@ export class Connection {
    * @throw Same errors as the constructor.
    */
   public clone(cloneOptions: CloneOptions = {}): Connection {
-    const {
-      url,
-      serverCaCertificate,
-      forceHttps,
-      maxConcurrentConnections
-    } = cloneOptions;
+    const { url, serverCaCertificate, forceHttps, maxConcurrentConnections } =
+      cloneOptions;
     const opts = {
       url: url ?? this.url.href,
       serverCaCertificate: serverCaCertificate ?? this.serverCaCertificate,

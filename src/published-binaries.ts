@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2020 SUSE LLC
+ * Copyright (c) 2020-2022 SUSE LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -138,7 +138,7 @@ export async function fetchPublishedRepositoryContents(
   try {
     const binaryNames = await fetchDirectoryNames(con, route);
     return binaryNames;
-  } catch (err) {
+  } catch (err: any) {
     if (isXmlParseError(err)) {
       return undefined;
     } else {

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2020 SUSE LLC
+ * Copyright (c) 2020-2022 SUSE LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -44,7 +44,7 @@ export const enum TokenOperation {
 type TokenKindHelper = TokenOperation | TokenKindOnly;
 
 const operationToKind = (operation: TokenOperation): TokenKind =>
-  (operation as unknown) as TokenKind;
+  operation as unknown as TokenKind;
 
 /** Possible token types */
 export const enum TokenKind {

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2019-2020 SUSE LLC
+ * Copyright (c) 2019-2022 SUSE LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -58,7 +58,8 @@ type RepositoryWithFlagType<T> = BaseRepository & {
  */
 export type RepositoryWithFlags = RepositoryWithFlagType<RepositorySetting>;
 
-type RepositoryWithNonDefaultFlags = RepositoryWithFlagType<RepositorySettingWithoutDefaults>;
+type RepositoryWithNonDefaultFlags =
+  RepositoryWithFlagType<RepositorySettingWithoutDefaults>;
 
 interface SetDefaultsOption {
   setDefaults: boolean;
@@ -189,7 +190,6 @@ export function repositoryWithFlagsFromMeta(
     setDefaults
   });
 
-  assert(pkgMeta !== undefined);
   const pkgRepos = getRepositoryWithFlags(pkgMeta, repository);
 
   const repos: RepositoryWithFlags[] = [];

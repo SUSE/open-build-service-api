@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2020 SUSE LLC
+ * Copyright (c) 2020-2022 SUSE LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -41,9 +41,9 @@ describe("RepositoryWithFlags", () => {
   beforeEach(beforeEachRecordHook);
   afterEach(afterEachRecordHook);
 
-  const getRepoByNameBuilder = (repos: RepositoryWithFlags[] | undefined) => (
-    name: string
-  ) => repos!.find((repo) => repo.name === name);
+  const getRepoByNameBuilder =
+    (repos: RepositoryWithFlags[] | undefined) => (name: string) =>
+      repos!.find((repo) => repo.name === name);
 
   describe("#repositoryWithFlagsFromMeta", () => {
     it("correctly parses the project flags of home:tkb", async () => {

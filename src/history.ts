@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2020 SUSE LLC
+ * Copyright (c) 2020-2022 SUSE LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -219,34 +219,32 @@ async function fetchExpandedRevisions(
   const revisions = await fetchHistory(con, pkg);
 
   const packageContentsAndExpanded = await Promise.all(
-    revisions.map(
-      async (rev): Promise<[Directory, boolean]> => {
-        try {
-          // FIXME: should use a function from the package module instead
-          const expandedDir = await fetchDirectory(
-            con,
-            `/source/${pkg.projectName}/${pkg.name}?expand=1&linkrev=base&rev=${rev.revisionHash}`
-          );
-          return [expandedDir, true];
-        } catch (err) {
-          // it is possible that the sources cannot be expanded due to a conflict,
-          // in that case well get an ApiError with status 400 telling us that
-          // there is a conflict
-          // If we got a different error, just rethrow it, we cannot handle it
-          if (!isApiError(err) || err.statusCode !== 400) {
-            throw err;
-          }
-          // retry with the unexpanded sources
-          return [
-            await fetchDirectory(
-              con,
-              `/source/${pkg.projectName}/${pkg.name}?expand=0&rev=${rev.revisionHash}`
-            ),
-            false
-          ];
+    revisions.map(async (rev): Promise<[Directory, boolean]> => {
+      try {
+        // FIXME: should use a function from the package module instead
+        const expandedDir = await fetchDirectory(
+          con,
+          `/source/${pkg.projectName}/${pkg.name}?expand=1&linkrev=base&rev=${rev.revisionHash}`
+        );
+        return [expandedDir, true];
+      } catch (err: any) {
+        // it is possible that the sources cannot be expanded due to a conflict,
+        // in that case well get an ApiError with status 400 telling us that
+        // there is a conflict
+        // If we got a different error, just rethrow it, we cannot handle it
+        if (!isApiError(err) || err.statusCode !== 400) {
+          throw err;
         }
+        // retry with the unexpanded sources
+        return [
+          await fetchDirectory(
+            con,
+            `/source/${pkg.projectName}/${pkg.name}?expand=0&rev=${rev.revisionHash}`
+          ),
+          false
+        ];
       }
-    )
+    })
   );
 
   assert(
@@ -420,10 +418,8 @@ async function cachedFetchHistoryAcrossLinks(
     return pkgHistoryCache.get(pkgKey);
   }
 
-  const {
-    headCommit,
-    reversedExpandedPackageContents
-  } = await fetchExpandedRevisions(con, pkg);
+  const { headCommit, reversedExpandedPackageContents } =
+    await fetchExpandedRevisions(con, pkg);
 
   // console.log(reversedExpandedPackageContents);
 

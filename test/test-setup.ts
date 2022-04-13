@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2019-2020 SUSE LLC
+ * Copyright (c) 2019-2022 SUSE LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -286,7 +286,7 @@ export function miniObsOnlyHook(hook: HookFunction): HookFunction {
 }
 
 export const castToFuncT = <FC, FT>(func: (this: FC) => void): FT =>
-  (func as any) as FT;
+  func as any as FT;
 
 export const castToAsyncFunc = <FC>(func: (this: FC) => void): AsyncFunc =>
   castToFuncT<FC, AsyncFunc>(func);
@@ -300,7 +300,7 @@ export async function swallowException(
 ): Promise<void> {
   try {
     await func.apply(undefined, args);
-  } catch (err) {
+  } catch (err: any) {
     console.error(err.toString());
   }
 }

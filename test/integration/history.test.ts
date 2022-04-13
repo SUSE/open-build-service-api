@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2020 SUSE LLC
+ * Copyright (c) 2020-2022 SUSE LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -319,8 +319,8 @@ describe("Commit", function () {
         .to.be.an("array")
         .and.have.length(2);
 
-      const request789968Commit = request790711Commit.parentCommits![0]
-        .parentCommits![0];
+      const request789968Commit =
+        request790711Commit.parentCommits![0].parentCommits![0];
 
       expect(request789968Commit).to.deep.include({
         revisionHash: "480dd2446e028ca573b49aae533bdf2b",
@@ -346,8 +346,8 @@ describe("Commit", function () {
         expanded: true,
         requestId: 789974
       };
-      const factoryRequest789744Commit = request790711Commit.parentCommits![0]
-        .parentCommits![1];
+      const factoryRequest789744Commit =
+        request790711Commit.parentCommits![0].parentCommits![1];
       expect(factoryRequest789744Commit).to.deep.include(
         expectedRequest789744Commit
       );
@@ -371,8 +371,8 @@ describe("Commit", function () {
         .to.be.an("array")
         .and.have.length(2);
 
-      const rel134Commit = request789968Commit.parentCommits![0]
-        .parentCommits![0];
+      const rel134Commit =
+        request789968Commit.parentCommits![0].parentCommits![0];
       expect(rel134Commit).to.deep.include({
         revisionHash: "f3673ea3a638aad7afb7fda1880bfd4d",
         userId: "dancermak",
@@ -513,8 +513,8 @@ describe("Commit", function () {
       expect(
         secondBaseRevUpdate[0].parentCommits![0].parentCommits
       ).to.have.length(1);
-      const thirdBaseRevUpdate = secondBaseRevUpdate[0].parentCommits![0]
-        .parentCommits![0];
+      const thirdBaseRevUpdate =
+        secondBaseRevUpdate[0].parentCommits![0].parentCommits![0];
 
       expect(thirdBaseRevUpdate).to.deep.include({
         revisionHash: "4fd9f144db09bfaa246fd0ad57c0d1bb",
@@ -542,8 +542,8 @@ describe("Commit", function () {
       expect(thirdBaseRevUpdate.parentCommits![0].parentCommits).to.have.length(
         1
       );
-      const fourthBaseRevUpdate = thirdBaseRevUpdate.parentCommits![0]
-        .parentCommits![0];
+      const fourthBaseRevUpdate =
+        thirdBaseRevUpdate.parentCommits![0].parentCommits![0];
 
       expect(fourthBaseRevUpdate).to.deep.include({
         revisionHash: "eb7f3ba5b53e222d736fe9f872fc0728",

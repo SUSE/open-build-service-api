@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2019-2020 SUSE LLC
+ * Copyright (c) 2019-2022 SUSE LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -269,7 +269,7 @@ baz
       let exceptionCaught = false;
       try {
         await util.runProcess("sh", { stdin: "echo 'bar' >&2 ; exit 1;" });
-      } catch (err) {
+      } catch (err: any) {
         util.isProcessError(err).should.equal(true);
         (err as util.ProcessError).stderr.join("\n").should.match(/bar/);
         exceptionCaught = true;
@@ -281,7 +281,7 @@ baz
       let exceptionCaught = false;
       try {
         await util.runProcess("sh", { stdin: "echo 'foo'; exit 1;" });
-      } catch (err) {
+      } catch (err: any) {
         util.isProcessError(err).should.equal(true);
         (err as util.ProcessError).stdout.join("\n").should.match(/foo/);
         exceptionCaught = true;
@@ -293,7 +293,7 @@ baz
       let exceptionCaught = false;
       try {
         await util.runProcess("sh", { stdin: "kill -9 $$" });
-      } catch (err) {
+      } catch (err: any) {
         util.isProcessError(err).should.equal(true);
         err.toString().should.match(/killed by a signal/i);
         exceptionCaught = true;

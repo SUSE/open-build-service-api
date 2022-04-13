@@ -187,7 +187,7 @@ export function deleteUndefinedAndEmptyMembers<T>(obj: T): T {
   Object.keys(obj).forEach((key) => {
     const elem = obj[key as keyof T] as T[keyof T] | undefined;
     if (elem !== undefined) {
-      if (!Array.isArray(elem) || ((elem as unknown) as any[]).length > 0) {
+      if (!Array.isArray(elem) || (elem as unknown as any[]).length > 0) {
         res[key] = elem;
       }
     }

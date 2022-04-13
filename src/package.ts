@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2019-2020 SUSE LLC
+ * Copyright (c) 2019-2022 SUSE LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -25,6 +25,7 @@ import { join, resolve } from "path";
 import { inspect } from "util";
 import {
   Directory,
+  DirectoryApiReply,
   directoryFromApi,
   directoryToApi,
   fetchDirectory,
@@ -33,6 +34,7 @@ import {
 import {
   fetchPackageMeta,
   PackageMeta,
+  PackageMetaApiReply,
   packageMetaFromApi,
   packageMetaToApi,
   setPackageMeta
@@ -452,7 +454,7 @@ export async function fetchFileList(
     await Promise.all(
       files.map(async (f) => {
         f.contents = await fetchFileContents(con, f, {
-          expandLinks: options?.expandLinks,
+          expandLinks: options.expandLinks,
           // we need to pass the md5Hash of the package into here and **not**
           // the one that the user provided, because they will **not** match if
           // we used linkedRevisionIsBase = true!
@@ -805,17 +807,12 @@ export async function checkOutPackage(
 export async function readInCheckedOutPackage(
   path: string
 ): Promise<FrozenPackage> {
-  const [
-    osclibVersion,
-    apiUrlRaw,
-    nameRaw,
-    projectNameRaw,
-    fileDirectoryXml
-  ] = await Promise.all(
-    mandatoryPkgUnderscoreFiles.map(async (fname) =>
-      (await fsPromises.readFile(join(path, ".osc", fname))).toString()
-    )
-  );
+  const [osclibVersion, apiUrlRaw, nameRaw, projectNameRaw, fileDirectoryXml] =
+    await Promise.all(
+      mandatoryPkgUnderscoreFiles.map(async (fname) =>
+        (await fsPromises.readFile(join(path, ".osc", fname))).toString()
+      )
+    );
 
   const apiUrl = apiUrlRaw.trim();
   const name = nameRaw.trim();
@@ -839,7 +836,11 @@ export async function readInCheckedOutPackage(
 
   const meta =
     metaXml !== undefined
-      ? packageMetaFromApi(await newXmlParser().parseStringPromise(metaXml))
+      ? packageMetaFromApi(
+          (await newXmlParser().parseStringPromise(
+            metaXml
+          )) as PackageMetaApiReply
+        )
       : undefined;
 
   if (parseFloat(osclibVersion) !== 1.0) {
@@ -849,14 +850,17 @@ export async function readInCheckedOutPackage(
   }
 
   const dir = directoryFromApi(
-    await newXmlParser().parseStringPromise(fileDirectoryXml)
+    (await newXmlParser().parseStringPromise(
+      fileDirectoryXml
+    )) as DirectoryApiReply
   );
 
   const basePkg = { apiUrl, name, projectName };
-  const { sourceLink, md5Hash, files: emptyFiles } = fileListFromDirectory(
-    basePkg,
-    dir
-  );
+  const {
+    sourceLink,
+    md5Hash,
+    files: emptyFiles
+  } = fileListFromDirectory(basePkg, dir);
 
   const files = await Promise.all(
     emptyFiles.map(async (f) => {

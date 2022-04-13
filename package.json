@@ -7,7 +7,7 @@
   "author": {
     "name": "Dan Čermák",
     "email": "dcermak@suse.com",
-    "url": "https://github.com/dcermak/"
+    "url": "https://dancermak.name/"
   },
   "keywords": [
     "open-build-service",
@@ -16,7 +16,9 @@
     "api-client",
     "typescript"
   ],
-  "files": ["lib"],
+  "files": [
+    "lib"
+  ],
   "main": "lib/main.js",
   "types": "lib/main.d.ts",
   "scripts": {
@@ -48,12 +50,12 @@
     "@types/sinon": "^10",
     "@types/sinon-chai": "^3",
     "@types/xml2js": "^0.4",
-    "@typescript-eslint/eslint-plugin": "^4",
-    "@typescript-eslint/parser": "^4",
+    "@typescript-eslint/eslint-plugin": "^5",
+    "@typescript-eslint/parser": "^5",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "chai-things": "^0.2.0",
-    "eslint": "^7",
+    "eslint": "^8",
     "mocha": "^9",
     "mock-fs": "^5",
     "nock": "^13",
@@ -73,17 +75,34 @@
     "trailingComma": "none"
   },
   "nyc": {
-    "include": ["src/**/*.ts"],
-    "exclude": ["lib"],
-    "extension": [".ts"],
-    "require": ["ts-node/register"],
-    "reporter": ["html", "text", "lcov"],
+    "include": [
+      "src/**/*.ts"
+    ],
+    "exclude": [
+      "lib"
+    ],
+    "extension": [
+      ".ts"
+    ],
+    "require": [
+      "ts-node/register"
+    ],
+    "reporter": [
+      "html",
+      "text",
+      "lcov"
+    ],
     "all": true,
     "cache": false
   },
   "mocha": {
-    "require": ["ts-node/register", "test/setup.js"],
+    "require": [
+      "ts-node/register",
+      "test/setup.js"
+    ],
     "spec": "test/**/*.test.ts",
-    "extension": ["ts"]
+    "extension": [
+      "ts"
+    ]
   }
 }

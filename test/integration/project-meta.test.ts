@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2019-2020 SUSE LLC
+ * Copyright (c) 2019-2022 SUSE LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -62,8 +62,7 @@ const fedora33StandardDoD: DownloadOnDemand[] = [
     url: "http://ftp.fau.de/fedora/linux/releases/33/Everything/x86_64/os",
     repositoryType: "rpmmd",
     sslMaster: {
-      url:
-        "https://dl.fedoraproject.org/pub/fedora/linux/releases/33/Everything/x86_64/os",
+      url: "https://dl.fedoraproject.org/pub/fedora/linux/releases/33/Everything/x86_64/os",
       fingerprint:
         "sha256:65a9f760749609c590387157e58a308b0d55d7f343da82bbe5ea945d2f0e338a"
     }
@@ -73,44 +72,37 @@ const fedora33StandardDoD: DownloadOnDemand[] = [
     url: "http://ftp.fau.de/fedora/linux/releases/33/Everything/armhfp/os",
     repositoryType: "rpmmd",
     sslMaster: {
-      url:
-        "https://dl.fedoraproject.org/pub/fedora/linux/releases/33/Everything/armhfp/os",
+      url: "https://dl.fedoraproject.org/pub/fedora/linux/releases/33/Everything/armhfp/os",
       fingerprint:
         "sha256:65a9f760749609c590387157e58a308b0d55d7f343da82bbe5ea945d2f0e338a"
     }
   },
   {
     arch: Arch.Ppc64le,
-    url:
-      "http://ftp-stud.hs-esslingen.de/pub/fedora-secondary/releases/33/Everything/ppc64le/os/",
+    url: "http://ftp-stud.hs-esslingen.de/pub/fedora-secondary/releases/33/Everything/ppc64le/os/",
     repositoryType: "rpmmd",
     sslMaster: {
-      url:
-        "https://dl.fedoraproject.org/pub/fedora-secondary/releases/33/Everything/ppc64le/os/",
+      url: "https://dl.fedoraproject.org/pub/fedora-secondary/releases/33/Everything/ppc64le/os/",
       fingerprint:
         "sha256:65a9f760749609c590387157e58a308b0d55d7f343da82bbe5ea945d2f0e338a"
     }
   },
   {
     arch: Arch.S390x,
-    url:
-      "http://ftp-stud.hs-esslingen.de/pub/fedora-secondary/releases/33/Everything/s390x/os/",
+    url: "http://ftp-stud.hs-esslingen.de/pub/fedora-secondary/releases/33/Everything/s390x/os/",
     repositoryType: "rpmmd",
     sslMaster: {
-      url:
-        "https://dl.fedoraproject.org/pub/fedora-secondary/releases/33/Everything/s390x/os/",
+      url: "https://dl.fedoraproject.org/pub/fedora-secondary/releases/33/Everything/s390x/os/",
       fingerprint:
         "sha256:65a9f760749609c590387157e58a308b0d55d7f343da82bbe5ea945d2f0e338a"
     }
   },
   {
     arch: Arch.Aarch64,
-    url:
-      "https://dl.fedoraproject.org/pub/fedora/linux/releases/33/Everything/aarch64/os/",
+    url: "https://dl.fedoraproject.org/pub/fedora/linux/releases/33/Everything/aarch64/os/",
     repositoryType: "rpmmd",
     sslMaster: {
-      url:
-        "https://dl.fedoraproject.org/pub/fedora/linux/releases/33/Everything/aarch64/os/",
+      url: "https://dl.fedoraproject.org/pub/fedora/linux/releases/33/Everything/aarch64/os/",
       fingerprint:
         "sha256:65a9f760749609c590387157e58a308b0d55d7f343da82bbe5ea945d2f0e338a"
     }
@@ -504,8 +496,7 @@ hqrPS+q2yftjNbsODagaOUb85ESfQGx/LqoMePD+7MqGpAXjKMZqsEDP0TbxTwSk
             },
             {
               arch: Arch.Armv6l,
-              url:
-                "https://download.opensuse.org/ports/armv6hl/tumbleweed/repo/oss",
+              url: "https://download.opensuse.org/ports/armv6hl/tumbleweed/repo/oss",
               repositoryType: "rpmmd",
               publicKey: `
 -----BEGIN PGP PUBLIC KEY BLOCK-----
@@ -531,8 +522,7 @@ hqrPS+q2yftjNbsODagaOUb85ESfQGx/LqoMePD+7MqGpAXjKMZqsEDP0TbxTwSk
             },
             {
               arch: Arch.Armv7l,
-              url:
-                "https://download.opensuse.org/ports/armv7hl/tumbleweed/repo/oss",
+              url: "https://download.opensuse.org/ports/armv7hl/tumbleweed/repo/oss",
               repositoryType: "rpmmd",
               publicKey: `
 -----BEGIN PGP PUBLIC KEY BLOCK-----
@@ -558,8 +548,7 @@ hqrPS+q2yftjNbsODagaOUb85ESfQGx/LqoMePD+7MqGpAXjKMZqsEDP0TbxTwSk
             },
             {
               arch: Arch.Aarch64,
-              url:
-                "https://download.opensuse.org/ports/aarch64/tumbleweed/repo/oss",
+              url: "https://download.opensuse.org/ports/aarch64/tumbleweed/repo/oss",
               repositoryType: "rpmmd",
               publicKey: `
 -----BEGIN PGP PUBLIC KEY BLOCK-----
@@ -585,8 +574,7 @@ hqrPS+q2yftjNbsODagaOUb85ESfQGx/LqoMePD+7MqGpAXjKMZqsEDP0TbxTwSk
             },
             {
               arch: Arch.Riscv64,
-              url:
-                "https://download.opensuse.org/ports/riscv/tumbleweed/repo/oss",
+              url: "https://download.opensuse.org/ports/riscv/tumbleweed/repo/oss",
               repositoryType: "rpmmd",
               publicKey: `
 -----BEGIN PGP PUBLIC KEY BLOCK-----
@@ -628,48 +616,40 @@ hqrPS+q2yftjNbsODagaOUb85ESfQGx/LqoMePD+7MqGpAXjKMZqsEDP0TbxTwSk
       const fedora33UpdateDoD: DownloadOnDemand[] = [
         {
           arch: Arch.X86_64,
-          url:
-            "http://ftp-stud.hs-esslingen.de/pub/fedora/linux/updates/33/Everything/x86_64/",
+          url: "http://ftp-stud.hs-esslingen.de/pub/fedora/linux/updates/33/Everything/x86_64/",
           repositoryType: "rpmmd",
           sslMaster: {
-            url:
-              "https://dl.fedoraproject.org/pub/fedora/linux/updates/33/Everything/x86_64/",
+            url: "https://dl.fedoraproject.org/pub/fedora/linux/updates/33/Everything/x86_64/",
             fingerprint:
               "sha256:65a9f760749609c590387157e58a308b0d55d7f343da82bbe5ea945d2f0e338a"
           }
         },
         {
           arch: Arch.I586,
-          url:
-            "https://kojipkgs.fedoraproject.org/repos/f33-build/latest/i386/",
+          url: "https://kojipkgs.fedoraproject.org/repos/f33-build/latest/i386/",
           repositoryType: "rpmmd",
           sslMaster: {
-            url:
-              "https://kojipkgs.fedoraproject.org/repos/f33-build/latest/i386/",
+            url: "https://kojipkgs.fedoraproject.org/repos/f33-build/latest/i386/",
             fingerprint:
               "sha256:65a9f760749609c590387157e58a308b0d55d7f343da82bbe5ea945d2f0e338a"
           }
         },
         {
           arch: Arch.Armv7l,
-          url:
-            "http://ftp-stud.hs-esslingen.de/pub/fedora/linux/updates/33/Everything/armhfp/",
+          url: "http://ftp-stud.hs-esslingen.de/pub/fedora/linux/updates/33/Everything/armhfp/",
           repositoryType: "rpmmd",
           sslMaster: {
-            url:
-              "https://dl.fedoraproject.org/pub/fedora/linux/updates/33/Everything/armhfp/",
+            url: "https://dl.fedoraproject.org/pub/fedora/linux/updates/33/Everything/armhfp/",
             fingerprint:
               "sha256:65a9f760749609c590387157e58a308b0d55d7f343da82bbe5ea945d2f0e338a"
           }
         },
         {
           arch: Arch.Ppc64le,
-          url:
-            "http://ftp-stud.hs-esslingen.de/pub/fedora-secondary/updates/33/Everything/ppc64le/",
+          url: "http://ftp-stud.hs-esslingen.de/pub/fedora-secondary/updates/33/Everything/ppc64le/",
           repositoryType: "rpmmd",
           sslMaster: {
-            url:
-              "https://dl.fedoraproject.org/pub/fedora/updates/33/Everything/ppc64le/",
+            url: "https://dl.fedoraproject.org/pub/fedora/updates/33/Everything/ppc64le/",
             fingerprint:
               "sha256:65a9f760749609c590387157e58a308b0d55d7f343da82bbe5ea945d2f0e338a"
           }
@@ -679,8 +659,7 @@ hqrPS+q2yftjNbsODagaOUb85ESfQGx/LqoMePD+7MqGpAXjKMZqsEDP0TbxTwSk
           url: "http://ftp.fau.de/fedora/linux/updates/33/Everything/aarch64/",
           repositoryType: "rpmmd",
           sslMaster: {
-            url:
-              "https://dl.fedoraproject.org/pub/fedora/linux/updates/33/Everything/aarch64/",
+            url: "https://dl.fedoraproject.org/pub/fedora/linux/updates/33/Everything/aarch64/",
             fingerprint:
               "sha256:65a9f760749609c590387157e58a308b0d55d7f343da82bbe5ea945d2f0e338a"
           }

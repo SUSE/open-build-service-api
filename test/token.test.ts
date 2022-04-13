@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2020 SUSE LLC
+ * Copyright (c) 2020-2022 SUSE LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -31,13 +31,15 @@ describe("Token", () => {
   it("fetches a RSS token", async () => {
     const id = 16;
     const string = "superSecretValue";
-    nock(url).get(`/person/${userId}/token`).reply(
-      200,
-      `<directory count="1">
+    nock(url)
+      .get(`/person/${userId}/token`)
+      .reply(
+        200,
+        `<directory count="1">
   <entry id="${id}" string="${string}" kind="rss"/>
 </directory>
 `
-    );
+      );
     await fetchTokens(con, "fooUser").should.eventually.deep.equal([
       { id, userId, kind: TokenKind.RSS, string }
     ]);

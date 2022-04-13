@@ -60,7 +60,7 @@ function develPackageToApi(
   return develPkg === undefined ? undefined : { $: develPkg };
 }
 
-interface PackageMetaApiReply {
+export interface PackageMetaApiReply {
   package: {
     $?: { name?: string; project?: string };
     devel?: DevelPackageApiReply;

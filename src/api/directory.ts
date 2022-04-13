@@ -126,15 +126,8 @@ function directoryEntryFromApi(dentry: DirectoryEntryApiReply): DirectoryEntry {
 function directoryEntryToApi(dentry: DirectoryEntry): DirectoryEntryApiReply {
   // explicitly destructure most of the elements here to get the "correct" order
   // of the attributes ("correct" here = the same order that osc uses by default)
-  const {
-    name,
-    hash,
-    md5,
-    size,
-    modifiedTime,
-    originProject,
-    ...rest
-  } = dentry;
+  const { name, hash, md5, size, modifiedTime, originProject, ...rest } =
+    dentry;
 
   return {
     $: {
